@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/YourUsername/two-factor-auth/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/YourUsername/two-factor-auth/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # 二步验证服务
 
