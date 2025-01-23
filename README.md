@@ -1,6 +1,8 @@
-[![Build Status](https://github.com/YourUsername/two-factor-auth/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/YourUsername/two-factor-auth/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Two-Factor Authentication Service
+
+[online](https://vercel-2fa.vercel.app)
 
 A simple and user-friendly two-factor authentication service based on the TOTP (Time-Based One-Time Password) standard for enhanced security.
 

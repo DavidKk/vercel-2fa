@@ -1,6 +1,8 @@
-[![Build Status](https://github.com/YourUsername/two-factor-auth/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/YourUsername/two-factor-auth/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # 二步验证服务
+
+[online](https://vercel-2fa.vercel.app)
 
 一个简单易用的二步验证服务，基于 TOTP（基于时间的一次性密码）标准，实现更安全的身份验证。
 
