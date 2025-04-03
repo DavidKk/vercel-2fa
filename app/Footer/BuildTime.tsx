@@ -4,22 +4,30 @@ import React from 'react'
 import { useClient } from '@/hooks/useClient'
 import { isInvalidDate } from '@/utils/date'
 
+const formatBuildTime = (date: Date) => {
+  try {
+    return date.toLocaleString()
+  } catch {
+    return ''
+  }
+}
+
 function BuildTime() {
   const isClient = useClient()
-  if (!isClient) {
-    return null
+  const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME
+  const date = isClient && buildTime ? new Date(buildTime) : null
+  const isValidDate = date && !isInvalidDate(date)
+
+  if (!isValidDate) {
+    return <div className="text-xs font-medium text-gray-600 tracking-wide">&nbsp;</div>
   }
 
-  const date = new Date(`${process.env.NEXT_PUBLIC_BUILD_TIME}`)
   return (
     <div className="text-xs font-medium text-gray-600 tracking-wide">
-      {!isInvalidDate(date) && (
-        <>
-          Build Time: <span className="font-mono text-gray-700">{date.toLocaleString()}</span>
-        </>
-      )}
+      Build Time: <span className="font-mono text-gray-700">{formatBuildTime(date)}</span>
     </div>
   )
 }
 
-export default React.memo(BuildTime, () => true)
+const areEqual = () => true
+export default React.memo(BuildTime, areEqual)
