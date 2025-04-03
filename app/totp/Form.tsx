@@ -2,7 +2,7 @@ import { useRequest } from 'ahooks'
 import { useRef, useState } from 'react'
 import { Spinner } from '@/components/Spinner'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { generate2fa } from '@/actions/2fa'
+import { generate2fa } from '@/app/actions/2fa'
 
 export interface FormProps {
   onGenerate2fa: (payload: { qrCode: string; secret: string }) => void
@@ -36,7 +36,7 @@ export default function Form(props: FormProps) {
   )
 
   return (
-    <form className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100" ref={formRef}>
+    <form className="flex flex-col flex-1 items-center justify-center p-4 bg-gray-100" ref={formRef}>
       <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-4 text-center">Set Up Two-Factor Authentication</h1>
         <p className="text-sm text-gray-500 mb-6 text-center">

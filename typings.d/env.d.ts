@@ -1,3 +1,6 @@
 declare namespace NodeJS {
-  interface ProcessEnv {}
+  interface ProcessEnv {
+    /** time of project build */
+    NEXT_PUBLIC_BUILD_TIME: string
+  }
 }

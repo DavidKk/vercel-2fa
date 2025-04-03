@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/react'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { Nav } from './Nav'
+import Footer from './Footer'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -17,14 +20,21 @@ export const metadata: Metadata = {
   description: 'Two Factor Authentication',
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+interface RootLayoutProps {
   children: React.ReactNode
-}>) {
+}
+
+export default function RootLayout(props: Readonly<RootLayoutProps>) {
+  const { children } = props
+
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <Analytics />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
+        <Nav />
+        {children}
+        <Footer />
+      </body>
     </html>
   )
 }
