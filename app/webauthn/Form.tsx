@@ -1,7 +1,6 @@
-'use client'
-
 import { useRequest } from 'ahooks'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown } from 'feather-icons-react'
 import { Spinner } from '@/components/Spinner'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
 
@@ -13,10 +12,27 @@ export default function Form(props: FormProps) {
   const { onGenerateCredential } = props
   const [username, setUsername] = useState('')
   const [appName, setAppName] = useState('')
-  const [rpId, setRpId] = useState(window.location.hostname)
+  const [rpId, setRpId] = useState('')
 
   const formRef = useRef<HTMLFormElement>(null)
   const alertRef = useRef<AlertImperativeHandler>(null)
+
+  const [domainOptions, setDomainOptions] = useState<Array<{ value: string; label: string }>>([])
+
+  useEffect(() => {
+    const hostname = window.location.hostname
+    const options = [{ value: hostname, label: hostname }]
+
+    if (hostname.split('.').length > 2) {
+      const parentDomain = hostname.split('.').slice(1).join('.')
+      options.push({ value: parentDomain, label: parentDomain })
+    }
+
+    setDomainOptions(options)
+    if (options.length > 0) {
+      setRpId(options[0].value)
+    }
+  }, [])
 
   const { run: submit, loading: submitting } = useRequest(
     async () => {
@@ -102,12 +118,21 @@ export default function Form(props: FormProps) {
         </div>
 
         <div className="mb-4">
-          <select className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3" value={rpId} onChange={(event) => setRpId(event.target.value)} required>
-            <option value={window.location.hostname}>{window.location.hostname}</option>
-            {window.location.hostname.split('.').length > 2 && (
-              <option value={window.location.hostname.split('.').slice(1).join('.')}>{window.location.hostname.split('.').slice(1).join('.')}</option>
-            )}
-          </select>
+          <div className="relative">
+            <select
+              className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3 appearance-none"
+              value={rpId}
+              onChange={(event) => setRpId(event.target.value)}
+              required
+            >
+              {domainOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
 
         <button
