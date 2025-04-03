@@ -1,3 +1,5 @@
+'use client'
+
 import { useRequest } from 'ahooks'
 import { useRef, useState } from 'react'
 import { Spinner } from '@/components/Spinner'
@@ -11,6 +13,7 @@ export default function Form(props: FormProps) {
   const { onGenerateCredential } = props
   const [username, setUsername] = useState('')
   const [appName, setAppName] = useState('')
+  const [rpId, setRpId] = useState(window.location.hostname)
 
   const formRef = useRef<HTMLFormElement>(null)
   const alertRef = useRef<AlertImperativeHandler>(null)
@@ -26,7 +29,7 @@ export default function Form(props: FormProps) {
         challenge: new Uint8Array(32),
         rp: {
           name: appName || 'Vercel 2FA Demo',
-          id: window.location.hostname,
+          id: rpId,
         },
         user: {
           id: new Uint8Array(16),
@@ -96,6 +99,15 @@ export default function Form(props: FormProps) {
             onChange={(event) => setAppName(event.target.value)}
             required
           />
+        </div>
+
+        <div className="mb-4">
+          <select className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3" value={rpId} onChange={(event) => setRpId(event.target.value)} required>
+            <option value={window.location.hostname}>{window.location.hostname}</option>
+            {window.location.hostname.split('.').length > 2 && (
+              <option value={window.location.hostname.split('.').slice(1).join('.')}>{window.location.hostname.split('.').slice(1).join('.')}</option>
+            )}
+          </select>
         </div>
 
         <button
