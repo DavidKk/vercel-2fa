@@ -54,7 +54,7 @@ export default function Form(props: FormProps) {
       }
 
       onGenerateCredential({
-        credential: JSON.stringify(credential, null, 2),
+        credential: JSON.stringify(credential),
       })
     },
     {
