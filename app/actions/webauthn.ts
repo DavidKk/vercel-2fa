@@ -35,7 +35,7 @@ export interface GenerateLoginOptionsProps {
 /** Verify login parameter interface */
 export interface VerifyLoginProps {
   /** Client returned authentication response */
-  credential: AuthenticationResponseJSON
+  credentials: AuthenticationResponseJSON
   /** From server retrieved user credentials */
   userCredentials: UserCredentials
   /** Login challenge value, needs to be temporarily stored in server session */
@@ -117,7 +117,7 @@ export async function generateLoginOptions(props: GenerateLoginOptionsProps) {
 export async function verifyLogin(props: VerifyLoginProps) {
   // Verify login response by comparing challenge to prevent replay attacks
   // Even if an attacker obtains previous response data, verification will fail due to challenge mismatch
-  const { credential: response, userCredentials, challenge: expectedChallenge, expectedOrigin, expectedRPID } = props
+  const { credentials: response, userCredentials, challenge: expectedChallenge, expectedOrigin, expectedRPID } = props
 
   // Verify login response by comparing challenge to prevent replay attacks
   // Even if an attacker obtains previous response data, verification will fail due to challenge mismatch

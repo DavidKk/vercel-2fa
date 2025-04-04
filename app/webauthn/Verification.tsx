@@ -34,11 +34,11 @@ export default function Verification(props: VerificationProps) {
       }
 
       const options = await generateLoginOptions({ rpId: userCredentials.rpId, userCredentials })
-      const credential = await startAuthentication({ optionsJSON: options })
+      const credentials = await startAuthentication({ optionsJSON: options })
       const challenge = options.challenge
       const expectedOrigin = window.location.origin
       const expectedRPID = userCredentials.rpId
-      await verifyLogin({ userCredentials, challenge, credential, expectedOrigin, expectedRPID })
+      await verifyLogin({ userCredentials, challenge, credentials, expectedOrigin, expectedRPID })
     },
     {
       manual: true,

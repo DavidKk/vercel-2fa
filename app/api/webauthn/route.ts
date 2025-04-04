@@ -1,15 +1,28 @@
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
 import { api } from '@/initializer/controller'
 import { jsonSuccess, jsonUnauthorized } from '@/initializer/response'
-import { generateLoginOptions, verifyLogin } from '@/app/actions/webauthn'
+import { verifyLogin } from '@/app/actions/webauthn'
 import { generateToken } from '@/utils/jwt'
-import { startAuthentication } from '@simplewebauthn/browser'
+import { stringToCredentials } from '@/services/webauthn'
+
+interface Payload {
+  username: string
+  password: string
+  challenge: string
+  credentials: AuthenticationResponseJSON
+}
 
 export const POST = api(async (req) => {
   if (!(process.env.ACCESS_USERNAME && process.env.ACCESS_PASSWORD && process.env.ACCESS_WEBAUTHN_SECRET)) {
     return jsonUnauthorized('Invalid server configuration')
   }
 
-  const { username, password, credential: userCredentials } = await req.json()
+  const userCredentials = stringToCredentials(process.env.ACCESS_WEBAUTHN_SECRET)
+  if (!userCredentials) {
+    return jsonUnauthorized('Invalid server configuration')
+  }
+
+  const { username, password, challenge, credentials } = (await req.json()) as Payload
   if (!username) {
     return jsonUnauthorized('username is required')
   }
@@ -18,22 +31,18 @@ export const POST = api(async (req) => {
     return jsonUnauthorized('password is required')
   }
 
-  if (!userCredentials) {
-    return jsonUnauthorized('credential is required')
+  if (!challenge) {
+    return jsonUnauthorized('challenge is required')
   }
 
   if (username !== process.env.ACCESS_USERNAME || password !== process.env.ACCESS_PASSWORD) {
     return jsonUnauthorized()
   }
 
-  const options = await generateLoginOptions({ rpId: userCredentials.rpId, userCredentials })
-  const credential = await startAuthentication({ optionsJSON: options })
-  const challenge = options.challenge
-  const expectedOrigin = window.location.origin
-  const expectedRPID = userCredentials.rpId
-
   try {
-    await verifyLogin({ userCredentials, challenge, credential, expectedOrigin, expectedRPID })
+    const expectedOrigin = window.location.origin
+    const expectedRPID = userCredentials.rpId
+    await verifyLogin({ userCredentials, challenge, credentials, expectedOrigin, expectedRPID })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     return jsonUnauthorized('WebAuthn verification failed: ' + message)
