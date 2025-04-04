@@ -25,12 +25,6 @@ export default function Form(props: FormProps) {
   useEffect(() => {
     const hostname = window.location.hostname
     const options = [{ value: hostname, label: hostname }]
-
-    if (hostname.split('.').length > 2) {
-      const parentDomain = hostname.split('.').slice(1).join('.')
-      options.push({ value: parentDomain, label: parentDomain })
-    }
-
     setDomainOptions(options)
 
     if (options.length > 0) {
@@ -101,6 +95,7 @@ export default function Form(props: FormProps) {
               value={rpId}
               onChange={(event) => setRpId(event.target.value)}
               required
+              disabled
             >
               {domainOptions.map((option) => (
                 <option key={option.value} value={option.value}>
