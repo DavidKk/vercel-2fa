@@ -16,7 +16,7 @@ export function verifyToken(token: string) {
 
 function getJWTConfig() {
   const JWT_SECRET = process.env.JWT_SECRET
-  const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d'
+  const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d'
 
   if (!JWT_SECRET) {
     throw new Error('process.env.JWT_SECRET is not defined')
