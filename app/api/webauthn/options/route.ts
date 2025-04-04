@@ -1,9 +1,14 @@
 import { api } from '@/initializer/controller'
-import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
+import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
+import { stringToCredentials } from '@/services/webauthn'
 import { generateLoginOptions } from '@/app/actions/webauthn'
 
-export const GET = api(async (req) => {
-  const { credential: userCredentials } = await req.json()
+export const GET = api(async () => {
+  if (!process.env.ACCESS_WEBAUTHN_SECRET) {
+    return jsonUnauthorized('Invalid server configuration')
+  }
+
+  const userCredentials = stringToCredentials(process.env.ACCESS_WEBAUTHN_SECRET)
   if (!userCredentials) {
     return jsonInvalidParameters('credential is required')
   }
