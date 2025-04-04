@@ -1,9 +1,9 @@
 import { useRequest } from 'ahooks'
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'feather-icons-react'
+import { startRegistration } from '@simplewebauthn/browser'
 import { Spinner } from '@/components/Spinner'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { startRegistration } from '@simplewebauthn/browser'
 import type { StoreCredentials } from '@/services/webauthn'
 import { generateRegisterOptions, verifyRegister } from '@/app/actions/webauthn'
 
@@ -91,7 +91,7 @@ export default function Form(props: FormProps) {
         <div className="mb-4">
           <div className="relative">
             <select
-              className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3 appearance-none"
+              className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3 appearance-none disabled:text-gray-500 cursor-not-allowed"
               value={rpId}
               onChange={(event) => setRpId(event.target.value)}
               required
@@ -103,7 +103,7 @@ export default function Form(props: FormProps) {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 opacity-[0.3]" />
           </div>
         </div>
 
