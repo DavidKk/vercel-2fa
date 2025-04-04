@@ -2,7 +2,7 @@ import { useRequest } from 'ahooks'
 import { useRef, useState } from 'react'
 import { Spinner } from '@/components/Spinner'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { generate2fa } from '@/app/actions/2fa'
+import { generate2fa } from '@/app/actions/totp'
 
 export interface FormProps {
   onGenerate2fa: (payload: { qrCode: string; secret: string }) => void

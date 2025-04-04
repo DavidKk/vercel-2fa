@@ -5,7 +5,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Spinner } from '@/components/Spinner'
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
-import { verify2fa } from '@/app/actions/2fa'
+import { verify2fa } from '@/app/actions/totp'
 
 export interface VerificationProps {
   secret: string

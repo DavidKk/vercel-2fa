@@ -1,12 +1,15 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import type { StoreCredentials } from '@/services/webauthn'
 import Form from './Form'
+import Success from './Success'
 import Verification from './Verification'
 
 export default function WebAuthnSetup() {
-  const [credential, setCredential] = useState('')
-  const [isVerified, setIsVerified] = useState(false)
+  const [credentials, setCredentials] = useState<StoreCredentials>()
+  const [isGenerated, setGenerated] = useState(false)
+  const [isVerifyMode, toggleVerifyMode] = useState(false)
 
   const handleBeforeUnload = useCallback((event: BeforeUnloadEvent) => {
     event.preventDefault()
@@ -14,7 +17,7 @@ export default function WebAuthnSetup() {
   }, [])
 
   useEffect(() => {
-    if (!credential) {
+    if (!credentials) {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       return
     }
@@ -23,17 +26,29 @@ export default function WebAuthnSetup() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [credential])
+  }, [credentials])
 
-  if (isVerified) {
-    return <Verification credential={credential} />
+  if (isVerifyMode && credentials) {
+    return <Verification credentials={credentials} onSuccess={() => toggleVerifyMode(false)} />
+  }
+
+  if (isGenerated && credentials) {
+    return (
+      <Success
+        credentials={credentials}
+        onVerify={() => {
+          setGenerated(false)
+          toggleVerifyMode(true)
+        }}
+      />
+    )
   }
 
   return (
     <Form
-      onGenerateCredential={(payload) => {
-        setCredential(payload.credential)
-        setIsVerified(true)
+      onGenerateCredential={(credentials) => {
+        setCredentials(credentials)
+        setGenerated(true)
       }}
     />
   )

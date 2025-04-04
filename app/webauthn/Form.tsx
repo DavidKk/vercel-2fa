@@ -3,9 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'feather-icons-react'
 import { Spinner } from '@/components/Spinner'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
+import { startRegistration } from '@simplewebauthn/browser'
+import type { StoreCredentials } from '@/services/webauthn'
+import { generateRegisterOptions, verifyRegister } from '@/app/actions/webauthn'
 
 export interface FormProps {
-  onGenerateCredential: (payload: { credential: string }) => void
+  onGenerateCredential: (credentials: StoreCredentials) => void
 }
 
 export default function Form(props: FormProps) {
@@ -29,6 +32,7 @@ export default function Form(props: FormProps) {
     }
 
     setDomainOptions(options)
+
     if (options.length > 0) {
       setRpId(options[0].value)
     }
@@ -41,40 +45,13 @@ export default function Form(props: FormProps) {
         return
       }
 
-      const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
-        challenge: new Uint8Array(32),
-        rp: {
-          name: appName || 'Vercel 2FA Demo',
-          id: rpId,
-        },
-        user: {
-          id: new Uint8Array(16),
-          name: username,
-          displayName: `${appName}-${username}`,
-        },
-        pubKeyCredParams: [
-          { type: 'public-key', alg: -7 }, // ES256
-          { type: 'public-key', alg: -257 }, // RS256
-        ],
-        timeout: 60000,
-        attestation: 'direct',
-        authenticatorSelection: {
-          authenticatorAttachment: 'platform',
-          userVerification: 'preferred',
-        },
-      }
-
-      const credential = await navigator.credentials.create({
-        publicKey: publicKeyCredentialCreationOptions,
-      })
-
-      if (!credential) {
-        throw new Error('Failed to create credential')
-      }
-
-      onGenerateCredential({
-        credential: JSON.stringify(credential),
-      })
+      const options = await generateRegisterOptions({ appName, rpId, username })
+      const credential = await startRegistration({ optionsJSON: options })
+      const challenge = options.challenge
+      const expectedOrigin = window.location.origin
+      const result = await verifyRegister({ challenge, credential, expectedOrigin, expectedRPID: rpId })
+      const { credentialID, publicKey } = result
+      onGenerateCredential({ credentialID, publicKey, rpId, username })
     },
     {
       manual: true,
