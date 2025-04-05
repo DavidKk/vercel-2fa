@@ -1,7 +1,6 @@
 'use server'
 
 import { verifyTOTPToken } from '@/utils/totp'
-import { generateJWTToken } from '@/app/actions/jwt'
 
 export interface Verify2faParams {
   token: string

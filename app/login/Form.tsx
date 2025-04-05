@@ -9,7 +9,6 @@ import Alert from '@/components/Alert'
 import { Spinner } from '@/components/Spinner'
 import { verfiyTOTPToken, getLoginWithWebauthnOptions, vierfyForm, verifyWebauthn } from '@/app/actions/login'
 import { generateJWTToken } from '@/app/actions/jwt'
-import { stringToCredentials } from '@/services/webauthn'
 
 export interface LoginFormProps {
   enableTotp?: boolean
@@ -39,9 +38,11 @@ export default function LoginForm(props: LoginFormProps) {
       if (enableWebAuthn) {
         const options = await getLoginWithWebauthnOptions({ username, password })
         const credentials = await startAuthentication({ optionsJSON: options })
+
         const challenge = options.challenge
         const expectedOrigin = window.location.origin
         const expectedRPID = options.rpId!
+
         await verifyWebauthn({ username, password, challenge, credentials, expectedOrigin, expectedRPID })
       }
 
@@ -53,6 +54,7 @@ export default function LoginForm(props: LoginFormProps) {
       onSuccess: (token) => {
         const url = new URL(redirectUrl, window.location.origin)
         url.searchParams.set('token', token)
+
         router.push(url.toString())
         setComplete(true)
       },
