@@ -1,27 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import type { Jwt, JwtPayload } from 'jsonwebtoken'
-import { useSearchParams } from 'next/navigation'
 import { Spinner } from '@/components/Spinner'
 import { useClient } from '@/hooks/useClient'
-import { verifyJWTToken } from '@/app/actions/jwt'
 
-export default function TokenViewer() {
+interface TokenViewerProps {
+  decodedJWTToken: string | Jwt | JwtPayload | null
+}
+
+export default function TokenViewer({ decodedJWTToken }: TokenViewerProps) {
   const isClient = useClient()
-  const [decodedJWTToken, setDecodedJWTToken] = useState<string | Jwt | JwtPayload | null>(null)
-  const params = useSearchParams()
-
-  useEffect(() => {
-    const token = params.get('token')
-    if (!token) {
-      return
-    }
-
-    verifyJWTToken(token).then((decoded) => {
-      setDecodedJWTToken(decoded)
-    })
-  }, [])
 
   if (!isClient) {
     return (
@@ -32,12 +20,21 @@ export default function TokenViewer() {
   }
 
   if (!decodedJWTToken) {
-    return <div className="flex flex-1 items-center justify-center">Unauthority</div>
+    return (
+      <div className="flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 border border-gray-100">
+          <h2 className="text-center text-xl font-semibold mb-4 text-red-600">Authorization Failed</h2>
+          <div className="space-y-4">
+            <p className="text-center text-gray-700">Invalid or missing authentication token. Please try again.</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="flex flex-1 items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 border border-gray-100">
         <h2 className="text-xl font-semibold mb-4">JWT Token Details</h2>
         <div className="space-y-2">
           {Object.entries(decodedJWTToken).map(([key, value]) => (

@@ -1,11 +1,15 @@
-import { Suspense } from 'react'
-import { Spinner } from '@/components/Spinner'
+import { verifyJWTToken } from '@/app/actions/jwt'
 import TokenViewer from './TokenViewer'
 
-export default function BlankPage() {
-  return (
-    <Suspense fallback={<Spinner color="text-indigo-600" />}>
-      <TokenViewer />
-    </Suspense>
-  )
+interface PageProps {
+  searchParams: Promise<{
+    token?: string
+  }>
+}
+
+export default async function BlankPage(props: PageProps) {
+  const { searchParams } = props
+  const { token } = await searchParams
+  const decodedJWTToken = token ? await verifyJWTToken(token) : null
+  return <TokenViewer decodedJWTToken={decodedJWTToken} />
 }
