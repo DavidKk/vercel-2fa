@@ -8,7 +8,8 @@ interface TokenViewerProps {
   decodedJWTToken: string | Jwt | JwtPayload | null
 }
 
-export default function TokenViewer({ decodedJWTToken }: TokenViewerProps) {
+export default function TokenViewer(props: TokenViewerProps) {
+  const { decodedJWTToken } = props
   const isClient = useClient()
 
   if (!isClient) {
