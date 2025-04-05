@@ -2,7 +2,7 @@ import { useRequest } from 'ahooks'
 import { useRef, useState } from 'react'
 import { Spinner } from '@/components/Spinner'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { generate2fa } from '@/app/actions/totp'
+import { generateTOTPSecret } from '@/utils/totp'
 
 export interface FormProps {
   onGenerate2fa: (payload: { qrCode: string; secret: string }) => void
@@ -23,7 +23,7 @@ export default function Form(props: FormProps) {
         return
       }
 
-      const { qrCode, secret } = await generate2fa({ username, appName })
+      const { qrCode, secret } = await generateTOTPSecret({ username, appName })
       onGenerate2fa({ qrCode, secret })
     },
     {

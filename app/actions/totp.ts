@@ -1,33 +1,23 @@
 'use server'
 
-import { authenticator } from 'otplib'
-import QRCode from 'qrcode'
-
-export interface Generate2faParams {
-  username: string
-  appName: string
-}
-
-export async function generate2fa(params: Generate2faParams) {
-  const { username, appName } = params
-  const secret = authenticator.generateSecret()
-  const otpauthUrl = authenticator.keyuri(username, appName, secret)
-  const qrCode = await QRCode.toDataURL(otpauthUrl)
-  return { qrCode, secret }
-}
+import { verifyTOTPToken } from '@/utils/totp'
+import { generateJWTToken } from '@/app/actions/jwt'
 
 export interface Verify2faParams {
   token: string
-  secret: string
 }
 
-export async function verify2fa(params: Verify2faParams) {
-  const { token, secret } = params
+export async function verfiyToken(payload: Verify2faParams) {
+  const { token } = payload
+  const { ACCESS_TOTP_SECRET: secret } = getTOTPConfig()
+  return verifyTOTPToken({ token, secret })
+}
 
-  try {
-    const isValid = authenticator.check(token, secret)
-    return isValid
-  } catch (error) {
-    return false
+function getTOTPConfig() {
+  const ACCESS_TOTP_SECRET = process.env.ACCESS_TOTP_SECRET
+  if (!ACCESS_TOTP_SECRET) {
+    throw new Error('process.env.ACCESS_TOTP_SECRET is not defined')
   }
+
+  return { ACCESS_TOTP_SECRET }
 }

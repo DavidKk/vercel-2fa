@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { verifyToken } from '@/utils/jwt'
+import { verifyToken } from '@/services/jwt'
 import { AUTH_TOKEN_NAME } from './constants'
 import { getReqHeaders } from '../context'
 

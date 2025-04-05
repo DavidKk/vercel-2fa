@@ -1,3 +1,5 @@
+'use server'
+
 import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server'
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server'
 import type { UserCredentials } from '@/services/webauthn'
@@ -138,4 +140,6 @@ export async function verifyLogin(props: VerifyLoginProps) {
   if (!verification.verified) {
     throw new Error('Login failed')
   }
+
+  return true
 }

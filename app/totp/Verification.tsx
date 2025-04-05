@@ -5,7 +5,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Spinner } from '@/components/Spinner'
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
-import { verify2fa } from '@/app/actions/totp'
+import { verifyTOTPToken } from '@/utils/totp'
 
 export interface VerificationProps {
   secret: string
@@ -21,7 +21,7 @@ export default function Verification(props: VerificationProps) {
 
   const { run: submit, loading: submitting } = useRequest(
     async () => {
-      if (await verify2fa({ token, secret })) {
+      if (await verifyTOTPToken({ token, secret })) {
         return
       }
 
