@@ -21,14 +21,14 @@ export function Nav(props: NavProps) {
 
   return (
     <nav className="w-full p-4 bg-indigo-500 text-white">
-      <div className="container-md flex items-center">
-        <h1 className="text-xl font-bold">
-          <Link className="capitalize" href="/">
+      <div className="container-md flex items-center justify-center md:justify-start flex-wrap md:flex-nowrap gap-y-2">
+        <h1 className="text-xl font-bold text-center md:text-left">
+          <Link className="whitespace-nowrap capitalize" href="/">
             {title}
           </Link>
         </h1>
 
-        <div className="ml-8 flex">
+        <div className="md:ml-8 flex">
           {Object.entries(nav).map(([hero, nav], index) => (
             <div className="group inline-flex flex-col relative px-2" key={index}>
               {!hero.startsWith('$') && (
@@ -37,12 +37,12 @@ export function Nav(props: NavProps) {
                 </span>
               )}
 
-              <div className={`flex gap-2 transition-all ${hero.startsWith('$') ? '' : 'group-hover:translate-y-[0.5rem]'}`}>
+              <div className={`flex gap-2 flex-wrap transition-all ${hero.startsWith('$') ? '' : 'group-hover:translate-y-[0.5rem]'}`}>
                 {nav.map(({ name, href }, index) => (
-                  <Link className="relative group/link" href={href} key={index}>
+                  <Link className="whitespace-nowrap relative group/link" href={href} key={index}>
                     {name}
                     <span
-                      className={`${hero.startsWith('$') ? 'translate-y-[1.2rem]' : 'translate-y-[0.7rem]'} absolute inset-x-0 bottom-0 h-[2px] bg-white transition-all duration-300 transform scale-x-0 group-hover/link:scale-x-100`}
+                      className={`hidden md:block ${hero.startsWith('$') ? 'translate-y-[1.2rem]' : 'translate-y-[0.7rem]'} absolute inset-x-0 bottom-0 h-[2px] bg-white transition-all duration-300 transform scale-x-0 group-hover/link:scale-x-100`}
                     ></span>
                   </Link>
                 ))}
@@ -52,7 +52,7 @@ export function Nav(props: NavProps) {
         </div>
 
         {GITHUB_URL && (
-          <a className="ml-auto" href={GITHUB_URL} target="_blank" rel="noreferrer">
+          <a className="ml-auto absolute top-4 right-4 md:static" href={GITHUB_URL} target="_blank" rel="noreferrer">
             <FeatherIcon icon="github" />
           </a>
         )}
