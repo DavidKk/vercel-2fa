@@ -14,5 +14,7 @@ declare namespace NodeJS {
     JWT_SECRET: string
     /** JWT Token Expiration Time */
     JWT_EXPIRES_IN: string
+    /** Allowed Redirect URLs (comma-separated) */
+    ALLOWED_REDIRECT_URLS?: string
   }
 }

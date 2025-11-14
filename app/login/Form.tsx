@@ -15,10 +15,11 @@ export interface LoginFormProps {
   enableTotp?: boolean
   enableWebAuthn?: boolean
   redirectUrl?: string
+  state?: string
 }
 
 export default function LoginForm(props: LoginFormProps) {
-  const { enableTotp, enableWebAuthn, redirectUrl = '/' } = props
+  const { enableTotp, enableWebAuthn, redirectUrl = '/', state } = props
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -55,6 +56,11 @@ export default function LoginForm(props: LoginFormProps) {
       onSuccess: (token) => {
         const url = new URL(redirectUrl, window.location.origin)
         url.searchParams.set('token', token)
+
+        // Pass through state parameter for CSRF protection
+        if (state) {
+          url.searchParams.set('state', state)
+        }
 
         router.push(url.toString())
         setComplete(true)

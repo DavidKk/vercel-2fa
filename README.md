@@ -4,10 +4,10 @@
 
 [online](https://vercel-2fa.vercel.app)
 
-A simple and user-friendly two-factor authentication service based on the TOTP (Time-Based One-Time Password) standard for enhanced security.
+A simple and user-friendly two-factor authentication service based on TOTP (Time-Based One-Time Password) and WebAuthn standards for enhanced security.
 
-- **Purpose**: Provide more secure login verification to reduce risks caused by password leaks.
-- **Use Cases**: User login verification, identity confirmation for sensitive operations, and more.
+- **Purpose**: Provide unified login service for all your personal projects, no need to build authentication for each one.
+- **Use Cases**: Multiple personal projects, small team internal apps, self-hosted services, and more.
 
 ## Deploy to Vercel
 
@@ -49,3 +49,227 @@ Important Notes
 
 - **Secure Storage**: Secrets must be stored on the server and never exposed to users.
 - **Time Synchronization**: Ensure server and client times are synchronized to prevent validation failures due to time drift.
+
+## Environment Variables
+
+| Variable                 | Required | Description                                      | Example                                                                   |
+| ------------------------ | -------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| `ACCESS_USERNAME`        | Yes      | Admin username                                   | `admin`                                                                   |
+| `ACCESS_PASSWORD`        | Yes      | Admin password                                   | `your-secure-password`                                                    |
+| `ACCESS_TOTP_SECRET`     | Optional | TOTP 2FA secret                                  | `JBSWY3DPEHPK3PXP`                                                        |
+| `ACCESS_WEBAUTHN_SECRET` | Optional | WebAuthn credentials                             | `{"id":"...","publicKey":"..."}`                                          |
+| `JWT_SECRET`             | Yes      | JWT signing secret (min 32 chars)                | `your-super-secret-jwt-key-min-32-chars`                                  |
+| `JWT_EXPIRES_IN`         | Optional | JWT token expiration                             | `30d` (default 30 days)                                                   |
+| `ALLOWED_REDIRECT_URLS`  | Optional | Allowed redirect URL whitelist (comma-separated) | `https://app1.example.com,https://app2.example.com,https://*.example.com` |
+
+**Notes**:
+
+- At least one of `ACCESS_TOTP_SECRET` or `ACCESS_WEBAUTHN_SECRET` must be configured
+- `ALLOWED_REDIRECT_URLS` supports wildcard patterns like `https://*.example.com`
+- If `ALLOWED_REDIRECT_URLS` is not configured, only relative paths (same domain) are allowed
+
+## Unified Login Service
+
+This system can serve as a unified login portal for all your personal projects. Deploy once, use everywhere.
+
+### Integration Flow
+
+#### 1. Your Project Initiates Login
+
+Redirect users to the authentication center with callback URL:
+
+```
+https://your-2fa-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
+```
+
+**Parameters**:
+
+- `redirectUrl`: Callback URL after successful login (must be URL encoded)
+- `state`: (Optional) Random string for CSRF protection
+
+#### 2. User Completes Authentication
+
+User enters username, password, and 2FA code (TOTP or WebAuthn)
+
+#### 3. Receive Authentication Token
+
+After successful authentication, the system redirects to the specified `redirectUrl` with JWT token:
+
+```
+https://your-app.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&state=random-string
+```
+
+#### 4. Verify Token
+
+External systems can verify tokens using two methods:
+
+**Method A: Shared Secret Verification (Recommended for internal systems)**
+
+```typescript
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = 'your-shared-secret' // Same secret as auth center
+
+function verifyToken(token: string) {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET)
+    // payload contains: { username, authenticated, iat, exp }
+
+    if (payload.authenticated) {
+      // Verification successful, create local session
+      return { success: true, username: payload.username }
+    }
+  } catch (error) {
+    return { success: false, error: 'Invalid token' }
+  }
+}
+```
+
+**Method B: API Verification (For scenarios without shared secrets)**
+
+```typescript
+const response = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ token }),
+})
+
+const result = await response.json()
+if (result.code === 0 && result.data.valid) {
+  // Verification successful
+  console.log('User:', result.data.payload.username)
+}
+```
+
+### Security Configuration
+
+#### 1. Configure Redirect URL Whitelist
+
+Set allowed callback URLs in environment variables:
+
+```bash
+ALLOWED_REDIRECT_URLS=https://app1.example.com,https://app2.example.com,http://localhost:3000
+```
+
+Supports wildcards:
+
+```bash
+ALLOWED_REDIRECT_URLS=https://*.example.com,https://*.company.com
+```
+
+#### 2. Use State Parameter for CSRF Protection
+
+```javascript
+// Generate random state when initiating login
+const state = crypto.randomUUID()
+sessionStorage.setItem('oauth_state', state)
+
+const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+window.location.href = loginUrl
+
+// Verify state on callback
+const params = new URLSearchParams(window.location.search)
+const returnedState = params.get('state')
+if (returnedState !== sessionStorage.getItem('oauth_state')) {
+  throw new Error('Invalid state - possible CSRF attack')
+}
+```
+
+#### 3. Token Expiration Management
+
+- Default login token expiration is 5 minutes
+- External systems should verify tokens immediately and create local sessions
+- Do not use short-lived tokens for long-term session management
+
+### Complete Example (React Application)
+
+```typescript
+// 1. Login button handler
+function handleLogin() {
+  const state = crypto.randomUUID()
+  sessionStorage.setItem('oauth_state', state)
+
+  const callbackUrl = `${window.location.origin}/auth/callback`
+  const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+
+  window.location.href = loginUrl
+}
+
+// 2. Callback page handler (pages/auth/callback.tsx)
+export default function AuthCallback() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('token')
+    const state = params.get('state')
+
+    // Verify state
+    if (state !== sessionStorage.getItem('oauth_state')) {
+      console.error('Invalid state')
+      return
+    }
+
+    // Clear state
+    sessionStorage.removeItem('oauth_state')
+
+    if (token) {
+      // Send to your backend for verification and session creation
+      fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      }).then(async res => {
+        const data = await res.json()
+        if (data.success) {
+          router.push('/dashboard')
+        }
+      })
+    }
+  }, [])
+
+  return <div>Processing login...</div>
+}
+```
+
+### API Endpoints
+
+#### POST /api/auth/verify
+
+Verify JWT token validity
+
+**Request Body**:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Success Response**:
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "valid": true,
+    "payload": {
+      "username": "admin",
+      "authenticated": true,
+      "iat": 1699999999,
+      "exp": 1699999999
+    }
+  }
+}
+```
+
+**Error Response**:
+
+```json
+{
+  "code": 2000,
+  "message": "Invalid or expired token",
+  "data": null
+}
+```
