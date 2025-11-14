@@ -1,7 +1,9 @@
 'use server'
 
-import { stringToCredentials } from '@/services/webauthn'
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
+
+import { stringToCredentials } from '@/services/webauthn'
+
 import { verfiyToken } from './totp'
 import { generateLoginOptions, verifyLogin } from './webauthn'
 

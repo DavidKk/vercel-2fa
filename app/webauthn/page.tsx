@@ -1,12 +1,23 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+
+import { HelpButton, useSidebarContent } from '@/components/Sidebar'
 import type { StoreCredentials } from '@/services/webauthn'
+
+import principlesMd from './docs/principles.md'
+import usageMd from './docs/usage.md'
 import Form from './Form'
 import Success from './Success'
 import Verification from './Verification'
 
 export default function WebAuthnSetup() {
+  // Register sidebar sections for this page
+  useSidebarContent('webauthn', [
+    { key: 'usage', title: 'How to Use', markdown: usageMd },
+    { key: 'principles', title: 'Principles', markdown: principlesMd },
+  ])
+
   const [credentials, setCredentials] = useState<StoreCredentials>()
   const [isGenerated, setGenerated] = useState(false)
   const [isVerifyMode, toggleVerifyMode] = useState(false)
@@ -28,28 +39,27 @@ export default function WebAuthnSetup() {
     }
   }, [credentials])
 
-  if (isVerifyMode && credentials) {
-    return <Verification credentials={credentials} onSuccess={() => toggleVerifyMode(false)} />
-  }
-
-  if (isGenerated && credentials) {
-    return (
-      <Success
-        credentials={credentials}
-        onVerify={() => {
-          setGenerated(false)
-          toggleVerifyMode(true)
-        }}
-      />
-    )
-  }
-
   return (
-    <Form
-      onGenerateCredential={(credentials) => {
-        setCredentials(credentials)
-        setGenerated(true)
-      }}
-    />
+    <>
+      <HelpButton contentKey="webauthn" />
+      {isVerifyMode && credentials ? (
+        <Verification credentials={credentials} onSuccess={() => toggleVerifyMode(false)} />
+      ) : isGenerated && credentials ? (
+        <Success
+          credentials={credentials}
+          onVerify={() => {
+            setGenerated(false)
+            toggleVerifyMode(true)
+          }}
+        />
+      ) : (
+        <Form
+          onGenerateCredential={(credentials) => {
+            setCredentials(credentials)
+            setGenerated(true)
+          }}
+        />
+      )}
+    </>
   )
 }

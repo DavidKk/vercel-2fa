@@ -1,10 +1,14 @@
-import type { Metadata } from 'next'
+import './globals.css'
+
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import './globals.css'
-import { Nav } from './Nav'
+
+import { Sidebar, SidebarProvider, SidebarRouteListener } from '@/components/Sidebar'
+
 import Footer from './Footer'
+import { Nav } from './Nav'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -33,9 +37,13 @@ export default function RootLayout(props: Readonly<RootLayoutProps>) {
       <Analytics />
       <SpeedInsights />
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <Nav />
-        {children}
-        <Footer />
+        <SidebarProvider>
+          <SidebarRouteListener />
+          <Sidebar />
+          <Nav />
+          {children}
+          <Footer />
+        </SidebarProvider>
       </body>
     </html>
   )

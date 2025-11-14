@@ -1,11 +1,12 @@
-import { useRequest } from 'ahooks'
-import { useCallback, useRef, useState, useMemo } from 'react'
 import { startAuthentication } from '@simplewebauthn/browser'
-import { Spinner } from '@/components/Spinner'
+import { useRequest } from 'ahooks'
+import { useCallback, useMemo, useRef, useState } from 'react'
+
+import { generateLoginOptions, verifyLogin } from '@/app/actions/webauthn'
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
-import { credentialsToString, stringToCredentials, type StoreCredentials } from '@/services/webauthn'
-import { generateLoginOptions, verifyLogin } from '@/app/actions/webauthn'
+import { Spinner } from '@/components/Spinner'
+import { credentialsToString, type StoreCredentials, stringToCredentials } from '@/services/webauthn'
 
 export interface VerificationProps {
   credentials: StoreCredentials

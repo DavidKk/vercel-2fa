@@ -1,7 +1,8 @@
 import { useRequest } from 'ahooks'
 import { useRef, useState } from 'react'
-import { Spinner } from '@/components/Spinner'
+
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
+import { Spinner } from '@/components/Spinner'
 import { generateTOTPSecret } from '@/utils/totp'
 
 export interface FormProps {

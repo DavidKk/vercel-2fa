@@ -1,5 +1,5 @@
-import typescriptEslintParser from '@typescript-eslint/parser'
 import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin'
+import typescriptEslintParser from '@typescript-eslint/parser'
 import importPlugin from 'eslint-plugin-import'
 import prettierPlugin from 'eslint-plugin-prettier'
 

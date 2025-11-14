@@ -1,6 +1,7 @@
 'use server'
 
 import type jwt from 'jsonwebtoken'
+
 import { generateToken, verifyToken } from '@/services/jwt'
 
 export async function generateJWTToken(payload: object, options?: jwt.SignOptions | undefined) {

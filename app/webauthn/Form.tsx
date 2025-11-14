@@ -1,11 +1,12 @@
-import { useRequest } from 'ahooks'
-import { useEffect, useRef, useState } from 'react'
-import { ChevronDown } from 'feather-icons-react'
 import { startRegistration } from '@simplewebauthn/browser'
-import { Spinner } from '@/components/Spinner'
-import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import type { StoreCredentials } from '@/services/webauthn'
+import { useRequest } from 'ahooks'
+import { ChevronDown } from 'feather-icons-react'
+import { useEffect, useRef, useState } from 'react'
+
 import { generateRegisterOptions, verifyRegister } from '@/app/actions/webauthn'
+import Alert, { type AlertImperativeHandler } from '@/components/Alert'
+import { Spinner } from '@/components/Spinner'
+import type { StoreCredentials } from '@/services/webauthn'
 
 export interface FormProps {
   onGenerateCredential: (credentials: StoreCredentials) => void

@@ -1,5 +1,5 @@
-import QRCode from 'qrcode'
 import { authenticator } from 'otplib'
+import QRCode from 'qrcode'
 
 export interface GenerateTOTPSecretParams {
   username: string

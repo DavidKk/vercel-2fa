@@ -2,9 +2,10 @@
 
 import { useRequest } from 'ahooks'
 import { useCallback, useRef, useState } from 'react'
-import { Spinner } from '@/components/Spinner'
+
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
+import { Spinner } from '@/components/Spinner'
 import { verifyTOTPToken } from '@/utils/totp'
 
 export interface VerificationProps {

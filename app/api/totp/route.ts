@@ -1,7 +1,7 @@
-import { api } from '@/initializer/controller'
-import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
 import { generateJWTToken } from '@/app/actions/jwt'
 import { verfiyToken } from '@/app/actions/totp'
+import { api } from '@/initializer/controller'
+import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
 
 interface Payload {
   token: string

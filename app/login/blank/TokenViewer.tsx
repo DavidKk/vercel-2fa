@@ -1,6 +1,7 @@
 'use client'
 
 import type { Jwt, JwtPayload } from 'jsonwebtoken'
+
 import { Spinner } from '@/components/Spinner'
 import { useClient } from '@/hooks/useClient'
 
