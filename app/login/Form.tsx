@@ -3,7 +3,7 @@
 import { startAuthentication } from '@simplewebauthn/browser'
 import { useRequest } from 'ahooks'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { generateJWTToken } from '@/app/actions/jwt'
 import { getLoginWithWebauthnOptions, verfiyTOTPToken, verifyWebauthn, vierfyForm } from '@/app/actions/login'
@@ -25,9 +25,22 @@ export default function LoginForm(props: LoginFormProps) {
   const [password, setPassword] = useState('')
   const [access2FAToken, setAccess2FAToken] = useState('')
   const [complete, setComplete] = useState(false)
+  const [totpVisible, setTotpVisible] = useState(!!enableTotp && !enableWebAuthn)
   const formRef = useRef<HTMLFormElement>(null)
   const alertRef = useRef<AlertImperativeHandler>(null)
   const router = useRouter()
+
+  const handleRedirect = (token: string) => {
+    const url = new URL(redirectUrl, window.location.origin)
+    url.searchParams.set('token', token)
+
+    if (state) {
+      url.searchParams.set('state', state)
+    }
+
+    router.push(url.toString())
+    setComplete(true)
+  }
 
   const { run: submit, loading: submitting } = useRequest(
     async () => {
@@ -37,16 +50,36 @@ export default function LoginForm(props: LoginFormProps) {
         await verfiyTOTPToken({ username, password, token: access2FAToken })
       }
 
-      if (enableWebAuthn) {
-        const options = await getLoginWithWebauthnOptions({ username, password })
-        const credentials = await startAuthentication({ optionsJSON: options })
+      return generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
+    },
+    {
+      manual: true,
+      throttleWait: 1000,
+      onSuccess: (token) => {
+        handleRedirect(token)
+      },
+      onError: (error: Error) => {
+        alertRef.current?.show(error.message, { type: 'error' })
+      },
+    }
+  )
 
-        const challenge = options.challenge
-        const expectedOrigin = window.location.origin
-        const expectedRPID = options.rpId!
-
-        await verifyWebauthn({ username, password, challenge, credentials, expectedOrigin, expectedRPID })
+  const { run: submitWebAuthn, loading: webAuthnSubmitting } = useRequest(
+    async () => {
+      if (!enableWebAuthn) {
+        throw new Error('WebAuthn is not enabled')
       }
+
+      await vierfyForm({ username, password })
+
+      const options = await getLoginWithWebauthnOptions({ username, password })
+      const credentials = await startAuthentication({ optionsJSON: options })
+
+      const challenge = options.challenge
+      const expectedOrigin = window.location.origin
+      const expectedRPID = options.rpId!
+
+      await verifyWebauthn({ username, password, challenge, credentials, expectedOrigin, expectedRPID })
 
       return generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
     },
@@ -54,16 +87,7 @@ export default function LoginForm(props: LoginFormProps) {
       manual: true,
       throttleWait: 1000,
       onSuccess: (token) => {
-        const url = new URL(redirectUrl, window.location.origin)
-        url.searchParams.set('token', token)
-
-        // Pass through state parameter for CSRF protection
-        if (state) {
-          url.searchParams.set('state', state)
-        }
-
-        router.push(url.toString())
-        setComplete(true)
+        handleRedirect(token)
       },
       onError: (error: Error) => {
         alertRef.current?.show(error.message, { type: 'error' })
@@ -73,16 +97,30 @@ export default function LoginForm(props: LoginFormProps) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
+
+    if (!enableTotp) {
+      submit()
+      return
+    }
+
+    if (!totpVisible) {
+      setTotpVisible(true)
+      return
+    }
+
+    if (!formRef.current?.checkValidity()) {
+      formRef.current?.reportValidity()
+      return
+    }
+
     submit()
   }
 
-  useEffect(() => {
-    if (username && password && access2FAToken) {
-      if (formRef.current?.checkValidity()) {
-        submit()
-      }
-    }
-  }, [username, password, access2FAToken])
+  const handleWebAuthn = () => {
+    setTotpVisible(false)
+    setAccess2FAToken('')
+    submitWebAuthn()
+  }
 
   if (!(enableTotp || enableWebAuthn)) {
     return null
@@ -111,7 +149,7 @@ export default function LoginForm(props: LoginFormProps) {
           className="mt-1 w-full px-3 py-2 border rounded-md placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
         />
 
-        {enableTotp && (
+        {enableTotp && totpVisible && (
           <input
             className="mt-1 w-full px-3 py-2 border rounded-md text-center tracking-[1em] placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
             value={access2FAToken}
@@ -129,11 +167,9 @@ export default function LoginForm(props: LoginFormProps) {
           className="relative w-full max-w-lg bg-indigo-500 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? (
-            <div>
-              <span className="w-6 h-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <Spinner />
-              </span>
-              &nbsp;
+            <div className="flex items-center justify-center gap-2">
+              <Spinner />
+              <span>Verifying...</span>
             </div>
           ) : complete ? (
             <span>jumpping, please wait...</span>
@@ -141,6 +177,24 @@ export default function LoginForm(props: LoginFormProps) {
             <span>Login</span>
           )}
         </button>
+
+        {enableWebAuthn && (
+          <button
+            type="button"
+            disabled={webAuthnSubmitting || complete}
+            onClick={handleWebAuthn}
+            className="relative w-full max-w-lg border border-indigo-500 text-indigo-600 px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {webAuthnSubmitting ? (
+              <div className="flex items-center justify-center gap-2">
+                <Spinner />
+                <span>Authenticating...</span>
+              </div>
+            ) : (
+              <span>Login with WebAuthn</span>
+            )}
+          </button>
+        )}
 
         <Alert ref={alertRef} />
       </form>

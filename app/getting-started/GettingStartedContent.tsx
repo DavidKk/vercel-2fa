@@ -62,8 +62,8 @@ function OverviewContent() {
       <h2 className="text-xl font-bold text-gray-900 mb-3">Welcome to Your Personal Auth Hub</h2>
 
       <p className="text-gray-600 text-sm mb-4">
-        Host one login service and reuse it across every side project. This app bundles TOTP and WebAuthn so you can
-        protect dashboards, admin tools, and playground ideas without rewriting auth each time.
+        Host one login service and reuse it across every side project. This app bundles TOTP and WebAuthn so you can protect dashboards, admin tools, and playground ideas without
+        rewriting auth each time.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
@@ -153,8 +153,7 @@ function TOTPContent() {
       <h2 className="text-xl font-bold text-gray-900 mb-3">Set up TOTP</h2>
 
       <p className="text-gray-600 text-sm mb-4">
-        Time-based One-Time Passwords (TOTP) are the easiest way to add 2FA. Any authenticator app that supports RFC 6238
-        will work, so you can use the tools you already trust.
+        Time-based One-Time Passwords (TOTP) are the easiest way to add 2FA. Any authenticator app that supports RFC 6238 will work, so you can use the tools you already trust.
       </p>
 
       <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
@@ -226,8 +225,8 @@ function WebAuthnContent() {
       <h2 className="text-xl font-bold text-gray-900 mb-3">Set up WebAuthn</h2>
 
       <p className="text-gray-600 text-sm mb-4">
-        WebAuthn gives you “touch once to login” convenience using fingerprints, Face ID, Windows Hello, or hardware keys
-        such as YubiKey. It is perfect when you want max security for your own admin panels.
+        WebAuthn gives you “touch once to login” convenience using fingerprints, Face ID, Windows Hello, or hardware keys such as YubiKey. It is perfect when you want max security
+        for your own admin panels.
       </p>
 
       <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
@@ -291,8 +290,7 @@ function IntegrationContent() {
       <h2 className="text-xl font-bold text-gray-900 mb-3">Integrate with Your Projects</h2>
 
       <p className="text-gray-600 text-sm mb-4">
-        Every project simply redirects to this login page, waits for the JWT callback, and then verifies it. No more
-        re-building auth for each repo.
+        Every project simply redirects to this login page, waits for the JWT callback, and then verifies it. No more re-building auth for each repo.
       </p>
 
       <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
@@ -305,9 +303,7 @@ function IntegrationContent() {
             { step: '4', title: 'Verify', desc: 'Your app validates the token and creates its own session' },
           ].map(({ step, title, desc }) => (
             <div className="flex items-start gap-3" key={step}>
-              <div className="bg-indigo-200 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-indigo-900">
-                {step}
-              </div>
+              <div className="bg-indigo-200 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-indigo-900">{step}</div>
               <div>
                 <h4 className="font-semibold text-indigo-900 text-sm">{title}</h4>
                 <p className="text-[11px]">{desc}</p>
@@ -416,7 +412,9 @@ function EnvironmentContent() {
     <div className="prose max-w-none prose-sm">
       <h2 className="text-xl font-bold text-gray-900 mb-3">Environment variables</h2>
 
-      <p className="text-gray-600 text-sm mb-4">Drop these into your <code>.env.local</code> or hosting provider.</p>
+      <p className="text-gray-600 text-sm mb-4">
+        Drop these into your <code>.env.local</code> or hosting provider.
+      </p>
 
       <div className="space-y-5">
         <div className="bg-white border border-gray-200 rounded-lg p-5">
