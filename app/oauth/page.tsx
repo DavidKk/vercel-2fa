@@ -1,29 +1,41 @@
 import { headers } from 'next/headers'
 
+import LoginForm from '@/app/login/Form'
+import { OAuthHelpSidebar } from '@/app/oauth/OAuthHelpSidebar'
 import { isAllowedRedirectUrl } from '@/utils/url'
 
-import LoginForm from './Form'
-
-interface LoginPageProps {
+interface OAuthLoginPageProps {
   searchParams: Promise<{ redirectUrl?: string; state?: string }>
 }
 
-export default async function LoginPage(props: LoginPageProps) {
+export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
   const enableTotp = !!process.env.ACCESS_TOTP_SECRET
   const enableWebAuthn = !!process.env.ACCESS_WEBAUTHN_SECRET
+
   if (!enableTotp && !enableWebAuthn) {
     return <div>2FA is not enabled</div>
   }
 
   const { searchParams } = props
-  const { redirectUrl: url = '/login/blank', state } = await searchParams
-
-  const redirectUrl = decodeURIComponent(url)
+  const { redirectUrl: encodedRedirectUrl, state } = await searchParams
 
   const headersList = await headers()
+  const protocol = headersList.get('x-forwarded-proto') ?? 'https'
   const host = headersList.get('host')
+  const currentPageUrl = host ? `${protocol}://${host}/oauth` : '/oauth'
 
-  // Validate redirect URL against whitelist
+  let redirectUrl = currentPageUrl
+  if (encodedRedirectUrl) {
+    try {
+      redirectUrl = decodeURIComponent(encodedRedirectUrl)
+    } catch {
+      redirectUrl = encodedRedirectUrl
+    }
+  }
+  if (!redirectUrl) {
+    redirectUrl = currentPageUrl
+  }
+
   if (!isAllowedRedirectUrl(redirectUrl, host || undefined)) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-100">
@@ -36,5 +48,10 @@ export default async function LoginPage(props: LoginPageProps) {
     )
   }
 
-  return <LoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} />
+  return (
+    <>
+      <OAuthHelpSidebar />
+      <LoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} />
+    </>
+  )
 }

@@ -55,8 +55,8 @@ export default function LoginForm(props: LoginFormProps) {
     {
       manual: true,
       throttleWait: 1000,
-      onSuccess: (token) => {
-        handleRedirect(token)
+      onSuccess: async (token) => {
+        await handleRedirect(token)
       },
       onError: (error: Error) => {
         alertRef.current?.show(error.message, { type: 'error' })

@@ -34,11 +34,43 @@ export function matchUrl(pattern: string, url: string) {
 /**
  * Validate if a redirect URL is allowed based on environment configuration
  * @param redirectUrl - The URL to validate
+ * @param currentHost - Optional current host (e.g., 'localhost:3000') to allow same-host /oauth/test
  * @returns true if the URL is allowed, false otherwise
  */
-export function isAllowedRedirectUrl(redirectUrl: string): boolean {
+export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string): boolean {
   // Allow relative paths (same origin redirects)
   if (redirectUrl.startsWith('/')) {
+    return true
+  }
+
+  let targetUrl: URL
+  try {
+    targetUrl = new URL(redirectUrl)
+  } catch {
+    return false
+  }
+
+  // Always allow /oauth/test on the same host
+  if (currentHost && targetUrl.pathname === '/oauth/test') {
+    const targetHost = targetUrl.host.toLowerCase()
+    const currentHostLower = currentHost.toLowerCase()
+    // Match exact host or handle port variations
+    if (targetHost === currentHostLower) {
+      return true
+    }
+    // Handle cases where one has port and the other doesn't (e.g., localhost vs localhost:3000)
+    const targetHostname = targetUrl.hostname.toLowerCase()
+    const currentHostname = currentHostLower.split(':')[0]
+    if (targetHostname === currentHostname || targetHostname === 'localhost' || currentHostname === 'localhost') {
+      return true
+    }
+  }
+
+  const hostname = targetUrl.hostname.toLowerCase()
+  const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.local')
+
+  // During local development we allow localhost style URLs even without whitelist
+  if (isLocalHost && process.env.NODE_ENV !== 'production') {
     return true
   }
 
@@ -51,7 +83,6 @@ export function isAllowedRedirectUrl(redirectUrl: string): boolean {
   }
 
   try {
-    const targetUrl = new URL(redirectUrl)
     const allowedList = allowedUrls.split(',').map((url) => url.trim())
 
     // Check if the redirect URL matches any allowed URL or pattern
@@ -79,7 +110,6 @@ export function isAllowedRedirectUrl(redirectUrl: string): boolean {
 
     return false
   } catch {
-    // Invalid URL format
     return false
   }
 }
