@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { HelpButton, useSidebarContent } from '@/components/Sidebar'
+import { AssistSidebarTrigger, useAssistSidebarContent } from '@/components/AssistSidebar'
 
 import principlesMd from './docs/principles.md'
 import usageMd from './docs/usage.md'
@@ -12,7 +12,7 @@ import Verification from './Verification'
 
 export default function TwoFactorSetup() {
   // Register sidebar sections for this page
-  useSidebarContent('totp', [
+  useAssistSidebarContent('totp', [
     { key: 'usage', title: 'How to Use', markdown: usageMd },
     { key: 'principles', title: 'Principles', markdown: principlesMd },
   ])
@@ -40,7 +40,7 @@ export default function TwoFactorSetup() {
 
   return (
     <>
-      <HelpButton contentKey="totp" />
+      <AssistSidebarTrigger contentKey="totp" />
       {isVerified ? (
         <Verification secret={secret} />
       ) : qrCode ? (

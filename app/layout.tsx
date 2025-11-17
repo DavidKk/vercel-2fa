@@ -5,7 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
-import { Sidebar, SidebarProvider, SidebarRouteListener } from '@/components/Sidebar'
+import { AssistSidebarPanel, AssistSidebarProvider, AssistSidebarRouteListener } from '@/components/AssistSidebar'
 
 import Footer from './Footer'
 import { Nav } from './Nav'
@@ -37,13 +37,13 @@ export default function RootLayout(props: Readonly<RootLayoutProps>) {
       <Analytics />
       <SpeedInsights />
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <SidebarProvider>
-          <SidebarRouteListener />
-          <Sidebar />
+        <AssistSidebarProvider>
+          <AssistSidebarRouteListener />
+          <AssistSidebarPanel />
           <Nav />
           {children}
           <Footer />
-        </SidebarProvider>
+        </AssistSidebarProvider>
       </body>
     </html>
   )

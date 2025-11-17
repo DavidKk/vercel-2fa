@@ -3,31 +3,31 @@
 import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useState } from 'react'
 
-export interface SidebarSection {
+export interface AssistSidebarSection {
   key: string
   title: string
   content: string
 }
 
-interface SidebarContextType {
+interface AssistSidebarContextType {
   isOpen: boolean
-  sections: SidebarSection[]
+  sections: AssistSidebarSection[]
   activeSection: string | null
   openSidebar: (moduleKey: string) => void
   closeSidebar: () => void
   setActiveSection: (sectionKey: string) => void
-  registerSections: (moduleKey: string, sections: SidebarSection[]) => void
+  registerSections: (moduleKey: string, sections: AssistSidebarSection[]) => void
 }
 
-const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
+const AssistSidebarContext = createContext<AssistSidebarContextType | undefined>(undefined)
 
-export function SidebarProvider({ children }: { children: ReactNode }) {
+export function AssistSidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [sectionsRegistry, setSectionsRegistry] = useState<Record<string, SidebarSection[]>>({})
+  const [sectionsRegistry, setSectionsRegistry] = useState<Record<string, AssistSidebarSection[]>>({})
   const [currentModule, setCurrentModule] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<string | null>(null)
 
-  const registerSections = useCallback((moduleKey: string, sections: SidebarSection[]) => {
+  const registerSections = useCallback((moduleKey: string, sections: AssistSidebarSection[]) => {
     setSectionsRegistry((prev) => {
       // Only update if sections changed
       const prevSections = prev[moduleKey]
@@ -66,7 +66,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const sections = currentModule ? sectionsRegistry[currentModule] || [] : []
 
   return (
-    <SidebarContext.Provider
+    <AssistSidebarContext.Provider
       value={{
         isOpen,
         sections,
@@ -78,14 +78,14 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </SidebarContext.Provider>
+    </AssistSidebarContext.Provider>
   )
 }
 
-export function useSidebar() {
-  const context = useContext(SidebarContext)
+export function useAssistSidebar() {
+  const context = useContext(AssistSidebarContext)
   if (context === undefined) {
-    throw new Error('useSidebar must be used within a SidebarProvider')
+    throw new Error('useAssistSidebar must be used within an AssistSidebarProvider')
   }
   return context
 }

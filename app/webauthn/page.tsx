@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { HelpButton, useSidebarContent } from '@/components/Sidebar'
+import { AssistSidebarTrigger, useAssistSidebarContent } from '@/components/AssistSidebar'
 import type { StoreCredentials } from '@/services/webauthn'
 
 import principlesMd from './docs/principles.md'
@@ -13,7 +13,7 @@ import Verification from './Verification'
 
 export default function WebAuthnSetup() {
   // Register sidebar sections for this page
-  useSidebarContent('webauthn', [
+  useAssistSidebarContent('webauthn', [
     { key: 'usage', title: 'How to Use', markdown: usageMd },
     { key: 'principles', title: 'Principles', markdown: principlesMd },
   ])
@@ -41,7 +41,7 @@ export default function WebAuthnSetup() {
 
   return (
     <>
-      <HelpButton contentKey="webauthn" />
+      <AssistSidebarTrigger contentKey="webauthn" />
       {isVerifyMode && credentials ? (
         <Verification credentials={credentials} onSuccess={() => toggleVerifyMode(false)} />
       ) : isGenerated && credentials ? (

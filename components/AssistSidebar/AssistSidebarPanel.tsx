@@ -2,10 +2,10 @@
 
 import { X } from 'feather-icons-react'
 
-import { useSidebar } from './SidebarContext'
+import { useAssistSidebar } from './AssistSidebarContext'
 
-export function Sidebar() {
-  const { isOpen, sections, activeSection, setActiveSection, closeSidebar } = useSidebar()
+export function AssistSidebarPanel() {
+  const { isOpen, sections, activeSection, setActiveSection, closeSidebar } = useAssistSidebar()
 
   const currentContent = sections.find((s) => s.key === activeSection)?.content || ''
 
@@ -57,7 +57,7 @@ export function Sidebar() {
           <button
             onClick={closeSidebar}
             className="absolute top-3 right-8 p-1 hover:bg-red-50 hover:text-red-400 rounded transition-all duration-200 hover:scale-110 text-gray-500 z-10"
-            aria-label="Close sidebar"
+            aria-label="Close assist sidebar"
           >
             <X size={20} className="transition-transform" />
           </button>

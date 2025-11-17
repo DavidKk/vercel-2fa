@@ -2,26 +2,26 @@
 
 import { useEffect } from 'react'
 
+import type { AssistSidebarSection } from './AssistSidebarContext'
+import { useAssistSidebar } from './AssistSidebarContext'
 import { markdownToHtml } from './markdownToHtml'
-import type { SidebarSection } from './SidebarContext'
-import { useSidebar } from './SidebarContext'
 
-export interface SidebarDoc {
+export interface AssistSidebarDoc {
   key: string
   title: string
   markdown: string
 }
 
 /**
- * Hook to register sidebar sections for the current page
+ * Hook to register assist sidebar sections for the current page
  * @param moduleKey - Unique key for the module (e.g., 'webauthn', 'totp')
  * @param docs - Array of documents with title and markdown content
  */
-export function useSidebarContent(moduleKey: string, docs: SidebarDoc[]) {
-  const { registerSections } = useSidebar()
+export function useAssistSidebarContent(moduleKey: string, docs: AssistSidebarDoc[]) {
+  const { registerSections } = useAssistSidebar()
 
   useEffect(() => {
-    const sections: SidebarSection[] = docs.map((doc) => ({
+    const sections: AssistSidebarSection[] = docs.map((doc) => ({
       key: doc.key,
       title: doc.title,
       content: markdownToHtml(doc.markdown),
