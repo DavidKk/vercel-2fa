@@ -178,7 +178,7 @@ export const formatDate = (date: Date): string => {
 2. **Avoid duplicate exports**: Do not use both default export and named export with the same name in the same file
 3. **Avoid over-exporting**: Only export functions that truly need to be used by other modules
 4. **Avoid naming conflicts**: Ensure exported function names do not conflict between modules
-5. **Avoid complex nesting**: Hook and utility function return values should remain简洁 flat
+5. **Avoid complex nesting**: Hook and utility function return values should remain simple and flat
 
 ---
 

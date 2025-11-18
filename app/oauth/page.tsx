@@ -1,11 +1,15 @@
 import { headers } from 'next/headers'
 
-import LoginForm from '@/app/login/Form'
 import { OAuthHelpSidebar } from '@/app/oauth/OAuthHelpSidebar'
+import { OAuthLoginForm } from '@/app/oauth/OAuthLoginForm'
 import { isAllowedRedirectUrl } from '@/utils/url'
 
-interface OAuthLoginPageProps {
-  searchParams: Promise<{ redirectUrl?: string; state?: string }>
+export interface OAuthLoginPageProps {
+  searchParams: Promise<{
+    redirectUrl?: string
+    state?: string
+    clientPublicKey?: string
+  }>
 }
 
 export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
@@ -17,7 +21,18 @@ export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
   }
 
   const { searchParams } = props
-  const { redirectUrl: encodedRedirectUrl, state } = await searchParams
+  const { redirectUrl: encodedRedirectUrl, state, clientPublicKey: rawClientPublicKey } = await searchParams
+  const clientPublicKey = normalizeClientPublicKey(rawClientPublicKey)
+
+  if (!clientPublicKey || !isValidBase64Key(clientPublicKey)) {
+    return (
+      <ErrorPanel
+        title="Missing Client Public Key"
+        description="OAuth requests must include a valid client public key so we can encrypt the token. Make sure you append the clientPublicKey query parameter."
+        value={rawClientPublicKey || 'Not provided'}
+      />
+    )
+  }
 
   const headersList = await headers()
   const protocol = headersList.get('x-forwarded-proto') ?? 'https'
@@ -37,21 +52,66 @@ export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
   }
 
   if (!isAllowedRedirectUrl(redirectUrl, host || undefined)) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 border border-red-200">
-          <h2 className="text-center text-xl font-semibold mb-4 text-red-600">Invalid Redirect URL</h2>
-          <p className="text-center text-gray-700">The redirect URL is not in the allowed list. Please contact your administrator.</p>
-          <p className="text-center text-sm text-gray-500 mt-4">Redirect URL: {redirectUrl}</p>
-        </div>
-      </div>
-    )
+    return <ErrorPanel title="Invalid Redirect URL" description="The redirect URL is not in the allowed list. Please contact your administrator." value={redirectUrl} />
   }
 
   return (
     <>
       <OAuthHelpSidebar />
-      <LoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} />
+      <OAuthLoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} clientPublicKey={clientPublicKey} />
     </>
+  )
+}
+
+function normalizeClientPublicKey(value?: string) {
+  if (!value) {
+    return undefined
+  }
+  const decoded = safeDecodeURIComponent(value)
+  // Some clients send base64 with '+' signs without encoding; browsers convert '+' to ' ' when parsing querystring.
+  // Convert spaces back to '+' to ensure we use the original base64 string.
+  return decoded.replace(/ /g, '+').trim()
+}
+
+function safeDecodeURIComponent(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+function isValidBase64Key(value: string) {
+  if (!value || value.length < 32) {
+    return false
+  }
+  try {
+    // Reject characters outside base64 alphabet
+    if (!/^[A-Za-z0-9+/=]+$/.test(value)) {
+      return false
+    }
+    Buffer.from(value, 'base64').toString('base64')
+    return true
+  } catch {
+    return false
+  }
+}
+
+export interface ErrorPanelProps {
+  title: string
+  description: string
+  value: string
+}
+
+function ErrorPanel(props: ErrorPanelProps) {
+  const { title, description, value } = props
+  return (
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 border border-red-200">
+        <h2 className="text-center text-xl font-semibold mb-4 text-red-600">{title}</h2>
+        <p className="text-center text-gray-700">{description}</p>
+        <p className="text-center text-sm text-gray-500 mt-4 break-all">{value}</p>
+      </div>
+    </div>
   )
 }

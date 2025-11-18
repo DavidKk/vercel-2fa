@@ -2,7 +2,7 @@ import { verifyJWTToken } from '@/app/actions/jwt'
 
 import TokenViewer from './TokenViewer'
 
-interface PageProps {
+export interface PageProps {
   searchParams: Promise<{
     token?: string
   }>

@@ -4,7 +4,7 @@ import { HelpCircle } from 'feather-icons-react'
 
 import { useAssistSidebar } from './AssistSidebarContext'
 
-interface AssistSidebarTriggerProps {
+export interface AssistSidebarTriggerProps {
   contentKey: string
 }
 

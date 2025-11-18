@@ -1,22 +1,22 @@
 import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
 
-import { name, repository } from '@/package.json'
+import packageJson from '@/package.json'
 
 import { DEFAULT_NAV } from './constants'
 
-interface NavItem {
+export interface NavItem {
   name: string
   href: string
 }
 
-interface NavProps {
+export interface NavProps {
   title?: string
   nav?: Record<string, NavItem[]>
 }
 
-const DEFAULT_TITLE = name.replace('vercel', '').split('-').join(' ')
-const GITHUB_URL = repository.url
+const DEFAULT_TITLE = packageJson.name.replace('vercel', '').split('-').join(' ')
+const GITHUB_URL = packageJson.repository?.url
 
 export function Nav(props: NavProps) {
   const { title = DEFAULT_TITLE, nav = DEFAULT_NAV } = props

@@ -4,7 +4,7 @@ import { isAllowedRedirectUrl } from '@/utils/url'
 
 import LoginForm from './Form'
 
-interface LoginPageProps {
+export interface LoginPageProps {
   searchParams: Promise<{ redirectUrl?: string; state?: string }>
 }
 

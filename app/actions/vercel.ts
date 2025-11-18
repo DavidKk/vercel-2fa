@@ -1,6 +1,6 @@
 'use server'
 
-import { name } from '@/package.json'
+import packageJson from '@/package.json'
 import { formatProjectName } from '@/utils/format'
 
 const VERCEL_API_URL = 'https://api.vercel.com'
@@ -39,7 +39,7 @@ export async function getProjects(): Promise<VercelProject[]> {
 
   const excludes = process.env.VERCEL_PROJECT_EXCLUDES?.split(',') || []
   const vercels = projects.filter(({ name: projectName, targets }) => {
-    if (projectName === name) {
+    if (projectName === packageJson.name) {
       return false
     }
 

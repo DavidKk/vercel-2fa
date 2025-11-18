@@ -1,11 +1,11 @@
 'use client'
 
 import { AssistSidebarTrigger, useAssistSidebarContent } from '@/components/AssistSidebar'
-import ecdhDoc from '@/ECDH.md'
 
+import ecdhDoc from '../ecdh/docs/flow.md'
 import integrationDoc from './docs/integration.md'
 
-interface OAuthHelpSidebarProps {
+export interface OAuthHelpSidebarProps {
   moduleKey?: string
   showTrigger?: boolean
 }

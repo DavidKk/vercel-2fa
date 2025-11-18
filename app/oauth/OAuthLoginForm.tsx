@@ -3,23 +3,23 @@
 import { startAuthentication } from '@simplewebauthn/browser'
 import { useRequest } from 'ahooks'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
-import { generateJWTToken } from '@/app/actions/jwt'
 import { getLoginWithWebauthnOptions, loginWithECDH, verfiyTOTPToken, verifyWebauthn, vierfyForm } from '@/app/actions/login'
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
 import { Spinner } from '@/components/Spinner'
 
-export interface LoginFormProps {
+export interface OAuthLoginFormProps {
   enableTotp?: boolean
   enableWebAuthn?: boolean
-  redirectUrl?: string
+  redirectUrl: string
   state?: string
+  clientPublicKey: string
 }
 
-export default function LoginForm(props: LoginFormProps) {
-  const { enableTotp, enableWebAuthn, redirectUrl = '/', state } = props
+export function OAuthLoginForm(props: OAuthLoginFormProps) {
+  const { enableTotp, enableWebAuthn, redirectUrl, state, clientPublicKey } = props
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -30,28 +30,20 @@ export default function LoginForm(props: LoginFormProps) {
   const alertRef = useRef<AlertImperativeHandler>(null)
   const router = useRouter()
 
-  // Get client public key from URL params (for ECDH flow)
-  const [clientPublicKey, setClientPublicKey] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      const pk = params.get('clientPublicKey')
-      if (pk) {
-        setClientPublicKey(pk)
-      }
-    }
-  }, [])
-
   const handleRedirect = (token: string) => {
-    const url = new URL(redirectUrl, window.location.origin)
+    const url = buildRedirectUrl(redirectUrl)
     url.searchParams.set('token', token)
 
     if (state) {
       url.searchParams.set('state', state)
     }
 
-    router.push(url.toString())
+    if (typeof window !== 'undefined' && window.location.origin !== url.origin) {
+      window.location.href = url.toString()
+    } else {
+      router.push(url.toString())
+    }
+
     setComplete(true)
   }
 
@@ -63,13 +55,7 @@ export default function LoginForm(props: LoginFormProps) {
         await verfiyTOTPToken({ username, password, token: access2FAToken })
       }
 
-      // If client public key is provided, use ECDH encryption
-      if (clientPublicKey) {
-        return await loginWithECDH({ username, password, clientPublicKey })
-      }
-
-      // Otherwise, use legacy JWT token
-      return generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
+      return loginWithECDH({ username, password, clientPublicKey })
     },
     {
       manual: true,
@@ -100,13 +86,13 @@ export default function LoginForm(props: LoginFormProps) {
 
       await verifyWebauthn({ username, password, challenge, credentials, expectedOrigin, expectedRPID })
 
-      return generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
+      return loginWithECDH({ username, password, clientPublicKey })
     },
     {
       manual: true,
       throttleWait: 1000,
-      onSuccess: (token) => {
-        handleRedirect(token)
+      onSuccess: async (token) => {
+        await handleRedirect(token)
       },
       onError: (error: Error) => {
         alertRef.current?.show(error.message, { type: 'error' })
@@ -148,7 +134,7 @@ export default function LoginForm(props: LoginFormProps) {
   return (
     <div className="flex justify-center pt-[20vh] h-screen bg-gray-100 pt-12">
       <form onSubmit={handleSubmit} className="w-full max-w-lg flex flex-col items-center gap-4 p-4" ref={formRef}>
-        <h1 className="text-2xl">Login</h1>
+        <h1 className="text-2xl">OAuth Login</h1>
 
         <input
           type="text"
@@ -191,9 +177,9 @@ export default function LoginForm(props: LoginFormProps) {
               <span>Verifying...</span>
             </div>
           ) : complete ? (
-            <span>jumpping, please wait...</span>
+            <span>Redirecting...</span>
           ) : (
-            <span>Login</span>
+            <span>Continue</span>
           )}
         </button>
 
@@ -210,7 +196,7 @@ export default function LoginForm(props: LoginFormProps) {
                 <span>Authenticating...</span>
               </div>
             ) : (
-              <span>Login with WebAuthn</span>
+              <span>Use WebAuthn</span>
             )}
           </button>
         )}
@@ -219,4 +205,15 @@ export default function LoginForm(props: LoginFormProps) {
       </form>
     </div>
   )
+}
+
+function buildRedirectUrl(target: string) {
+  try {
+    return new URL(target)
+  } catch {
+    if (typeof window !== 'undefined') {
+      return new URL(target, window.location.origin)
+    }
+    throw new Error('Invalid redirect URL')
+  }
 }

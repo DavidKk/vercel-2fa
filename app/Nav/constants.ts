@@ -4,4 +4,8 @@ export const DEFAULT_NAV = {
     { name: 'TOTP', href: '/totp' },
     { name: 'WebAuthn', href: '/webauthn' },
   ],
+  $oauth: [
+    { name: 'ECDH Keys', href: '/ecdh' },
+    { name: 'OAuth Test', href: '/oauth/test' },
+  ],
 }

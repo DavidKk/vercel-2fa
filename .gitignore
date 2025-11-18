@@ -60,3 +60,4 @@ nbproject
 *.sublime-workspace
 .idea
 .env
+test-results

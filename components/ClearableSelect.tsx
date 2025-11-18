@@ -7,7 +7,7 @@ interface Option {
   label: string
 }
 
-interface ClearableSelectProps {
+export interface ClearableSelectProps {
   value?: any
   placeholder?: string
   options?: Option[]

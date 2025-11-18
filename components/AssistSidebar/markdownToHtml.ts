@@ -1,5 +1,6 @@
 import { marked } from 'marked'
 
+// Configure marked with options
 marked.setOptions({
   breaks: true,
   gfm: true,

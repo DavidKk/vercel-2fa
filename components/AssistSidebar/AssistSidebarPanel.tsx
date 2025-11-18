@@ -12,24 +12,13 @@ export function AssistSidebarPanel() {
   return (
     <>
       {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300"
-          style={{ top: 'var(--header-height, 60px)', bottom: 'var(--footer-height, 64px)' }}
-          onClick={closeSidebar}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300" onClick={closeSidebar} />}
 
       {/* Sidebar drawer */}
       <aside
-        className={`fixed left-0 w-full md:w-[700px] lg:w-[800px] bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out flex ${
+        className={`fixed left-0 top-0 w-full md:w-[700px] lg:w-[800px] h-screen bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out flex ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{
-          top: 'var(--header-height, 60px)',
-          bottom: 'var(--footer-height, 64px)',
-          height: 'calc(100vh - var(--header-height, 60px) - var(--footer-height, 64px))',
-        }}
       >
         {/* Navigation */}
         <nav className="w-48 border-r border-gray-200 bg-gray-50 flex-shrink-0">
@@ -52,7 +41,7 @@ export function AssistSidebarPanel() {
         </nav>
 
         {/* Content area */}
-        <div className="flex-1 flex flex-col relative">
+        <div className="flex-1 flex flex-col relative min-w-0">
           {/* Close button */}
           <button
             onClick={closeSidebar}
@@ -62,10 +51,10 @@ export function AssistSidebarPanel() {
             <X size={20} className="transition-transform" />
           </button>
 
-          <div className="h-full overflow-y-auto">
-            <div className="p-5 pr-12">
+          <div className="h-full overflow-y-auto overflow-x-hidden">
+            <div className="p-5 pr-12 min-w-0">
               {currentContent && (
-                <div className="sidebar-content">
+                <div className="sidebar-content break-words">
                   <div dangerouslySetInnerHTML={{ __html: currentContent }} />
                 </div>
               )}

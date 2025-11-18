@@ -22,11 +22,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* 侧栏内容样式 */
+/* Sidebar content styles */
 .sidebar-content {
   color: #1f2937;
   line-height: 1.5;
   font-size: 0.875rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .sidebar-content h1 {
@@ -57,6 +60,8 @@ body {
 .sidebar-content p {
   margin-bottom: 0.75rem;
   color: #4b5563;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .sidebar-content ul, .sidebar-content ol {
@@ -81,6 +86,8 @@ body {
   font-size: 0.8125rem;
   color: #db2777;
   font-family: 'Courier New', monospace;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .sidebar-content pre {
@@ -97,4 +104,23 @@ body {
   background-color: transparent;
   padding: 0;
   color: #1f2937;
+}
+
+.sidebar-content div {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Mermaid diagram styles */
+.sidebar-content .mermaid {
+  margin: 1rem 0;
+  text-align: center;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.sidebar-content .mermaid svg {
+  max-width: 100%;
+  height: auto;
 }
