@@ -4,6 +4,9 @@ import { OAuthHelpSidebar } from '@/app/oauth/OAuthHelpSidebar'
 import { OAuthLoginForm } from '@/app/oauth/OAuthLoginForm'
 import { isAllowedRedirectUrl } from '@/utils/url'
 
+// Force dynamic rendering because we use searchParams and headers
+export const dynamic = 'force-dynamic'
+
 export interface OAuthLoginPageProps {
   searchParams: Promise<{
     redirectUrl?: string
@@ -13,54 +16,66 @@ export interface OAuthLoginPageProps {
 }
 
 export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
-  const enableTotp = !!process.env.ACCESS_TOTP_SECRET
-  const enableWebAuthn = !!process.env.ACCESS_WEBAUTHN_SECRET
+  try {
+    const enableTotp = !!process.env.ACCESS_TOTP_SECRET
+    const enableWebAuthn = !!process.env.ACCESS_WEBAUTHN_SECRET
 
-  if (!enableTotp && !enableWebAuthn) {
-    return <div>2FA is not enabled</div>
-  }
+    if (!enableTotp && !enableWebAuthn) {
+      return <div>2FA is not enabled</div>
+    }
 
-  const { searchParams } = props
-  const { redirectUrl: encodedRedirectUrl, state, clientPublicKey: rawClientPublicKey } = await searchParams
-  const clientPublicKey = normalizeClientPublicKey(rawClientPublicKey)
+    const { searchParams } = props
+    const { redirectUrl: encodedRedirectUrl, state, clientPublicKey: rawClientPublicKey } = await searchParams
+    const clientPublicKey = normalizeClientPublicKey(rawClientPublicKey)
 
-  if (!clientPublicKey || !isValidBase64Key(clientPublicKey)) {
+    if (!clientPublicKey || !isValidBase64Key(clientPublicKey)) {
+      return (
+        <ErrorPanel
+          title="Missing Client Public Key"
+          description="OAuth requests must include a valid client public key so we can encrypt the token. Make sure you append the clientPublicKey query parameter."
+          value={rawClientPublicKey || 'Not provided'}
+        />
+      )
+    }
+
+    const headersList = await headers()
+    const protocol = headersList.get('x-forwarded-proto') ?? 'https'
+    const host = headersList.get('host')
+    const currentPageUrl = host ? `${protocol}://${host}/oauth` : '/oauth'
+
+    let redirectUrl = currentPageUrl
+    if (encodedRedirectUrl) {
+      try {
+        redirectUrl = decodeURIComponent(encodedRedirectUrl)
+      } catch {
+        redirectUrl = encodedRedirectUrl
+      }
+    }
+    if (!redirectUrl) {
+      redirectUrl = currentPageUrl
+    }
+
+    if (!isAllowedRedirectUrl(redirectUrl, host || undefined)) {
+      return <ErrorPanel title="Invalid Redirect URL" description="The redirect URL is not in the allowed list. Please contact your administrator." value={redirectUrl} />
+    }
+
+    return (
+      <>
+        <OAuthHelpSidebar />
+        <OAuthLoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} clientPublicKey={clientPublicKey} />
+      </>
+    )
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('OAuth login page error:', error)
     return (
       <ErrorPanel
-        title="Missing Client Public Key"
-        description="OAuth requests must include a valid client public key so we can encrypt the token. Make sure you append the clientPublicKey query parameter."
-        value={rawClientPublicKey || 'Not provided'}
+        title="Server Error"
+        description="An error occurred while processing your request. Please try again later."
+        value={error instanceof Error ? error.message : 'Unknown error'}
       />
     )
   }
-
-  const headersList = await headers()
-  const protocol = headersList.get('x-forwarded-proto') ?? 'https'
-  const host = headersList.get('host')
-  const currentPageUrl = host ? `${protocol}://${host}/oauth` : '/oauth'
-
-  let redirectUrl = currentPageUrl
-  if (encodedRedirectUrl) {
-    try {
-      redirectUrl = decodeURIComponent(encodedRedirectUrl)
-    } catch {
-      redirectUrl = encodedRedirectUrl
-    }
-  }
-  if (!redirectUrl) {
-    redirectUrl = currentPageUrl
-  }
-
-  if (!isAllowedRedirectUrl(redirectUrl, host || undefined)) {
-    return <ErrorPanel title="Invalid Redirect URL" description="The redirect URL is not in the allowed list. Please contact your administrator." value={redirectUrl} />
-  }
-
-  return (
-    <>
-      <OAuthHelpSidebar />
-      <OAuthLoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} clientPublicKey={clientPublicKey} />
-    </>
-  )
 }
 
 function normalizeClientPublicKey(value?: string) {

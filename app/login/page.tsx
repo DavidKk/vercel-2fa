@@ -4,6 +4,9 @@ import { isAllowedRedirectUrl } from '@/utils/url'
 
 import LoginForm from './Form'
 
+// Force dynamic rendering because we use searchParams and headers
+export const dynamic = 'force-dynamic'
+
 export interface LoginPageProps {
   searchParams: Promise<{ redirectUrl?: string; state?: string }>
 }
