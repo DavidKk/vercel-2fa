@@ -2,7 +2,7 @@
 
 export interface VerificationOutputProps {
   token: string
-  verifyResult: { payload?: Record<string, unknown> } | null
+  verifyResult: { decryptedPayload?: Record<string, unknown>; verification?: Record<string, unknown> } | null
   status: 'idle' | 'redirecting' | 'verifying' | 'error'
   error: string | null
   onBack: () => void
@@ -16,12 +16,14 @@ export function VerificationOutput(props: VerificationOutputProps) {
   }
 
   const hasError = status === 'error' && error
+  const decryptedPayload = verifyResult?.decryptedPayload
+  const verification = verifyResult?.verification
 
   return (
     <section className="bg-white p-6 rounded-md shadow-md flex flex-col gap-4">
       <div className="flex flex-col gap-1 text-center">
         <h1 className="text-2xl font-bold">OAuth Callback Playground</h1>
-        <p className="text-sm text-gray-500">Decrypted token and payload from OAuth callback.</p>
+        <p className="text-sm text-gray-500">Decrypted payload and verification response from the OAuth callback.</p>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -34,17 +36,23 @@ export function VerificationOutput(props: VerificationOutputProps) {
             <label className="text-base font-semibold text-gray-700">Error</label>
             <p className="text-red-600">{error}</p>
           </div>
-        ) : verifyResult ? (
-          <div className="flex flex-col gap-1">
-            <label className="text-base font-semibold text-gray-700">Payload</label>
-            <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-64">
-              {JSON.stringify(verifyResult.payload ?? verifyResult, null, 2)}
-            </pre>
-          </div>
+        ) : decryptedPayload ? (
+          <>
+            <div className="flex flex-col gap-1">
+              <label className="text-base font-semibold text-gray-700">Decrypted Payload</label>
+              <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-64">{JSON.stringify(decryptedPayload, null, 2)}</pre>
+            </div>
+            {verification && (
+              <div className="flex flex-col gap-1">
+                <label className="text-base font-semibold text-gray-700">/api/auth/verify Response</label>
+                <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-64">{JSON.stringify(verification, null, 2)}</pre>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col gap-1">
             <label className="text-base font-semibold text-gray-700">Status</label>
-            <p className="text-gray-600">Awaiting verification...</p>
+            <p className="text-gray-600">{status === 'verifying' ? 'Verifying token...' : 'Awaiting verification...'}</p>
           </div>
         )}
       </div>

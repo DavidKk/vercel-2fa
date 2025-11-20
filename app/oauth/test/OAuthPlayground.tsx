@@ -8,7 +8,8 @@ import { OAuthCallbackPlayground } from './OAuthCallbackPlayground'
 import { VerificationOutput } from './VerificationOutput'
 
 interface VerifyResult {
-  payload?: Record<string, unknown>
+  decryptedPayload?: Record<string, unknown>
+  verification?: Record<string, unknown>
 }
 
 const STATE_STORAGE = 'oauth_state'
@@ -22,9 +23,58 @@ function OAuthPlaygroundContent() {
   const [status, setStatus] = useState<'idle' | 'redirecting' | 'verifying' | 'error'>('idle')
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [serverPublicKey, setServerPublicKey] = useState<string | null>(null)
+  const [publicKeyStatus, setPublicKeyStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [publicKeyError, setPublicKeyError] = useState<string | null>(null)
   const processedRef = useRef(false)
-  // Get server public key from environment variable
-  const serverPublicKey = process.env.NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY || null
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchPublicKey() {
+      try {
+        setPublicKeyStatus('loading')
+        setPublicKeyError(null)
+
+        const response = await fetch('/api/oauth/public-key', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        const body = await response.json()
+
+        if (!response.ok || !body || typeof body !== 'object') {
+          throw new Error('Failed to load server public key.')
+        }
+
+        if (body.code !== 0 || !body.data?.key) {
+          throw new Error(body.message || 'Server public key is not available.')
+        }
+
+        if (cancelled) {
+          return
+        }
+
+        setServerPublicKey(body.data.key as string)
+        setPublicKeyStatus('ready')
+      } catch (err) {
+        if (cancelled) {
+          return
+        }
+        setServerPublicKey(null)
+        setPublicKeyStatus('error')
+        const message = err instanceof Error ? err.message : 'Failed to load server public key.'
+        setPublicKeyError(message)
+      }
+    }
+
+    fetchPublicKey()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleLaunch = async (callbackUrl: string, publicKey: string) => {
     if (typeof window === 'undefined') {
@@ -54,6 +104,10 @@ function OAuthPlaygroundContent() {
       return
     }
 
+    if (publicKeyStatus !== 'ready' || !serverPublicKey) {
+      return
+    }
+
     const returnedState = params.get('state')
     let queryToken = urlToken
 
@@ -73,6 +127,7 @@ function OAuthPlaygroundContent() {
 
     setStatus('verifying')
     setError(null)
+    setVerifyResult(null)
 
     const storedState = sessionStorage.getItem(STATE_STORAGE)
     if (!returnedState) {
@@ -97,7 +152,6 @@ function OAuthPlaygroundContent() {
     // Only support ECDH flow - check required keys
     const clientPublicKey = sessionStorage.getItem(CLIENT_PUBLIC_KEY_STORAGE)
     const clientPrivateKey = sessionStorage.getItem(CLIENT_PRIVATE_KEY_STORAGE)
-    const storedServerPublicKey = serverPublicKey || null
 
     // Validate ECDH requirements
     if (!clientPublicKey) {
@@ -112,22 +166,27 @@ function OAuthPlaygroundContent() {
       return
     }
 
-    if (!storedServerPublicKey) {
-      setStatus('error')
-      setError('Server public key not found. NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY environment variable is not set.')
-      return
+    // ECDH flow: decrypt the token
+    const processToken = async () => {
+      try {
+        const decryptedPayload = await decryptECDHToken(queryToken, clientPrivateKey, serverPublicKey)
+
+        if (!decryptedPayload || typeof decryptedPayload !== 'object' || typeof (decryptedPayload as Record<string, unknown>).token !== 'string') {
+          throw new Error('Decrypted payload does not contain a valid JWT token.')
+        }
+
+        const verification = await verifyWithServer((decryptedPayload as Record<string, unknown>).token as string)
+
+        setVerifyResult({ decryptedPayload, verification })
+        setStatus('idle')
+      } catch (err) {
+        setStatus('error')
+        setError(err instanceof Error ? err.message : 'Failed to process token')
+      }
     }
 
-    // ECDH flow: decrypt the token
-    decryptECDHToken(queryToken, clientPrivateKey, storedServerPublicKey)
-      .then((decryptedPayload) => {
-        setVerifyResult({ payload: decryptedPayload })
-      })
-      .catch((err: Error) => {
-        setStatus('error')
-        setError(err.message || 'Failed to decrypt token')
-      })
-  }, [router, serverPublicKey, urlToken, params])
+    processToken()
+  }, [publicKeyStatus, router, serverPublicKey, urlToken, params])
 
   const handleBack = () => {
     setVerifyResult(null)
@@ -147,12 +206,38 @@ function OAuthPlaygroundContent() {
   return (
     <div className="flex flex-col flex-1 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-12 w-full flex flex-col gap-4 justify-center min-h-[60vh]">
+        {publicKeyStatus === 'loading' && <div className="text-sm text-indigo-600 text-center">Fetching server public key...</div>}
+        {publicKeyStatus === 'error' && (
+          <div className="text-sm text-red-600 text-center">{publicKeyError || 'Unable to load server public key. Refresh the page to try again.'}</div>
+        )}
         {!hasToken && <OAuthCallbackPlayground onLaunch={handleLaunch} status={status} />}
 
         {hasToken && <VerificationOutput token={urlToken} verifyResult={verifyResult} status={status} error={error} onBack={handleBack} />}
       </div>
     </div>
   )
+}
+
+async function verifyWithServer(token: string) {
+  const response = await fetch('/api/auth/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ token }),
+  })
+
+  const result = await response.json()
+
+  if (!response.ok || !result || typeof result !== 'object') {
+    throw new Error('Failed to verify token with /api/auth/verify.')
+  }
+
+  if (result.code !== 0) {
+    throw new Error(result.message || 'Token verification failed.')
+  }
+
+  return result.data as Record<string, unknown>
 }
 
 export function OAuthPlayground() {
