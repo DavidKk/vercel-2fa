@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   STATE: 'oauth_state',
   CLIENT_PUBLIC_KEY: 'oauth_client_public_key',
   CLIENT_PRIVATE_KEY: 'oauth_client_private_key',
+  SERVER_PUBLIC_KEY: 'oauth_server_public_key',
 } as const
 
 /**

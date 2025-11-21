@@ -8,7 +8,8 @@ import { exportPrivateKey, exportPublicKey, generateECDHKeyPair } from '@/utils/
 import { useECDHKeyPair } from './useECDHKeyPair'
 import { useOAuth } from './useOAuth'
 
-const { STORAGE_KEYS, decryptOAuthToken, fetchServerPublicKey, getStoredKeyPair, getStoredPrivateKey, storeOAuthSession, verifyOAuthToken } = oauthClientUtils
+const { clearOAuthSession, decryptOAuthToken, fetchServerPublicKey, getStoredKeyPair, getStoredPrivateKey, getStoredServerPublicKey, storeOAuthSession, verifyOAuthToken } =
+  oauthClientUtils
 
 type VerifyTokenResult = oauthClientUtils.VerifyTokenResult
 
@@ -75,8 +76,12 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
   // - 'login' flow: use SSR data if provided (for performance optimization)
   // - 'callback' flow: ignore SSR data, use own storage/generation (for consistency)
   const shouldUseSSRData = flowType === 'login'
-  const [serverPublicKey, setServerPublicKey] = useState<string | null>(shouldUseSSRData && initialServerPublicKey ? initialServerPublicKey : null)
-  const [publicKeyStatus, setPublicKeyStatus] = useState<'loading' | 'ready' | 'error'>(shouldUseSSRData && initialServerPublicKey ? 'ready' : 'loading')
+  // For callback flow, try to load server public key from sessionStorage first
+  const storedServerPublicKey = !shouldUseSSRData ? getStoredServerPublicKey() : null
+  const [serverPublicKey, setServerPublicKey] = useState<string | null>(shouldUseSSRData && initialServerPublicKey ? initialServerPublicKey : storedServerPublicKey)
+  const [publicKeyStatus, setPublicKeyStatus] = useState<'loading' | 'ready' | 'error'>(
+    shouldUseSSRData && initialServerPublicKey ? 'ready' : storedServerPublicKey ? 'ready' : 'loading'
+  )
   const [publicKeyError, setPublicKeyError] = useState<string | null>(null)
   const memoryKeyPairRef = useRef<MemoryKeyPair | null>(null)
   const memoryStateRef = useRef<string | null>(null)
@@ -115,9 +120,19 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
   useEffect(() => {
     // Server public key fetching strategy:
     // - For 'login' flow: only fetch if SSR data is missing (use SSR data if available)
-    // - For 'callback' flow: always fetch (SSR data is ignored, use own storage/generation)
-    if (!shouldUseSSRData || !initialServerPublicKey) {
-      fetchPublicKey()
+    //   Server public key will be stored to sessionStorage when storeOAuthSession is called in redirect mode
+    // - For 'callback' flow: try sessionStorage first, then fetch from API if not found
+    if (shouldUseSSRData) {
+      // Login flow: only fetch if SSR data is missing
+      if (!initialServerPublicKey) {
+        fetchPublicKey()
+      }
+    } else {
+      // Callback flow: if not loaded from sessionStorage, fetch from API
+      const storedKey = getStoredServerPublicKey()
+      if (!storedKey) {
+        fetchPublicKey()
+      }
     }
   }, [fetchPublicKey, shouldUseSSRData, initialServerPublicKey])
 
@@ -130,9 +145,8 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
     memoryStateRef.current = null
     authWindowRef.current = null
     authOriginRef.current = null
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem(STORAGE_KEYS.STATE)
-    }
+    // Clear all OAuth session data from sessionStorage
+    clearOAuthSession()
   }, [])
 
   const getCurrentPrivateKey = useCallback(() => {
@@ -211,7 +225,17 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
           if (!keyPair.publicKey || !keyPair.privateKey) {
             throw new Error('Failed to prepare key pair')
           }
-          storeOAuthSession({ state, clientPublicKey: keyPair.publicKey, clientPrivateKey: keyPair.privateKey })
+          if (!serverPublicKey) {
+            throw new Error('Server public key is not loaded. Please wait for it to be ready.')
+          }
+          // Store session data including server public key for redirect mode
+          // Server public key should always be available at this point (from SSR or fetched)
+          storeOAuthSession({
+            state,
+            clientPublicKey: keyPair.publicKey,
+            clientPrivateKey: keyPair.privateKey,
+            serverPublicKey,
+          })
           loginUrl.searchParams.set('clientPublicKey', keyPair.publicKey)
           window.location.href = loginUrl.toString()
         }
@@ -222,7 +246,7 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
         throw err
       }
     },
-    [buildProviderLoginUrl, ensureRedirectKeyPair, modeState]
+    [buildProviderLoginUrl, ensureRedirectKeyPair, modeState, serverPublicKey]
   )
 
   const handleTokenReceived = useCallback(
@@ -248,9 +272,8 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
       memoryStateRef.current = null
       authWindowRef.current = null
       authOriginRef.current = null
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem(STORAGE_KEYS.STATE)
-      }
+      // Clear all OAuth session data from sessionStorage after successful token processing
+      clearOAuthSession()
     },
     [getCurrentPrivateKey, serverPublicKey]
   )
