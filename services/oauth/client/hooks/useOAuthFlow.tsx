@@ -36,9 +36,20 @@ export interface OAuthFlowResult {
   }
 }
 
+export type OAuthFlowType = 'login' | 'callback'
+
 export interface UseOAuthFlowOptions {
   providerUrl?: string
   defaultMode?: OAuthFlowMode
+  /**
+   * Flow type: 'login' uses SSR data if provided, 'callback' ignores SSR data and uses own storage/generation
+   * @default 'login'
+   */
+  flowType?: OAuthFlowType
+  /** Initial server public key from SSR. Only used when flowType is 'login' */
+  initialServerPublicKey?: string | null
+  /** Initial temporary key pair from SSR. Only used when flowType is 'login' */
+  initialKeyPair?: { publicKey: string; privateKey: string } | null
 }
 
 export interface OAuthFlowVerifyResult {
@@ -54,14 +65,18 @@ interface MemoryKeyPair {
 import { DEFAULT_FLOW_MODE, DEFAULT_PROVIDER_URL } from '../constants'
 
 export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult {
-  const { providerUrl = DEFAULT_PROVIDER_URL, defaultMode = DEFAULT_FLOW_MODE } = options
+  const { providerUrl = DEFAULT_PROVIDER_URL, defaultMode = DEFAULT_FLOW_MODE, flowType = 'login', initialServerPublicKey, initialKeyPair } = options
   const [modeState, setModeState] = useState<OAuthFlowMode>(defaultMode)
   const modeRef = useRef<OAuthFlowMode>(defaultMode)
   const [status, setStatus] = useState<OAuthFlowStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<OAuthFlowVerifyResult | null>(null)
-  const [serverPublicKey, setServerPublicKey] = useState<string | null>(null)
-  const [publicKeyStatus, setPublicKeyStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  // Determine whether to use SSR data based on flow type:
+  // - 'login' flow: use SSR data if provided (for performance optimization)
+  // - 'callback' flow: ignore SSR data, use own storage/generation (for consistency)
+  const shouldUseSSRData = flowType === 'login'
+  const [serverPublicKey, setServerPublicKey] = useState<string | null>(shouldUseSSRData && initialServerPublicKey ? initialServerPublicKey : null)
+  const [publicKeyStatus, setPublicKeyStatus] = useState<'loading' | 'ready' | 'error'>(shouldUseSSRData && initialServerPublicKey ? 'ready' : 'loading')
   const [publicKeyError, setPublicKeyError] = useState<string | null>(null)
   const memoryKeyPairRef = useRef<MemoryKeyPair | null>(null)
   const memoryStateRef = useRef<string | null>(null)
@@ -75,7 +90,13 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
     loading: keyPairLoading,
     error: keyPairError,
     generate: generateStoredKeyPair,
-  } = useECDHKeyPair({ autoLoad: true })
+  } = useECDHKeyPair({
+    autoLoad: true,
+    // For 'login' flow: use SSR initialKeyPair if provided, prioritize it over storage
+    // For 'callback' flow: ignore SSR initialKeyPair, use storage keys if available
+    initialKeyPair: shouldUseSSRData ? initialKeyPair : null,
+    prioritizeInitialKeyPair: shouldUseSSRData,
+  })
 
   const fetchPublicKey = useCallback(async () => {
     try {
@@ -92,8 +113,13 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
   }, [])
 
   useEffect(() => {
-    fetchPublicKey()
-  }, [fetchPublicKey])
+    // Server public key fetching strategy:
+    // - For 'login' flow: only fetch if SSR data is missing (use SSR data if available)
+    // - For 'callback' flow: always fetch (SSR data is ignored, use own storage/generation)
+    if (!shouldUseSSRData || !initialServerPublicKey) {
+      fetchPublicKey()
+    }
+  }, [fetchPublicKey, shouldUseSSRData, initialServerPublicKey])
 
   const reset = useCallback(() => {
     setStatus('idle')

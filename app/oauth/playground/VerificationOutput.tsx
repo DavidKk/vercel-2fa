@@ -1,16 +1,17 @@
 'use client'
 
-import type { OAuthFlowStatus, OAuthFlowVerifyResult } from '@/services/oauth/client'
+import { useRouter } from 'next/navigation'
 
-export interface VerificationOutputProps {
-  result: OAuthFlowVerifyResult | null
-  status: OAuthFlowStatus
-  error: string | null
-  onBack: () => void
-}
+import { useOAuthFlowContext } from '@/services/oauth/client'
 
-export function VerificationOutput(props: VerificationOutputProps) {
-  const { result, status, error, onBack } = props
+export function VerificationOutput() {
+  const router = useRouter()
+  const { result, status, error, reset } = useOAuthFlowContext()
+
+  const handleBack = () => {
+    reset()
+    router.replace('/oauth/playground')
+  }
 
   const hasError = status === 'error' && error
   const decryptedPayload = result?.decryptedPayload
@@ -57,7 +58,7 @@ export function VerificationOutput(props: VerificationOutputProps) {
         )}
       </div>
 
-      <button type="button" onClick={onBack} className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+      <button type="button" onClick={handleBack} className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
         Back
       </button>
     </section>

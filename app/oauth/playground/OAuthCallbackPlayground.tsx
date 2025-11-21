@@ -6,11 +6,22 @@ import { Spinner } from '@/components/Spinner'
 import { Switch } from '@/components/Switch'
 import { useOAuthFlowContext } from '@/services/oauth/client'
 
-export function OAuthCallbackPlayground() {
+interface OAuthCallbackPlaygroundProps {
+  /** Default callback URL from SSR */
+  defaultCallbackUrl?: string | null
+}
+
+export function OAuthCallbackPlayground({ defaultCallbackUrl }: OAuthCallbackPlaygroundProps = {} as OAuthCallbackPlaygroundProps) {
   const { mode, setMode, status, keyPair, startLogin } = useOAuthFlowContext()
-  const [editableCallbackUrl, setEditableCallbackUrl] = useState('')
+  const [editableCallbackUrl, setEditableCallbackUrl] = useState(defaultCallbackUrl || '')
 
   useEffect(() => {
+    // If defaultCallbackUrl is provided from SSR, use it; otherwise generate from current URL
+    if (defaultCallbackUrl) {
+      setEditableCallbackUrl(defaultCallbackUrl)
+      return
+    }
+
     if (typeof window === 'undefined') {
       return
     }
@@ -18,10 +29,12 @@ export function OAuthCallbackPlayground() {
     const url = new URL(window.location.href)
     url.search = ''
     url.hash = ''
+    // Add resultPage parameter to identify this as result page
+    url.searchParams.set('resultPage', 'true')
 
-    const defaultCallbackUrl = url.toString()
-    setEditableCallbackUrl(defaultCallbackUrl)
-  }, [])
+    const generatedCallbackUrl = url.toString()
+    setEditableCallbackUrl(generatedCallbackUrl)
+  }, [defaultCallbackUrl])
 
   const handleGenerateKeys = async () => {
     try {
@@ -68,14 +81,14 @@ export function OAuthCallbackPlayground() {
           {keyPair.error && <span className="text-xs text-red-600">{keyPair.error}</span>}
         </div>
         <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-x-scroll overflow-y-auto break-all max-h-24 min-h-[2.5rem]">
-          {keyPair.publicKey || 'Not generated'}
+          {keyPair.loading ? 'Generating...' : keyPair.publicKey || 'Not generated'}
         </pre>
       </div>
 
       <div className="flex flex-col gap-1">
         <label className="text-base font-semibold text-gray-700">Private Key</label>
         <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-x-scroll overflow-y-auto break-all max-h-24 min-h-[2.5rem]">
-          {keyPair.privateKey || 'Not generated'}
+          {keyPair.loading ? 'Generating...' : keyPair.privateKey || 'Not generated'}
         </pre>
       </div>
 

@@ -9,6 +9,6 @@
  * - React hooks for OAuth flow
  */
 
-export type { OAuthFlowMode, OAuthFlowResult, OAuthFlowStatus, OAuthFlowVerifyResult } from './hooks/useOAuthFlow'
+export type { OAuthFlowMode, OAuthFlowResult, OAuthFlowStatus, OAuthFlowType, OAuthFlowVerifyResult } from './hooks/useOAuthFlow'
 export { useOAuthFlow } from './hooks/useOAuthFlow'
 export { OAuthFlowProvider, useOAuthFlowContext } from './OAuthFlowContext'

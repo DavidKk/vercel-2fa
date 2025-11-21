@@ -25,6 +25,16 @@ export interface UseECDHKeyPairOptions {
    * @default false
    */
   autoGenerate?: boolean
+  /**
+   * Initial key pair from SSR. If provided, will prioritize it over storage (for login flow)
+   * If not provided, will use storage if available (for callback flow)
+   */
+  initialKeyPair?: { publicKey: string; privateKey: string } | null
+  /**
+   * Whether to prioritize initialKeyPair over storage. If true, initialKeyPair will overwrite storage
+   * @default true
+   */
+  prioritizeInitialKeyPair?: boolean
 }
 
 export interface UseECDHKeyPairResult {
@@ -40,9 +50,9 @@ export interface UseECDHKeyPairResult {
 }
 
 export function useECDHKeyPair(options: UseECDHKeyPairOptions = {}): UseECDHKeyPairResult {
-  const { autoLoad = true, autoGenerate = false } = options
-  const [publicKey, setPublicKey] = useState<string | null>(null)
-  const [privateKey, setPrivateKey] = useState<string | null>(null)
+  const { autoLoad = true, autoGenerate = false, initialKeyPair, prioritizeInitialKeyPair = true } = options
+  const [publicKey, setPublicKey] = useState<string | null>(initialKeyPair?.publicKey ?? null)
+  const [privateKey, setPrivateKey] = useState<string | null>(initialKeyPair?.privateKey ?? null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -129,16 +139,51 @@ export function useECDHKeyPair(options: UseECDHKeyPairOptions = {}): UseECDHKeyP
   }, [syncFromStorage])
 
   useEffect(() => {
-    if (!autoLoad) {
+    // Early return if keys are already loaded in state
+    if (publicKey && privateKey) {
       return
     }
-    syncFromStorage()
-  }, [autoLoad, syncFromStorage])
+
+    // Priority 1: Login flow - prioritize SSR initialKeyPair over storage
+    // This ensures login page always uses fresh keys from SSR, not stale keys from storage
+    if (prioritizeInitialKeyPair && initialKeyPair?.publicKey && initialKeyPair?.privateKey) {
+      setStoredKeyPair(initialKeyPair.publicKey, initialKeyPair.privateKey)
+      setPublicKey(initialKeyPair.publicKey)
+      setPrivateKey(initialKeyPair.privateKey)
+      return
+    }
+
+    // Priority 2: Callback flow - prioritize storage over SSR initialKeyPair
+    // This ensures callback page uses the same keys that were used during login initiation
+    if (autoLoad) {
+      const stored = getStoredKeyPair()
+      if (stored.publicKey && stored.privateKey) {
+        setPublicKey(stored.publicKey)
+        setPrivateKey(stored.privateKey)
+        return
+      }
+    }
+
+    // Priority 3: Fallback - use initialKeyPair if no keys in storage
+    // This handles edge cases where storage is empty but SSR provided keys
+    if (initialKeyPair?.publicKey && initialKeyPair?.privateKey) {
+      setStoredKeyPair(initialKeyPair.publicKey, initialKeyPair.privateKey)
+      setPublicKey(initialKeyPair.publicKey)
+      setPrivateKey(initialKeyPair.privateKey)
+      return
+    }
+
+    // Priority 4: Sync from storage (might trigger other listeners or auto-generation)
+    if (autoLoad) {
+      syncFromStorage()
+    }
+  }, [autoLoad, syncFromStorage, initialKeyPair, prioritizeInitialKeyPair, publicKey, privateKey])
 
   useEffect(() => {
     if (!autoGenerate) {
       return
     }
+    // Only generate if we don't have keys at all
     if (publicKey && privateKey) {
       return
     }

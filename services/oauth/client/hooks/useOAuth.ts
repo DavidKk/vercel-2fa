@@ -139,9 +139,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
       const tokenFromHash = hashParams.get('token') || ''
       const stateFromHash = hashParams.get('state') || ''
 
-      // eslint-disable-next-line no-console
-      console.log('[useOAuth] Parsing hash:', { hash, tokenFromHash: !!tokenFromHash, stateFromHash: !!stateFromHash })
-
       setHashToken(tokenFromHash)
       setHashState(stateFromHash)
     }
@@ -165,20 +162,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
   const urlToken = hashToken || params.get('token') || ''
   const urlState = hashState || params.get('state') || ''
 
-  // Debug logging
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[useOAuth] Token state:', {
-      hashToken: !!hashToken,
-      urlToken: !!urlToken,
-      hashState: !!hashState,
-      urlState: !!urlState,
-      detectedSource,
-      publicKeyStatus,
-      hasServerPublicKey: !!serverPublicKey,
-    })
-  }, [hashToken, urlToken, hashState, urlState, detectedSource, publicKeyStatus, serverPublicKey])
-
   // Detect source type if auto
   useEffect(() => {
     if (sourceOption !== 'auto') {
@@ -194,17 +177,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     } else {
       setDetectedSource(null)
     }
-
-    // eslint-disable-next-line no-console
-    console.log('[useOAuth] Source detection:', {
-      sourceOption,
-      hasAuthWindow: !!authWindow,
-      hasAuthOrigin: !!authOrigin,
-      hasExpectedState: !!expectedState,
-      hasUrlToken: !!urlToken,
-      urlTokenLength: urlToken.length,
-      willDetectAs: authWindow && authOrigin && expectedState ? 'postMessage' : urlToken ? 'url' : null,
-    })
   }, [sourceOption, authWindow, authOrigin, expectedState, urlToken, hashToken])
 
   // Shared token validation and processing
@@ -224,19 +196,11 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
           throw new Error('Server public key not loaded')
         }
 
-        // eslint-disable-next-line no-console
-        console.log('[useOAuth] Calling onTokenReceived callback')
-
         // Call the token received callback
         // The callback should handle decryption and verification
         await onTokenReceived(encryptedToken, state)
-
-        // eslint-disable-next-line no-console
-        console.log('[useOAuth] onTokenReceived callback completed')
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Failed to process token'
-        // eslint-disable-next-line no-console
-        console.error('[useOAuth] processToken error:', errorMsg, err)
         setError(errorMsg)
         onError?.(errorMsg)
         throw err
@@ -257,22 +221,16 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
 
       // Validate origin
       if (authOrigin && event.origin !== authOrigin) {
-        // eslint-disable-next-line no-console
-        console.warn('Ignoring message from unexpected origin:', event.origin, 'expected:', authOrigin)
         return
       }
 
       // Validate source window
       if (event.source && event.source === window) {
-        // eslint-disable-next-line no-console
-        console.warn('Ignoring message from self')
         return
       }
 
       // Verify authWindow is still open
       if (authWindow && authWindow.closed) {
-        // eslint-disable-next-line no-console
-        console.warn('Auth window is closed, ignoring message')
         return
       }
 
@@ -295,8 +253,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
 
       // Prevent duplicate processing
       if (isProcessingRef.current || postMessageProcessedRef.current) {
-        // eslint-disable-next-line no-console
-        console.log('[useOAuth] PostMessage already processed, ignoring duplicate message')
         return
       }
       isProcessingRef.current = true
@@ -323,14 +279,10 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
       // Process token
       processToken(encryptedToken, event.data.state, clientPrivateKey)
         .then(() => {
-          // eslint-disable-next-line no-console
-          console.log('[useOAuth] PostMessage token processing completed')
           // Keep isProcessingRef.current = true and postMessageProcessedRef.current = true
           // to prevent duplicate processing. The listener has already been removed above.
         })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error('[useOAuth] PostMessage token processing failed:', err)
+        .catch(() => {
           isProcessingRef.current = false
           postMessageProcessedRef.current = false
           // Don't re-add listener on error, user should start a new flow
@@ -360,11 +312,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
 
     // Don't set up listener if already processing (prevents re-listening after token received)
     if (isProcessingRef.current || postMessageProcessedRef.current) {
-      // eslint-disable-next-line no-console
-      console.log('[useOAuth] Skipping postMessage listener setup: already processed', {
-        isProcessing: isProcessingRef.current,
-        postMessageProcessed: postMessageProcessedRef.current,
-      })
       return
     }
 
@@ -407,35 +354,18 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
 
   // URL callback handler
   useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[useOAuth] URL callback check:', {
-      enabled,
-      detectedSource,
-      publicKeyStatus,
-      hasServerPublicKey: !!serverPublicKey,
-      hasUrlToken: !!urlToken,
-      processed: processedRef.current,
-    })
-
     if (!enabled || detectedSource !== 'url' || typeof window === 'undefined') {
       return
     }
 
     if (publicKeyStatus !== 'ready' || !serverPublicKey) {
-      // eslint-disable-next-line no-console
-      console.log('[useOAuth] URL callback skipped: publicKey not ready')
       return
     }
 
     // Only process if we have a token and haven't already processed it
     if (!urlToken || processedRef.current) {
-      // eslint-disable-next-line no-console
-      console.log('[useOAuth] URL callback skipped: no token or already processed', { urlToken: !!urlToken, processed: processedRef.current })
       return
     }
-
-    // eslint-disable-next-line no-console
-    console.log('[useOAuth] Processing URL callback token', { urlToken: urlToken.substring(0, 50) + '...', urlState })
 
     processedRef.current = true
 
@@ -443,8 +373,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     if (typeof window !== 'undefined' && window.location.hash) {
       // Remove hash from URL without triggering page reload
       window.history.replaceState(null, '', window.location.pathname + window.location.search)
-      // eslint-disable-next-line no-console
-      console.log('[useOAuth] Hash cleared from URL')
     }
 
     // URL decode the token if needed
@@ -457,16 +385,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
 
     // Validate state
     const storedState = getStoredState()
-    // eslint-disable-next-line no-console
-    console.log('[useOAuth] State validation:', {
-      hasUrlState: !!urlState,
-      urlStateLength: urlState?.length || 0,
-      hasStoredState: !!storedState,
-      storedStateLength: storedState?.length || 0,
-      urlStatePreview: urlState?.substring(0, 8) || 'none',
-      storedStatePreview: storedState?.substring(0, 8) || 'none',
-      sessionStorageKeys: typeof window !== 'undefined' ? Object.keys(sessionStorage).filter((k) => k.startsWith('oauth_')) : [],
-    })
     if (!urlState) {
       const errorMsg = 'State parameter is missing from the callback URL. Please start a new OAuth login.'
       setError(errorMsg)
@@ -501,8 +419,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     const clientPrivateKey = getPrivateKey ? getPrivateKey() : getStoredPrivateKey()
     if (!clientPrivateKey) {
       const errorMsg = 'Client private key not found. Please start a new OAuth login.'
-      // eslint-disable-next-line no-console
-      console.error('[useOAuth] Missing private key')
       setError(errorMsg)
       setIsProcessing(false)
       onError?.(errorMsg)
@@ -510,31 +426,15 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
       return
     }
 
-    // eslint-disable-next-line no-console
-    console.log('[useOAuth] About to call processToken', {
-      hasToken: !!queryToken,
-      tokenLength: queryToken.length,
-      hasState: !!urlState,
-      hasPrivateKey: !!clientPrivateKey,
-      processTokenType: typeof processToken,
-    })
-
     // Process token - call directly to avoid closure issues
     setIsProcessing(true)
     setError(null)
 
     // Call processToken directly
-    processToken(queryToken, urlState, clientPrivateKey)
-      .then(() => {
-        // eslint-disable-next-line no-console
-        console.log('[useOAuth] Token processing completed successfully')
-      })
-      .catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('[useOAuth] Token processing failed:', err)
-        processedRef.current = false
-        setIsProcessing(false)
-      })
+    processToken(queryToken, urlState, clientPrivateKey).catch(() => {
+      processedRef.current = false
+      setIsProcessing(false)
+    })
   }, [enabled, detectedSource, publicKeyStatus, serverPublicKey, urlToken, urlState, processToken, onError, getPrivateKey])
 
   return {
