@@ -76,24 +76,24 @@ This document describes all environment variables used in the Two-Factor Authent
 
 ### ENABLE_TOKEN_REPLAY_PROTECTION
 
-- **Description**: Enable token replay protection using Vercel KV to prevent token reuse attacks
+- **Description**: Enable token replay protection using Upstash Redis to prevent token reuse attacks
 - **Required**: No (default: disabled)
 - **Values**: `1`, `true` (enabled) or `0`, `false`, unset (disabled)
 - **Requirements**:
-  - Requires `@vercel/kv` package to be installed
-  - Requires Vercel KV to be configured in your Vercel project
+  - Requires `@upstash/redis` package to be installed
+  - Requires Upstash Redis to be configured in your Vercel project
 - **How it works**:
-  - Tracks used JWT IDs (jti) in Vercel KV
+  - Tracks used JWT IDs (jti) in Upstash Redis
   - Prevents the same token from being used multiple times
-  - **Auto-Expiration**: Vercel KV automatically expires keys when TTL is reached (no manual cleanup needed)
+  - **Auto-Expiration**: Upstash Redis automatically expires keys when TTL is reached (no manual cleanup needed)
   - Token TTL: 3 minutes (180 seconds) - tokens are short-lived for login verification only, allows sufficient time for normal login flow (20-60 seconds) with buffer for network delays and user retries
-  - KV TTL: 190 seconds (180s token + 10s buffer) - ensures tracking slightly longer than token expiration
+  - Redis TTL: 190 seconds (180s token + 10s buffer) - ensures tracking slightly longer than token expiration
 - **Free Tier Limits**:
-  - Vercel KV free tier: 30,000 requests/month, 256MB storage
+  - Upstash Redis free tier: 10,000 commands/day, 256MB storage
   - Sufficient for small to medium teams (< 200 users, < 500 logins/day)
   - **Storage Efficiency**: With 3-minute TTL, only ~20-50 active tokens are stored at any time
 - **Example**: `ENABLE_TOKEN_REPLAY_PROTECTION=1`
-- **Note**: If enabled but Vercel KV is not configured, the service will fail open (allow tokens) to prevent blocking legitimate requests
+- **Note**: If enabled but Upstash Redis is not configured, the service will fail open (allow tokens) to prevent blocking legitimate requests
 
 ### ECDH_SERVER_PRIVATE_KEY
 
@@ -117,15 +117,15 @@ This document describes all environment variables used in the Two-Factor Authent
 
 ### ENABLE_KEY_ROTATION
 
-- **Description**: Enable automatic ECDH key pair rotation using Vercel KV
+- **Description**: Enable automatic ECDH key pair rotation using Upstash Redis
 - **Required**: No (default: disabled)
 - **Values**: `1`, `true` (enabled) or `0`, `false`, unset (disabled)
 - **Requirements**:
-  - Requires `@vercel/kv` package to be installed
-  - Requires Vercel KV to be configured in your Vercel project
+  - Requires `@upstash/redis` package to be installed
+  - Requires Upstash Redis to be configured in your Vercel project
 - **How it works**:
   - Automatically rotates server ECDH key pairs before expiration
-  - Stores multiple key pairs in Vercel KV during transition period
+  - Stores multiple key pairs in Upstash Redis during transition period
   - Ensures smooth key rotation without breaking active sessions
   - Keys are automatically rotated when they approach expiration (within transition period)
 - **Benefits**:
@@ -133,7 +133,7 @@ This document describes all environment variables used in the Two-Factor Authent
   - No manual intervention required
   - Graceful transition with overlap period for active sessions
 - **Example**: `ENABLE_KEY_ROTATION=1`
-- **Note**: If enabled but Vercel KV is not configured, the service will fall back to environment variable keys
+- **Note**: If enabled but Upstash Redis is not configured, the service will fall back to environment variable keys
 
 ### KEY_ROTATION_TTL_SECONDS
 
@@ -153,34 +153,44 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Example**: `86400` (1 day), `172800` (2 days)
 - **Note**: During the transition period, both old and new keys are active. This ensures smooth key rotation without breaking active sessions. The system will attempt decryption with all active keys.
 
-### KV_REST_API_URL
+### UPSTASH_REDIS_REST_URL
 
-- **Description**: Vercel KV REST API URL (automatically provided by Vercel)
+- **Description**: Upstash Redis REST API URL (automatically provided by Vercel/Upstash)
 - **Required**: Yes (only when using `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1`)
-- **How to get**: Automatically set by Vercel when you add KV integration to your project
-- **Setup** (通过 Vercel Storage/Marketplace):
+- **How to get**: Automatically set when you add Upstash Redis integration to your Vercel project
+- **Setup** (通过 Vercel Integrations):
   1. Go to your Vercel project dashboard
-  2. Navigate to the **"Storage"** tab
-  3. Click **"Create Database"** or **"Add"**
-  4. **选择 "KV"** (如果直接有 KV 选项) 或 **"Upstash" → "Serverless DB (Redis)"**
-  5. Vercel KV 基于 Upstash Redis，所以选择 **"Upstash"** 下的 **"Serverless DB (Redis)"** 也可以
-  6. 创建后，Vercel 会自动注入 `KV_REST_API_URL` 和 `KV_REST_API_TOKEN` 环境变量
-  7. **重要**: 添加后必须重新部署应用，环境变量才会生效
-- **Alternative**: 也可以通过 **"Integrations"** 标签页添加 KV 集成
-- **Note**:
-  - Vercel KV 是基于 Upstash Redis 的封装服务
-  - 如果看到 "KV" 选项，直接选择它
-  - 如果没有 "KV" 选项，选择 "Upstash" → "Serverless DB (Redis)" 也可以
-  - 不需要手动设置这些变量，Vercel 会自动配置
+  2. Navigate to the **"Integrations"** tab
+  3. Search for **"Upstash"** and click **"Add"** or **"Install"**
+  4. Follow the setup wizard to create or connect an Upstash Redis database
+  5. Vercel will automatically inject `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` into your environment
+  6. **重要**: 添加后必须重新部署应用，环境变量才会生效
+- **Alternative**: 也可以通过 **"Storage"** 标签页 → **"Upstash"** → **"Serverless DB (Redis)"** 添加
+- **Backward Compatibility**: The code also supports the old `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables for backward compatibility
+- **Note**: You don't need to manually set this variable. It's automatically configured when you add the Upstash Redis integration.
+- **Reference**: [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
 
-### KV_REST_API_TOKEN
+### UPSTASH_REDIS_REST_TOKEN
 
-- **Description**: Vercel KV REST API authentication token (automatically provided by Vercel)
+- **Description**: Upstash Redis REST API authentication token (automatically provided by Vercel/Upstash)
 - **Required**: Yes (only when using `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1`)
-- **How to get**: Automatically set by Vercel when you add KV integration to your project
-- **Setup**: Same as `KV_REST_API_URL` - automatically configured when you add the KV integration through Integrations or Marketplace
-- **Security**: This token is automatically managed by Vercel and should never be manually set or exposed
-- **Note**: You don't need to manually set this variable. It's automatically configured by Vercel when you add the KV integration.
+- **How to get**: Automatically set when you add Upstash Redis integration to your Vercel project
+- **Setup**: Same as `UPSTASH_REDIS_REST_URL` - automatically configured when you add the Upstash Redis integration
+- **Security**: This token is automatically managed by Vercel/Upstash and should never be manually set or exposed
+- **Backward Compatibility**: The code also supports the old `KV_REST_API_TOKEN` environment variable for backward compatibility
+- **Note**: You don't need to manually set this variable. It's automatically configured when you add the Upstash Redis integration.
+
+### KV_REST_API_URL (Deprecated)
+
+- **Description**: Legacy Vercel KV REST API URL (deprecated, use `UPSTASH_REDIS_REST_URL` instead)
+- **Status**: Deprecated but still supported for backward compatibility
+- **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `UPSTASH_REDIS_REST_URL` instead.
+
+### KV_REST_API_TOKEN (Deprecated)
+
+- **Description**: Legacy Vercel KV REST API token (deprecated, use `UPSTASH_REDIS_REST_TOKEN` instead)
+- **Status**: Deprecated but still supported for backward compatibility
+- **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `UPSTASH_REDIS_REST_TOKEN` instead.
 
 ### NEXT_PUBLIC_BUILD_TIME
 
@@ -212,10 +222,10 @@ ECDH_SERVER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-
 ECDH_SERVER_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n"
 NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="base64-encoded-spki-format-public-key"
 
-# Token Replay Protection (Optional)
+# Token Replay Protection (Optional, requires Upstash Redis)
 # ENABLE_TOKEN_REPLAY_PROTECTION=0
 
-# Key Rotation (Optional, requires Vercel KV)
+# Key Rotation (Optional, requires Upstash Redis)
 # ENABLE_KEY_ROTATION=0
 # KEY_ROTATION_TTL_SECONDS=604800
 # KEY_ROTATION_TRANSITION_SECONDS=86400
@@ -242,10 +252,10 @@ ALLOWED_REDIRECT_URLS=https://app.yourcompany.com,https://dashboard.yourcompany.
 # ECDH Key Exchange (OAuth Flow)
 ECDH_SERVER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-# Token Replay Protection (Recommended for production)
+# Token Replay Protection (Recommended for production, requires Upstash Redis)
 ENABLE_TOKEN_REPLAY_PROTECTION=1
 
-# Key Rotation (Recommended for production, requires Vercel KV)
+# Key Rotation (Recommended for production, requires Upstash Redis)
 ENABLE_KEY_ROTATION=1
 KEY_ROTATION_TTL_SECONDS=604800
 KEY_ROTATION_TRANSITION_SECONDS=86400
@@ -311,40 +321,44 @@ Visit the `/ecdh` page in the application to generate an ECDH key pair. The gene
 - Check that the token has not expired
 - Verify the token format is correct
 
-### "Missing required environment variables KV_REST_API_URL and KV_REST_API_TOKEN" Error
+### "Missing required environment variables" Error (Redis/KV)
 
-This error occurs when `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1` is set, but Vercel KV is not configured.
+This error occurs when `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1` is set, but Upstash Redis is not configured.
 
 **Solutions:**
 
-1. **If you want to use KV features** (recommended for production):
+1. **If you want to use Redis features** (recommended for production):
 
    - Go to your Vercel project dashboard
-   - Navigate to the **"Storage"** tab
-   - Click **"Create Database"** or **"Add"**
-   - **选择 "KV"** (推荐，如果可用) 或 **"Upstash" → "Serverless DB (Redis)"**
-   - 注意：Vercel KV 基于 Upstash Redis，所以选择 Upstash Redis 也可以
-   - 创建后，Vercel 会自动注入 `KV_REST_API_URL` 和 `KV_REST_API_TOKEN`
+   - Navigate to the **"Integrations"** tab
+   - Search for **"Upstash"** and click **"Add"** or **"Install"**
+   - Follow the setup wizard to create or connect an Upstash Redis database
+   - Vercel will automatically inject `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
    - **重要**: 添加后必须重新部署应用，环境变量才会生效
-   - 验证变量是否设置：Settings → Environment Variables，确认两个变量都存在
-   - **Alternative**: 也可以通过 **"Integrations"** 标签页搜索 "KV" 添加集成
+   - 验证变量是否设置：Settings → Environment Variables，确认以下变量存在：
+     - `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN` (推荐)
+     - 或 `KV_REST_API_URL` 和 `KV_REST_API_TOKEN` (向后兼容)
+   - **Alternative**: 也可以通过 **"Storage"** 标签页 → **"Upstash"** → **"Serverless DB (Redis)"** 添加
+   - **Reference**: [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
 
-2. **If you don't want to use KV features**:
+2. **If you don't want to use Redis features**:
    - Set `ENABLE_KEY_ROTATION=0` or remove it (defaults to disabled)
    - Set `ENABLE_TOKEN_REPLAY_PROTECTION=0` or remove it (defaults to disabled)
    - The service will fall back to using environment variable keys
 
-**Note**: The code has been updated to gracefully handle missing KV configuration. If KV is not available, the service will automatically fall back to environment variable keys without throwing errors.
+**Note**: The code has been updated to gracefully handle missing Redis configuration. If Redis is not available, the service will automatically fall back to environment variable keys without throwing errors.
 
 **Troubleshooting Tips:**
 
-- If you added KV but still see the error, make sure you **redeployed** your application after adding the integration
+- If you added Upstash Redis but still see the error, make sure you **redeployed** your application after adding the integration
 - Check that the integration is actually connected to your project in the Integrations tab
 - Verify environment variables exist in Settings → Environment Variables (they should be automatically added by Vercel)
+- The code supports both new (`UPSTASH_REDIS_REST_*`) and old (`KV_REST_API_*`) environment variable names for backward compatibility
 
 ## References
 
 - [Next.js Environment Variables](https://nextjs.org/docs/basic-features/environment-variables)
 - [Vercel Environment Variables](https://vercel.com/docs/concepts/projects/environment-variables)
-- [Vercel KV Documentation](https://vercel.com/docs/storage/vercel-kv)
+- [Upstash Redis Documentation](https://upstash.com/docs/redis)
+- [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)

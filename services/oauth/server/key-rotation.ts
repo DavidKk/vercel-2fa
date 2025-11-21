@@ -2,14 +2,17 @@
  * OAuth Server: Key Rotation Management
  *
  * Manages ECDH key pair rotation with transition period support.
- * Stores multiple key pairs in Vercel KV to support graceful key rotation.
+ * Stores multiple key pairs in Upstash Redis to support graceful key rotation.
  */
 
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
 import type { KeyObject } from 'crypto'
 import { createPrivateKey, generateKeyPairSync } from 'crypto'
 
 import { DEFAULT_KEY_ROTATION_TRANSITION_SECONDS, DEFAULT_KEY_ROTATION_TTL_SECONDS } from './constants'
+
+// Initialize Redis client (automatically reads from UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN)
+const redis = Redis.fromEnv()
 
 const KV_PREFIX = 'oauth:server-key:'
 const KEY_LIST_KEY = 'oauth:server-keys:list'
@@ -51,11 +54,12 @@ export function isKeyRotationEnabled(): boolean {
 }
 
 /**
- * Check if Vercel KV is available (environment variables are set)
- * @returns true if KV is available, false otherwise
+ * Check if Upstash Redis is available (environment variables are set)
+ * @returns true if Redis is available, false otherwise
  */
-function isKvAvailable(): boolean {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+function isRedisAvailable(): boolean {
+  // Support both old KV_REST_API_* and new UPSTASH_REDIS_REST_* environment variables
+  return !!((process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) || (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN))
 }
 
 /**
@@ -101,15 +105,17 @@ export async function getActiveKeyPairs(): Promise<ServerKeyPair[]> {
     return []
   }
 
-  // Check if KV is available before attempting to use it
-  if (!isKvAvailable()) {
+  // Check if Redis is available before attempting to use it
+  if (!isRedisAvailable()) {
     // eslint-disable-next-line no-console
-    console.warn('Vercel KV is not configured (missing KV_REST_API_URL or KV_REST_API_TOKEN). Key rotation will fall back to environment variables.')
+    console.warn(
+      'Upstash Redis is not configured (missing UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN or KV_REST_API_URL/KV_REST_API_TOKEN). Key rotation will fall back to environment variables.'
+    )
     return []
   }
 
   try {
-    const keyIds = await kv.lrange<string>(KEY_LIST_KEY, 0, -1)
+    const keyIds = await redis.lrange<string>(KEY_LIST_KEY, 0, -1)
     if (!keyIds || keyIds.length === 0) {
       return []
     }
@@ -119,7 +125,7 @@ export async function getActiveKeyPairs(): Promise<ServerKeyPair[]> {
 
     for (const keyId of keyIds) {
       try {
-        const keyData = await kv.get<ServerKeyPair>(`${KV_PREFIX}${keyId}`)
+        const keyData = await redis.get<ServerKeyPair>(`${KV_PREFIX}${keyId}`)
         // Key is active if expiresAt hasn't passed yet
         // This ensures old keys remain valid during transition period
         if (keyData && keyData.expiresAt > now) {
@@ -136,7 +142,7 @@ export async function getActiveKeyPairs(): Promise<ServerKeyPair[]> {
     return activeKeys.sort((a, b) => b.createdAt - a.createdAt)
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('Failed to get active key pairs from KV:', error)
+    console.error('Failed to get active key pairs from Redis:', error)
     return []
   }
 }
@@ -174,10 +180,10 @@ export async function rotateKeyPair(): Promise<ServerKeyPair> {
     throw new Error('Key rotation is not enabled')
   }
 
-  // Check if KV is available before attempting to use it
-  if (!isKvAvailable()) {
+  // Check if Redis is available before attempting to use it
+  if (!isRedisAvailable()) {
     throw new Error(
-      'Vercel KV is not configured. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables, or disable key rotation by unsetting ENABLE_KEY_ROTATION.'
+      'Upstash Redis is not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables (or KV_REST_API_URL and KV_REST_API_TOKEN for backward compatibility), or disable key rotation by unsetting ENABLE_KEY_ROTATION.'
     )
   }
 
@@ -195,22 +201,22 @@ export async function rotateKeyPair(): Promise<ServerKeyPair> {
   }
 
   try {
-    // Store the key pair in KV
-    // KV TTL = keyTtlSeconds + transitionPeriodSeconds to ensure old keys remain
+    // Store the key pair in Redis
+    // Redis TTL = keyTtlSeconds + transitionPeriodSeconds to ensure old keys remain
     // available during transition period even after expiresAt
-    await kv.set(`${KV_PREFIX}${keyId}`, keyPair, { ex: config.keyTtlSeconds + config.transitionPeriodSeconds })
+    await redis.set(`${KV_PREFIX}${keyId}`, keyPair, { ex: config.keyTtlSeconds + config.transitionPeriodSeconds })
 
     // Add to list
-    await kv.lpush(KEY_LIST_KEY, keyId)
+    await redis.lpush(KEY_LIST_KEY, keyId)
 
     // Clean up expired keys from list (keep only active ones)
     const activeKeys = await getActiveKeyPairs()
     const activeKeyIds = new Set(activeKeys.map((k) => k.id))
-    const allKeyIds = await kv.lrange<string>(KEY_LIST_KEY, 0, -1)
+    const allKeyIds = await redis.lrange<string>(KEY_LIST_KEY, 0, -1)
     for (const id of allKeyIds) {
       if (!activeKeyIds.has(id)) {
-        await kv.lrem(KEY_LIST_KEY, 0, id)
-        await kv.del(`${KV_PREFIX}${id}`)
+        await redis.lrem(KEY_LIST_KEY, 0, id)
+        await redis.del(`${KV_PREFIX}${id}`)
       }
     }
 
@@ -253,10 +259,10 @@ export async function ensureKeyRotation(): Promise<ServerKeyPair | null> {
     return null
   }
 
-  // Check if KV is available before attempting to use it
-  if (!isKvAvailable()) {
-    // KV is not available, silently return null to allow fallback to environment variables
-    // This matches the documented behavior: "If enabled but Vercel KV is not configured,
+  // Check if Redis is available before attempting to use it
+  if (!isRedisAvailable()) {
+    // Redis is not available, silently return null to allow fallback to environment variables
+    // This matches the documented behavior: "If enabled but Upstash Redis is not configured,
     // the service will fall back to environment variable keys"
     return null
   }

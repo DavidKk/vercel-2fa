@@ -1,12 +1,15 @@
 /**
  * OAuth Server: Token Replay Protection
  *
- * Prevents token replay attacks by tracking used JWT IDs (jti) in Vercel KV.
+ * Prevents token replay attacks by tracking used JWT IDs (jti) in Upstash Redis.
  * This service is optional and can be enabled via environment variable or configuration options.
  */
 
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
 import { randomUUID } from 'crypto'
+
+// Initialize Redis client (automatically reads from UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN)
+const redis = Redis.fromEnv()
 
 const KV_PREFIX = 'token:'
 const KV_TTL_BUFFER_SECONDS = 10 // Add 10 second buffer to token TTL (tokens expire in 3 minutes)
@@ -46,7 +49,7 @@ export async function isTokenUsed(jti: string, options?: ReplayProtectionOptions
 
   try {
     const key = `${KV_PREFIX}${jti}`
-    const exists = await kv.exists(key)
+    const exists = await redis.exists(key)
     return exists === 1
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -72,9 +75,9 @@ export async function markTokenAsUsed(jti: string, ttlSeconds: number, options?:
   try {
     const key = `${KV_PREFIX}${jti}`
     // Add buffer to TTL to ensure token is tracked for slightly longer than its expiration
-    // Vercel KV automatically expires keys when TTL is reached (no manual cleanup needed)
+    // Upstash Redis automatically expires keys when TTL is reached (no manual cleanup needed)
     const ttlWithBuffer = ttlSeconds + KV_TTL_BUFFER_SECONDS
-    await kv.set(key, '1', { ex: ttlWithBuffer })
+    await redis.set(key, '1', { ex: ttlWithBuffer })
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Error marking token as used:', error)
