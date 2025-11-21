@@ -51,6 +51,14 @@ export function isKeyRotationEnabled(): boolean {
 }
 
 /**
+ * Check if Vercel KV is available (environment variables are set)
+ * @returns true if KV is available, false otherwise
+ */
+function isKvAvailable(): boolean {
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+}
+
+/**
  * Generate a new ECDH key pair
  */
 function generateKeyPair(): { privateKeyPem: string; publicKeyBase64: string } {
@@ -90,6 +98,13 @@ function normalizePemKey(key: string): string {
 export async function getActiveKeyPairs(): Promise<ServerKeyPair[]> {
   const config = getKeyRotationConfig()
   if (!config.enabled) {
+    return []
+  }
+
+  // Check if KV is available before attempting to use it
+  if (!isKvAvailable()) {
+    // eslint-disable-next-line no-console
+    console.warn('Vercel KV is not configured (missing KV_REST_API_URL or KV_REST_API_TOKEN). Key rotation will fall back to environment variables.')
     return []
   }
 
@@ -157,6 +172,13 @@ export async function rotateKeyPair(): Promise<ServerKeyPair> {
   const config = getKeyRotationConfig()
   if (!config.enabled) {
     throw new Error('Key rotation is not enabled')
+  }
+
+  // Check if KV is available before attempting to use it
+  if (!isKvAvailable()) {
+    throw new Error(
+      'Vercel KV is not configured. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables, or disable key rotation by unsetting ENABLE_KEY_ROTATION.'
+    )
   }
 
   const { privateKeyPem, publicKeyBase64 } = generateKeyPair()
@@ -228,6 +250,14 @@ async function shouldRotateKey(): Promise<boolean> {
 export async function ensureKeyRotation(): Promise<ServerKeyPair | null> {
   const config = getKeyRotationConfig()
   if (!config.enabled) {
+    return null
+  }
+
+  // Check if KV is available before attempting to use it
+  if (!isKvAvailable()) {
+    // KV is not available, silently return null to allow fallback to environment variables
+    // This matches the documented behavior: "If enabled but Vercel KV is not configured,
+    // the service will fall back to environment variable keys"
     return null
   }
 
