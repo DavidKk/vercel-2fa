@@ -1,35 +1,18 @@
 /**
- * Token Replay Protection Service
+ * OAuth Server: Token Replay Protection
  *
  * Prevents token replay attacks by tracking used JWT IDs (jti) in Vercel KV.
- * This service is optional and can be enabled via ENABLE_TOKEN_REPLAY_PROTECTION environment variable.
+ * This service is optional and can be enabled via configuration options.
  */
 
+import { kv } from '@vercel/kv'
 import { randomUUID } from 'crypto'
 
 const KV_PREFIX = 'token:'
 const KV_TTL_BUFFER_SECONDS = 10 // Add 10 second buffer to token TTL (tokens expire in 3 minutes)
 
-/**
- * Check if token replay protection is enabled
- */
-export function isReplayProtectionEnabled(): boolean {
-  return process.env.ENABLE_TOKEN_REPLAY_PROTECTION === '1' || process.env.ENABLE_TOKEN_REPLAY_PROTECTION === 'true'
-}
-
-/**
- * Get Vercel KV client (lazy import to avoid errors if KV is not configured)
- */
-async function getKVClient() {
-  try {
-    // Dynamic import to avoid build errors if @vercel/kv is not installed
-    const { kv } = await import('@vercel/kv')
-    return kv
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn('Vercel KV not available. Token replay protection will be disabled.')
-    return null
-  }
+export interface ReplayProtectionOptions {
+  enabled?: boolean
 }
 
 /**
@@ -42,17 +25,13 @@ export function generateJti(): string {
 /**
  * Check if a token JTI has already been used
  * @param jti - JWT ID to check
+ * @param options - Replay protection options (enabled defaults to false)
  * @returns true if token has been used, false otherwise
  */
-export async function isTokenUsed(jti: string): Promise<boolean> {
-  if (!isReplayProtectionEnabled()) {
+export async function isTokenUsed(jti: string, options?: ReplayProtectionOptions): Promise<boolean> {
+  const enabled = options?.enabled ?? false
+  if (!enabled) {
     return false // If protection is disabled, tokens are never considered "used"
-  }
-
-  const kv = await getKVClient()
-  if (!kv) {
-    // If KV is not available, skip protection (fail open)
-    return false
   }
 
   try {
@@ -71,16 +50,12 @@ export async function isTokenUsed(jti: string): Promise<boolean> {
  * Mark a token JTI as used
  * @param jti - JWT ID to mark as used
  * @param ttlSeconds - Time to live in seconds (should match token expiration)
+ * @param options - Replay protection options (enabled defaults to false)
  */
-export async function markTokenAsUsed(jti: string, ttlSeconds: number): Promise<void> {
-  if (!isReplayProtectionEnabled()) {
+export async function markTokenAsUsed(jti: string, ttlSeconds: number, options?: ReplayProtectionOptions): Promise<void> {
+  const enabled = options?.enabled ?? false
+  if (!enabled) {
     return // Skip if protection is disabled
-  }
-
-  const kv = await getKVClient()
-  if (!kv) {
-    // If KV is not available, skip (fail open)
-    return
   }
 
   try {

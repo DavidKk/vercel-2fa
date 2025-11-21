@@ -6,13 +6,14 @@
 import type { JwtPayload } from 'jsonwebtoken'
 
 import { generateJWTToken, verifyJWTToken } from '@/app/actions/jwt'
-import { extractJti, generateJti, isReplayProtectionEnabled, isTokenUsed, markTokenAsUsed } from '@/services/token-replay-protection'
 
 import { ACCESS_TOKEN_TTL_SECONDS } from './constants'
+import { extractJti, generateJti, isTokenUsed, markTokenAsUsed } from './replay-protection'
 
 export interface VerifyTokenOptions {
   audience?: string
   scope?: string
+  enableReplayProtection?: boolean
 }
 
 export interface VerifyTokenResult {
@@ -47,10 +48,13 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
     throw new Error('Token username does not match configured ACCESS_USERNAME')
   }
 
+  const replayProtectionEnabled = options?.enableReplayProtection ?? false
+  const replayProtectionOptions = { enabled: replayProtectionEnabled }
+
   // Check token replay protection if enabled
-  if (isReplayProtectionEnabled()) {
+  if (replayProtectionEnabled) {
     const jti = extractJti(payload)
-    if (jti && (await isTokenUsed(jti))) {
+    if (jti && (await isTokenUsed(jti, replayProtectionOptions))) {
       throw new Error('Token has already been used')
     }
   }
@@ -63,7 +67,7 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
   // the client needs to use this token for subsequent API calls.
   // The replay protection for the new access token should be handled
   // by the client service's own token validation logic.
-  if (isReplayProtectionEnabled()) {
+  if (replayProtectionEnabled) {
     accessTokenClaims.jti = generateJti()
   }
 
@@ -71,11 +75,11 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
 
   // Mark the original token as used (if replay protection is enabled)
   // This prevents the same OAuth callback token from being reused
-  if (isReplayProtectionEnabled()) {
+  if (replayProtectionEnabled) {
     const originalJti = extractJti(payload)
     if (originalJti) {
       // Mark original token as used with its remaining TTL
-      await markTokenAsUsed(originalJti, expiresIn)
+      await markTokenAsUsed(originalJti, expiresIn, replayProtectionOptions)
     }
     // Note: We do NOT mark the new access token as used here because
     // the client needs to use it. The new access token's replay protection

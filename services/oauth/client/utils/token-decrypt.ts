@@ -58,11 +58,13 @@ export async function decryptOAuthToken(encryptedToken: string, clientPrivateKey
   try {
     payload = JSON.parse(decryptedJson)
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[OAuth Client] Failed to parse decrypted payload', { error })
     throw new Error('Decrypted payload is not valid JSON')
   }
 
   if (!payload || typeof payload !== 'object' || typeof payload.token !== 'string') {
+    // eslint-disable-next-line no-console
     console.error('[OAuth Client] Decrypted payload does not contain token field', payload)
     throw new Error('Decrypted payload is missing the JWT token')
   }
