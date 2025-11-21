@@ -16,7 +16,7 @@ export function OAuthPlayground() {
   const handleBack = () => {
     reset()
 
-    router.replace('/oauth/test')
+    router.replace('/oauth/playground')
   }
 
   return (

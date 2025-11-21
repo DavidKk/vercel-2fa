@@ -44,7 +44,7 @@ ECDH_SERVER_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY----
 ## Step 4: Verify Setup
 
 1. **Check environment variables**: Ensure both keys are set
-2. **Test OAuth flow**: Use the `/oauth/test` page to verify the ECDH flow works
+2. **Test OAuth flow**: Use the `/oauth/playground` page to verify the ECDH flow works
 3. **Monitor for errors**: Check console for any key-related errors
 
 ## Key Rotation

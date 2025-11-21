@@ -34,14 +34,14 @@ export function matchUrl(pattern: string, url: string) {
 /**
  * Validate if a redirect URL is allowed based on environment configuration
  * @param redirectUrl - The URL to validate
- * @param currentHost - Optional current host (e.g., 'localhost:3000') to allow same-host /oauth/test
+ * @param currentHost - Optional current host (e.g., 'localhost:3000') to allow same-host /oauth/playground
  * @returns true if the URL is allowed, false otherwise
  */
 export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string): boolean {
   // Allow relative paths (same origin redirects), but only for specific safe paths
   if (redirectUrl.startsWith('/')) {
     // Only allow known safe paths to prevent open redirect vulnerabilities
-    const safePaths = ['/oauth/test', '/oauth', '/login']
+    const safePaths = ['/oauth/playground', '/oauth', '/login']
     return safePaths.some((path) => redirectUrl.startsWith(path))
   }
 
@@ -52,8 +52,8 @@ export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string):
     return false
   }
 
-  // Always allow /oauth/test on the same host
-  if (currentHost && targetUrl.pathname === '/oauth/test') {
+  // Always allow /oauth/playground on the same host
+  if (currentHost && targetUrl.pathname === '/oauth/playground') {
     const targetHost = targetUrl.host.toLowerCase()
     const currentHostLower = currentHost.toLowerCase()
     // Match exact host or handle port variations
@@ -87,18 +87,20 @@ export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string):
   try {
     const allowedList = allowedUrls.split(',').map((url) => url.trim())
 
-    // Check if the redirect URL matches any allowed URL or pattern
+    // Check if the redirect URL's origin matches any allowed origin or pattern
+    // OAuth 2.0 best practice: validate by origin (protocol + domain + port), not by full URL path
     for (const allowed of allowedList) {
       try {
         // Support wildcard patterns like https://*.example.com
         if (allowed.includes('*')) {
           const allowedPattern = allowed.replace(/\./g, '\\.').replace(/\*/g, '.*')
           const regex = new RegExp(`^${allowedPattern}$`)
-          if (regex.test(targetUrl.origin) || regex.test(redirectUrl)) {
+          // Match origin only (protocol + domain + port), not full URL
+          if (regex.test(targetUrl.origin)) {
             return true
           }
         } else {
-          // Exact origin match
+          // Exact origin match (protocol + domain + port)
           const allowedUrl = new URL(allowed)
           if (targetUrl.origin === allowedUrl.origin) {
             return true
