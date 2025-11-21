@@ -38,9 +38,11 @@ export function matchUrl(pattern: string, url: string) {
  * @returns true if the URL is allowed, false otherwise
  */
 export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string): boolean {
-  // Allow relative paths (same origin redirects)
+  // Allow relative paths (same origin redirects), but only for specific safe paths
   if (redirectUrl.startsWith('/')) {
-    return true
+    // Only allow known safe paths to prevent open redirect vulnerabilities
+    const safePaths = ['/oauth/test', '/oauth', '/login']
+    return safePaths.some((path) => redirectUrl.startsWith(path))
   }
 
   let targetUrl: URL

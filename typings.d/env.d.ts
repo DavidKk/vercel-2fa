@@ -16,5 +16,7 @@ declare namespace NodeJS {
     JWT_EXPIRES_IN: string
     /** Allowed Redirect URLs (comma-separated) */
     ALLOWED_REDIRECT_URLS?: string
+    /** Enable token replay protection using Vercel KV (requires @vercel/kv package) */
+    ENABLE_TOKEN_REPLAY_PROTECTION?: string
   }
 }

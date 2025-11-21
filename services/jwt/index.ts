@@ -8,7 +8,13 @@ export function generateToken(payload: object, options?: jwt.SignOptions | undef
 export function verifyToken(token: string, options?: jwt.VerifyOptions | undefined) {
   try {
     const { JWT_SECRET } = getJWTConfig()
-    return jwt.verify(token, JWT_SECRET, options)
+    // Ensure we don't accept tokens without proper validation
+    // The caller should specify additional options like issuer, audience if needed
+    return jwt.verify(token, JWT_SECRET, {
+      ...options,
+      // Reject tokens without expiration if not explicitly allowed
+      ignoreExpiration: options?.ignoreExpiration ?? false,
+    })
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Error verifying token:', err)

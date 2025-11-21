@@ -4,9 +4,10 @@ import { NextResponse } from 'next/server'
 import { generateJWTToken, verifyJWTToken } from '@/app/actions/jwt'
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
+import { extractJti, generateJti, isReplayProtectionEnabled, isTokenUsed, markTokenAsUsed } from '@/services/token-replay-protection'
 import { assertOriginAllowed, buildCorsHeaders } from '@/services/whitelist'
 
-const ACCESS_TOKEN_TTL_SECONDS = 15 * 60 // 15 minutes
+const ACCESS_TOKEN_TTL_SECONDS = 180 // 3 minutes - tokens are short-lived for login verification only
 
 interface VerifyTokenPayload {
   token: string
@@ -53,9 +54,46 @@ export const POST = api(async (req) => {
     return jsonUnauthorized('Invalid or expired token', { headers: corsHeaders })
   }
 
+  // Validate username matches configured ACCESS_USERNAME
+  const allowedUsername = process.env.ACCESS_USERNAME
+  if (allowedUsername && payload.username !== allowedUsername) {
+    return jsonUnauthorized('Token username does not match configured ACCESS_USERNAME', { headers: corsHeaders })
+  }
+
+  // Check token replay protection if enabled
+  if (isReplayProtectionEnabled()) {
+    const jti = extractJti(payload)
+    if (jti && (await isTokenUsed(jti))) {
+      return jsonUnauthorized('Token has already been used', { headers: corsHeaders })
+    }
+  }
+
   const expiresIn = getExpiresInSeconds(payload)
   const accessTokenClaims = buildAccessTokenClaims(payload, { audience, scope })
+
+  // Add JTI to access token if replay protection is enabled
+  // Note: The new access token's jti is NOT marked as used here because
+  // the client needs to use this token for subsequent API calls.
+  // The replay protection for the new access token should be handled
+  // by the client service's own token validation logic.
+  if (isReplayProtectionEnabled()) {
+    accessTokenClaims.jti = generateJti()
+  }
+
   const accessToken = await generateJWTToken(accessTokenClaims, { expiresIn })
+
+  // Mark the original token as used (if replay protection is enabled)
+  // This prevents the same OAuth callback token from being reused
+  if (isReplayProtectionEnabled()) {
+    const originalJti = extractJti(payload)
+    if (originalJti) {
+      // Mark original token as used with its remaining TTL
+      await markTokenAsUsed(originalJti, expiresIn)
+    }
+    // Note: We do NOT mark the new access token as used here because
+    // the client needs to use it. The new access token's replay protection
+    // should be handled by the client service if needed.
+  }
 
   const response: VerificationResponse = {
     access_token: accessToken,

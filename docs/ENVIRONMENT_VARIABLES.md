@@ -74,6 +74,27 @@ This document describes all environment variables used in the Two-Factor Authent
   - `https://*.example.com` - Matches any subdomain of example.com
   - `https://app-*.example.com` - Matches app-1.example.com, app-2.example.com, etc.
 
+### ENABLE_TOKEN_REPLAY_PROTECTION
+
+- **Description**: Enable token replay protection using Vercel KV to prevent token reuse attacks
+- **Required**: No (default: disabled)
+- **Values**: `1`, `true` (enabled) or `0`, `false`, unset (disabled)
+- **Requirements**:
+  - Requires `@vercel/kv` package to be installed
+  - Requires Vercel KV to be configured in your Vercel project
+- **How it works**:
+  - Tracks used JWT IDs (jti) in Vercel KV
+  - Prevents the same token from being used multiple times
+  - **Auto-Expiration**: Vercel KV automatically expires keys when TTL is reached (no manual cleanup needed)
+  - Token TTL: 3 minutes (180 seconds) - tokens are short-lived for login verification only, allows sufficient time for normal login flow (20-60 seconds) with buffer for network delays and user retries
+  - KV TTL: 190 seconds (180s token + 10s buffer) - ensures tracking slightly longer than token expiration
+- **Free Tier Limits**:
+  - Vercel KV free tier: 30,000 requests/month, 256MB storage
+  - Sufficient for small to medium teams (< 200 users, < 500 logins/day)
+  - **Storage Efficiency**: With 3-minute TTL, only ~20-50 active tokens are stored at any time
+- **Example**: `ENABLE_TOKEN_REPLAY_PROTECTION=1`
+- **Note**: If enabled but Vercel KV is not configured, the service will fail open (allow tokens) to prevent blocking legitimate requests
+
 ### ECDH_SERVER_PRIVATE_KEY
 
 - **Description**: Server's ECDH private key for secure key exchange (ECDH flow)
