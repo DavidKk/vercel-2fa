@@ -25,6 +25,7 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-inferrable-types': 'warn',
       '@typescript-eslint/interface-name-prefix': 'off',
+      '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/member-delimiter-style': [
         'error',
         {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { clearStoredKeyPair, getStoredKeyPair, setStoredKeyPair } from '@/services/oauth/client/utils'
 import { exportPrivateKey, exportPublicKey, generateECDHKeyPair } from '@/utils/ecdh-client'

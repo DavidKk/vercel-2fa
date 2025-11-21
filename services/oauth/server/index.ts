@@ -6,12 +6,17 @@
  * - Token delivery (postMessage or redirect)
  * - Token verification and access token generation
  * - Token replay protection
+ * - Key rotation management
  * - Configuration helpers
  */
 
 // Configuration
 export type { OAuthServerConfig } from './config'
 export { getOAuthServerConfig, isOAuthEnabled } from './config'
+
+// Key rotation
+export type { KeyRotationConfig, ServerKeyPair } from './key-rotation'
+export { getActiveKeyPairs, getKeyRotationConfig, getLatestKeyPair, initializeKeyRotation, isKeyRotationEnabled, rotateKeyPair, tryDecryptWithAllKeys } from './key-rotation'
 
 // Token delivery
 export type { DeliverTokenOptions } from './token-delivery'

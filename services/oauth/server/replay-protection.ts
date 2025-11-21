@@ -2,7 +2,7 @@
  * OAuth Server: Token Replay Protection
  *
  * Prevents token replay attacks by tracking used JWT IDs (jti) in Vercel KV.
- * This service is optional and can be enabled via configuration options.
+ * This service is optional and can be enabled via environment variable or configuration options.
  */
 
 import { kv } from '@vercel/kv'
@@ -16,6 +16,15 @@ export interface ReplayProtectionOptions {
 }
 
 /**
+ * Check if replay protection is enabled (from environment variable)
+ * Defaults to false if not set
+ */
+export function isReplayProtectionEnabled(): boolean {
+  const envValue = process.env.ENABLE_TOKEN_REPLAY_PROTECTION
+  return envValue === '1' || envValue === 'true'
+}
+
+/**
  * Generate a unique JWT ID (jti) for token replay protection
  */
 export function generateJti(): string {
@@ -25,11 +34,12 @@ export function generateJti(): string {
 /**
  * Check if a token JTI has already been used
  * @param jti - JWT ID to check
- * @param options - Replay protection options (enabled defaults to false)
+ * @param options - Replay protection options (enabled defaults to environment variable)
  * @returns true if token has been used, false otherwise
  */
 export async function isTokenUsed(jti: string, options?: ReplayProtectionOptions): Promise<boolean> {
-  const enabled = options?.enabled ?? false
+  // Use options.enabled if provided, otherwise use environment variable
+  const enabled = options?.enabled ?? isReplayProtectionEnabled()
   if (!enabled) {
     return false // If protection is disabled, tokens are never considered "used"
   }
@@ -50,10 +60,11 @@ export async function isTokenUsed(jti: string, options?: ReplayProtectionOptions
  * Mark a token JTI as used
  * @param jti - JWT ID to mark as used
  * @param ttlSeconds - Time to live in seconds (should match token expiration)
- * @param options - Replay protection options (enabled defaults to false)
+ * @param options - Replay protection options (enabled defaults to environment variable)
  */
 export async function markTokenAsUsed(jti: string, ttlSeconds: number, options?: ReplayProtectionOptions): Promise<void> {
-  const enabled = options?.enabled ?? false
+  // Use options.enabled if provided, otherwise use environment variable
+  const enabled = options?.enabled ?? isReplayProtectionEnabled()
   if (!enabled) {
     return // Skip if protection is disabled
   }

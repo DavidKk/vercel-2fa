@@ -8,7 +8,7 @@ import type { JwtPayload } from 'jsonwebtoken'
 import { generateJWTToken, verifyJWTToken } from '@/app/actions/jwt'
 
 import { ACCESS_TOKEN_TTL_SECONDS } from './constants'
-import { extractJti, generateJti, isTokenUsed, markTokenAsUsed } from './replay-protection'
+import { extractJti, generateJti, isReplayProtectionEnabled, isTokenUsed, markTokenAsUsed } from './replay-protection'
 
 export interface VerifyTokenOptions {
   audience?: string
@@ -48,7 +48,9 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
     throw new Error('Token username does not match configured ACCESS_USERNAME')
   }
 
-  const replayProtectionEnabled = options?.enableReplayProtection ?? false
+  // Check if replay protection is enabled (from environment variable or options)
+  // If options.enableReplayProtection is provided, use it; otherwise use environment variable
+  const replayProtectionEnabled = options?.enableReplayProtection ?? isReplayProtectionEnabled()
   const replayProtectionOptions = { enabled: replayProtectionEnabled }
 
   // Check token replay protection if enabled

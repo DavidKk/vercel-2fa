@@ -1,4 +1,3 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
 
 export function WebAuthnContent() {

@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
 import { assertHttpsRequired, assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
+import { ensureKeyRotation } from '@/services/oauth/server/key-rotation'
 import { getServerPublicKey } from '@/utils/ecdh-server-keys'
 
 interface PublicKeyResponse {
@@ -20,7 +21,10 @@ export const GET = api(async (req) => {
   assertOriginAllowed(origin)
   assertHttpsRequired(req, origin)
 
-  const publicKey = getServerPublicKey()
+  // Auto-rotate key if needed (creates first key pair if none exists, or rotates if close to expiration)
+  await ensureKeyRotation()
+
+  const publicKey = await getServerPublicKey()
   if (!publicKey) {
     return jsonInvalidParameters('Server public key is not available', { headers: corsHeaders })
   }

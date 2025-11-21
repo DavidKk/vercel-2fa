@@ -125,6 +125,44 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Generation**: Visit `/ecdh` page to generate a key pair
 - **Production**: Not required - only the private key is needed for production. The public key is shared with clients separately.
 
+### ENABLE_KEY_ROTATION
+
+- **Description**: Enable automatic ECDH key pair rotation using Vercel KV
+- **Required**: No (default: disabled)
+- **Values**: `1`, `true` (enabled) or `0`, `false`, unset (disabled)
+- **Requirements**:
+  - Requires `@vercel/kv` package to be installed
+  - Requires Vercel KV to be configured in your Vercel project
+- **How it works**:
+  - Automatically rotates server ECDH key pairs before expiration
+  - Stores multiple key pairs in Vercel KV during transition period
+  - Ensures smooth key rotation without breaking active sessions
+  - Keys are automatically rotated when they approach expiration (within transition period)
+- **Benefits**:
+  - Enhanced security through regular key rotation
+  - No manual intervention required
+  - Graceful transition with overlap period for active sessions
+- **Example**: `ENABLE_KEY_ROTATION=1`
+- **Note**: If enabled but Vercel KV is not configured, the service will fall back to environment variable keys
+
+### KEY_ROTATION_TTL_SECONDS
+
+- **Description**: Time to live (TTL) for each ECDH key pair in seconds
+- **Required**: No (only used when `ENABLE_KEY_ROTATION=1`)
+- **Default**: `604800` (7 days)
+- **Format**: Number of seconds
+- **Example**: `604800` (7 days), `2592000` (30 days)
+- **Note**: Each key pair is valid for this duration before expiration. Keys are automatically rotated before expiration.
+
+### KEY_ROTATION_TRANSITION_SECONDS
+
+- **Description**: Transition period in seconds for key rotation overlap
+- **Required**: No (only used when `ENABLE_KEY_ROTATION=1`)
+- **Default**: `86400` (1 day)
+- **Format**: Number of seconds
+- **Example**: `86400` (1 day), `172800` (2 days)
+- **Note**: During the transition period, both old and new keys are active. This ensures smooth key rotation without breaking active sessions. The system will attempt decryption with all active keys.
+
 ### NEXT_PUBLIC_BUILD_TIME
 
 - **Description**: Build timestamp (auto-generated)
@@ -137,15 +175,31 @@ This document describes all environment variables used in the Two-Factor Authent
 
 ```bash
 # .env.local
+# Required Variables
 ACCESS_USERNAME=admin
 ACCESS_PASSWORD=dev-password-123
-ACCESS_TOTP_SECRET=JBSWY3DPEHPK3PXP
 JWT_SECRET=dev-jwt-secret-key-minimum-32-chars
+
+# Two-Factor Authentication (at least one required)
+ACCESS_TOTP_SECRET=JBSWY3DPEHPK3PXP
+# ACCESS_WEBAUTHN_SECRET={"id":"...","publicKey":"...","rpId":"..."}
+
+# Optional Configuration
 JWT_EXPIRES_IN=1h
 ALLOWED_REDIRECT_URLS=http://localhost:3000,http://localhost:3001
+
+# ECDH Key Exchange (OAuth Flow)
 ECDH_SERVER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ECDH_SERVER_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n"
 NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="base64-encoded-spki-format-public-key"
+
+# Token Replay Protection (Optional)
+# ENABLE_TOKEN_REPLAY_PROTECTION=0
+
+# Key Rotation (Optional, requires Vercel KV)
+# ENABLE_KEY_ROTATION=0
+# KEY_ROTATION_TTL_SECONDS=604800
+# KEY_ROTATION_TRANSITION_SECONDS=86400
 ```
 
 ### Production Environment (Vercel)
@@ -153,13 +207,29 @@ NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="base64-encoded-spki-format-public-key"
 Configure these in your Vercel project settings:
 
 ```bash
+# Required Variables
 ACCESS_USERNAME=admin
 ACCESS_PASSWORD=your-strong-secure-password-here
+JWT_SECRET=your-production-jwt-secret-min-32-characters
+
+# Two-Factor Authentication (at least one required)
 ACCESS_TOTP_SECRET=YOUR_PRODUCTION_TOTP_SECRET
 ACCESS_WEBAUTHN_SECRET={"id":"...","publicKey":"..."}
-JWT_SECRET=your-production-jwt-secret-min-32-characters
+
+# Optional Configuration
 JWT_EXPIRES_IN=30d
 ALLOWED_REDIRECT_URLS=https://app.yourcompany.com,https://dashboard.yourcompany.com,https://*.yourcompany.com
+
+# ECDH Key Exchange (OAuth Flow)
+ECDH_SERVER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Token Replay Protection (Recommended for production)
+ENABLE_TOKEN_REPLAY_PROTECTION=1
+
+# Key Rotation (Recommended for production, requires Vercel KV)
+ENABLE_KEY_ROTATION=1
+KEY_ROTATION_TTL_SECONDS=604800
+KEY_ROTATION_TRANSITION_SECONDS=86400
 ```
 
 ## Security Best Practices

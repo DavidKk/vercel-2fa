@@ -5,7 +5,7 @@ import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
 import { generateJWTToken } from '@/app/actions/jwt'
 import { stringToCredentials } from '@/services/webauthn'
 import { deriveSharedKey, encryptWithSharedKey } from '@/utils/ecdh'
-import { getServerPublicKey, loadServerPrivateKey } from '@/utils/ecdh-server-keys'
+import { loadServerPrivateKey } from '@/utils/ecdh-server-keys'
 
 import { verfiyToken } from './totp'
 import { generateLoginOptions, verifyLogin } from './webauthn'
@@ -120,8 +120,8 @@ export async function loginWithECDH(payload: LoginWithECDHPayload) {
     issuedAt: Date.now(),
   })
 
-  // Derive shared key using ECDH
-  const serverPrivateKey = loadServerPrivateKey()
+  // Derive shared key using ECDH (use latest key for encryption)
+  const serverPrivateKey = await loadServerPrivateKey()
   const sharedKey = deriveSharedKey(serverPrivateKey, clientPublicKey)
 
   // Encrypt token with shared key

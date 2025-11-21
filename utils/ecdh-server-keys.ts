@@ -1,32 +1,44 @@
 /**
  * Server-side ECDH key pair management
- * Loads server's ECDH key pair from environment variables
+ * Loads server's ECDH key pair from environment variables or KV (if key rotation is enabled)
  */
 
 import type { KeyObject } from 'crypto'
 import { createPrivateKey, createPublicKey } from 'crypto'
 
+import { getServerPublicKeyFromKV, isKeyRotationEnabled, loadServerPrivateKeyFromKV } from '@/services/oauth/server/key-rotation'
+
 /**
- * Load server's ECDH private key from environment variable
+ * Load server's ECDH private key from environment variable or KV
  * @returns Server's private key as KeyObject
  */
-export function loadServerPrivateKey(): KeyObject {
+export async function loadServerPrivateKey(): Promise<KeyObject> {
+  // If key rotation is enabled, try to load from KV first
+  if (isKeyRotationEnabled()) {
+    const keyFromKV = await loadServerPrivateKeyFromKV()
+    if (keyFromKV) {
+      return keyFromKV
+    }
+    // Fallback to environment variable if KV is not available
+  }
+
+  // Fallback to environment variable
   const privateKeyPem = process.env.ECDH_SERVER_PRIVATE_KEY
   if (!privateKeyPem) {
     throw new Error('ECDH_SERVER_PRIVATE_KEY environment variable is not set')
   }
 
   try {
-    // 规范化密钥：处理 Vercel 环境变量中可能的字面字符串 \n 转换为实际换行符
-    // 同时确保 PEM 格式正确
+    // Normalize key: convert literal \n strings in Vercel environment variables to actual newlines
+    // Also ensure PEM format is correct
     let normalizedKey = privateKeyPem
 
-    // 如果包含字面字符串 \n，替换为实际换行符
+    // If contains literal \n string, replace with actual newline
     if (normalizedKey.includes('\\n')) {
       normalizedKey = normalizedKey.replace(/\\n/g, '\n')
     }
 
-    // 验证 PEM 格式
+    // Validate PEM format
     if (!normalizedKey.includes('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('Invalid PEM format: missing BEGIN header')
     }
@@ -45,22 +57,32 @@ export function loadServerPrivateKey(): KeyObject {
  * Get server's ECDH public key (base64 SPKI format)
  * @returns Server's public key as base64 string (SPKI format)
  */
-export function getServerPublicKey(): string {
+export async function getServerPublicKey(): Promise<string> {
+  // If key rotation is enabled, try to load from KV first
+  if (isKeyRotationEnabled()) {
+    const publicKeyFromKV = await getServerPublicKeyFromKV()
+    if (publicKeyFromKV) {
+      return publicKeyFromKV
+    }
+    // Fallback to environment variable if KV is not available
+  }
+
+  // Fallback to environment variable
   const publicKeyPem = process.env.ECDH_SERVER_PUBLIC_KEY
   if (!publicKeyPem) {
     throw new Error('ECDH_SERVER_PUBLIC_KEY environment variable is not set')
   }
 
   try {
-    // 规范化密钥：处理 Vercel 环境变量中可能的字面字符串 \n 转换为实际换行符
+    // Normalize key: convert literal \n strings in Vercel environment variables to actual newlines
     let normalizedKey = publicKeyPem
 
-    // 如果包含字面字符串 \n，替换为实际换行符
+    // If contains literal \n string, replace with actual newline
     if (normalizedKey.includes('\\n')) {
       normalizedKey = normalizedKey.replace(/\\n/g, '\n')
     }
 
-    // 验证 PEM 格式
+    // Validate PEM format
     if (!normalizedKey.includes('-----BEGIN PUBLIC KEY-----') && !normalizedKey.includes('-----BEGIN PRIVATE KEY-----')) {
       throw new Error('Invalid PEM format: missing BEGIN header')
     }
