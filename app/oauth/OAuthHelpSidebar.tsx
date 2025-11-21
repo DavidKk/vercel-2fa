@@ -2,7 +2,7 @@
 
 import { AssistSidebarTrigger, useAssistSidebarContent } from '@/components/AssistSidebar'
 
-import ecdhDoc from '../ecdh/docs/flow.md'
+import ecdhDoc from './docs/flow.md'
 import integrationDoc from './docs/integration.md'
 
 export interface OAuthHelpSidebarProps {
