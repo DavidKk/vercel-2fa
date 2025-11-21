@@ -11,10 +11,6 @@ export interface VerificationOutputProps {
 export function VerificationOutput(props: VerificationOutputProps) {
   const { token, verifyResult, status, error, onBack } = props
 
-  if (!token) {
-    return null
-  }
-
   const hasError = status === 'error' && error
   const decryptedPayload = verifyResult?.decryptedPayload
   const verification = verifyResult?.verification
@@ -27,10 +23,12 @@ export function VerificationOutput(props: VerificationOutputProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex flex-col gap-1">
-          <label className="text-base font-semibold text-gray-700">Token</label>
-          <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-24">{token}</pre>
-        </div>
+        {token && (
+          <div className="flex flex-col gap-1">
+            <label className="text-base font-semibold text-gray-700">Token</label>
+            <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-24">{token}</pre>
+          </div>
+        )}
         {hasError ? (
           <div className="flex flex-col gap-1">
             <label className="text-base font-semibold text-gray-700">Error</label>

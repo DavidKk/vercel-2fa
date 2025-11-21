@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { Spinner } from '@/components/Spinner'
+import { Switch } from '@/components/Switch'
 import { exportPrivateKey, exportPublicKey, generateECDHKeyPair } from '@/utils/ecdh-client'
 
 const CLIENT_PUBLIC_KEY_STORAGE = 'oauth_client_public_key'
 const CLIENT_PRIVATE_KEY_STORAGE = 'oauth_client_private_key'
 
+export type OAuthLaunchMode = 'popup' | 'redirect'
+
 export interface OAuthCallbackPlaygroundProps {
-  onLaunch: (callbackUrl: string, publicKey: string) => void
+  onLaunch: (callbackUrl: string, publicKey: string, mode: OAuthLaunchMode) => void
   status: 'idle' | 'redirecting' | 'verifying' | 'error'
 }
 
@@ -21,6 +24,7 @@ export function OAuthCallbackPlayground(props: OAuthCallbackPlaygroundProps) {
   const [temporaryPublicKey, setTemporaryPublicKey] = useState<string | null>(null)
   const [temporaryPrivateKey, setTemporaryPrivateKey] = useState<string | null>(null)
   const [generatingKeys, setGeneratingKeys] = useState(false)
+  const [launchMode, setLaunchMode] = useState<OAuthLaunchMode>('popup')
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -115,7 +119,7 @@ export function OAuthCallbackPlayground(props: OAuthCallbackPlaygroundProps) {
 
     try {
       const publicKeyBase64 = await ensureKeyPair()
-      onLaunch(editableCallbackUrl, publicKeyBase64)
+      onLaunch(editableCallbackUrl, publicKeyBase64, launchMode)
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to generate key pair', err)
@@ -161,6 +165,18 @@ export function OAuthCallbackPlayground(props: OAuthCallbackPlaygroundProps) {
         <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-x-scroll overflow-y-auto break-all max-h-24 min-h-[2.5rem]">
           {temporaryPrivateKey || 'Not generated'}
         </pre>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <label className="text-base font-semibold text-gray-700">Launch Mode</label>
+            <p className="text-xs text-gray-500">
+              {launchMode === 'popup' ? 'Popup Window (postMessage) - More secure, uses window.open' : 'Redirect (URL Hash) - Uses window.location with hash parameters'}
+            </p>
+          </div>
+          <Switch checked={launchMode === 'popup'} onChange={(checked) => setLaunchMode(checked ? 'popup' : 'redirect')} size="md" variant="primary" />
+        </div>
       </div>
 
       <div className="flex gap-2">

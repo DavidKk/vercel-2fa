@@ -16,10 +16,11 @@ export interface OAuthLoginFormProps {
   redirectUrl: string
   state?: string
   clientPublicKey: string
+  callbackOrigin?: string
 }
 
 export function OAuthLoginForm(props: OAuthLoginFormProps) {
-  const { enableTotp, enableWebAuthn, redirectUrl, state, clientPublicKey } = props
+  const { enableTotp, enableWebAuthn, redirectUrl, state, clientPublicKey, callbackOrigin } = props
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -31,12 +32,48 @@ export function OAuthLoginForm(props: OAuthLoginFormProps) {
   const router = useRouter()
 
   const handleRedirect = (token: string) => {
-    const url = buildRedirectUrl(redirectUrl)
-    url.searchParams.set('token', token)
-
-    if (state) {
-      url.searchParams.set('state', state)
+    if (typeof window === 'undefined') {
+      return
     }
+
+    // Use postMessage if opened via window.open (has opener)
+    if (window.opener && callbackOrigin) {
+      try {
+        const message = {
+          type: 'OAUTH_RESULT',
+          state: state || '',
+          encryptedToken: token,
+        }
+        // eslint-disable-next-line no-console
+        console.log('Sending postMessage to:', callbackOrigin, 'message type:', message.type, 'has token:', !!message.encryptedToken)
+        window.opener.postMessage(message, callbackOrigin)
+        setComplete(true)
+        // Close the window after a short delay to allow message to be sent
+        setTimeout(() => {
+          window.close()
+        }, 100)
+        return
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to send postMessage:', error)
+        // Fallback to redirect if postMessage fails
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('postMessage not available:', { hasOpener: !!window.opener, callbackOrigin })
+    }
+
+    // Fallback to redirect if no opener or callbackOrigin
+    // Use hash instead of query params for security (hash is not sent to server)
+    const url = buildRedirectUrl(redirectUrl)
+
+    // Build hash parameters
+    const hashParams = new URLSearchParams()
+    hashParams.set('token', token)
+    if (state) {
+      hashParams.set('state', state)
+    }
+    url.hash = hashParams.toString()
 
     if (typeof window !== 'undefined' && window.location.origin !== url.origin) {
       window.location.href = url.toString()

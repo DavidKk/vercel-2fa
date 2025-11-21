@@ -12,6 +12,7 @@ export interface OAuthLoginPageProps {
     redirectUrl?: string
     state?: string
     clientPublicKey?: string
+    callbackOrigin?: string
   }>
 }
 
@@ -25,7 +26,7 @@ export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
     }
 
     const { searchParams } = props
-    const { redirectUrl: encodedRedirectUrl, state, clientPublicKey: rawClientPublicKey } = await searchParams
+    const { redirectUrl: encodedRedirectUrl, state, clientPublicKey: rawClientPublicKey, callbackOrigin } = await searchParams
     const clientPublicKey = normalizeClientPublicKey(rawClientPublicKey)
 
     if (!clientPublicKey || !isValidBase64Key(clientPublicKey)) {
@@ -62,7 +63,14 @@ export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
     return (
       <>
         <OAuthHelpSidebar />
-        <OAuthLoginForm enableTotp={enableTotp} enableWebAuthn={enableWebAuthn} redirectUrl={redirectUrl} state={state} clientPublicKey={clientPublicKey} />
+        <OAuthLoginForm
+          enableTotp={enableTotp}
+          enableWebAuthn={enableWebAuthn}
+          redirectUrl={redirectUrl}
+          state={state}
+          clientPublicKey={clientPublicKey}
+          callbackOrigin={callbackOrigin}
+        />
       </>
     )
   } catch (error) {
