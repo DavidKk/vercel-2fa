@@ -153,9 +153,9 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Example**: `86400` (1 day), `172800` (2 days)
 - **Note**: During the transition period, both old and new keys are active. This ensures smooth key rotation without breaking active sessions. The system will attempt decryption with all active keys.
 
-### UPSTASH_REDIS_REST_URL
+### AUTH_KV_REST_API_URL
 
-- **Description**: Upstash Redis REST API URL (automatically provided by Vercel/Upstash)
+- **Description**: Upstash Redis REST API URL (automatically provided by Vercel/Upstash integration)
 - **Required**: Yes (only when using `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1`)
 - **How to get**: Automatically set when you add Upstash Redis integration to your Vercel project
 - **Setup** (通过 Vercel Integrations):
@@ -163,34 +163,46 @@ This document describes all environment variables used in the Two-Factor Authent
   2. Navigate to the **"Integrations"** tab
   3. Search for **"Upstash"** and click **"Add"** or **"Install"**
   4. Follow the setup wizard to create or connect an Upstash Redis database
-  5. Vercel will automatically inject `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` into your environment
+  5. Vercel will automatically inject `AUTH_KV_REST_API_URL` and `AUTH_KV_REST_API_TOKEN` into your environment
   6. **重要**: 添加后必须重新部署应用，环境变量才会生效
 - **Alternative**: 也可以通过 **"Storage"** 标签页 → **"Upstash"** → **"Serverless DB (Redis)"** 添加
-- **Backward Compatibility**: The code also supports the old `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables for backward compatibility
+- **Backward Compatibility**: The code also supports `UPSTASH_REDIS_REST_URL` and `KV_REST_API_URL` for backward compatibility
 - **Note**: You don't need to manually set this variable. It's automatically configured when you add the Upstash Redis integration.
 - **Reference**: [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
 
-### UPSTASH_REDIS_REST_TOKEN
+### AUTH_KV_REST_API_TOKEN
 
-- **Description**: Upstash Redis REST API authentication token (automatically provided by Vercel/Upstash)
+- **Description**: Upstash Redis REST API authentication token (automatically provided by Vercel/Upstash integration)
 - **Required**: Yes (only when using `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1`)
 - **How to get**: Automatically set when you add Upstash Redis integration to your Vercel project
-- **Setup**: Same as `UPSTASH_REDIS_REST_URL` - automatically configured when you add the Upstash Redis integration
+- **Setup**: Same as `AUTH_KV_REST_API_URL` - automatically configured when you add the Upstash Redis integration
 - **Security**: This token is automatically managed by Vercel/Upstash and should never be manually set or exposed
-- **Backward Compatibility**: The code also supports the old `KV_REST_API_TOKEN` environment variable for backward compatibility
+- **Backward Compatibility**: The code also supports `UPSTASH_REDIS_REST_TOKEN` and `KV_REST_API_TOKEN` for backward compatibility
 - **Note**: You don't need to manually set this variable. It's automatically configured when you add the Upstash Redis integration.
 
-### KV_REST_API_URL (Deprecated)
+### UPSTASH_REDIS_REST_URL (Fallback)
 
-- **Description**: Legacy Vercel KV REST API URL (deprecated, use `UPSTASH_REDIS_REST_URL` instead)
-- **Status**: Deprecated but still supported for backward compatibility
-- **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `UPSTASH_REDIS_REST_URL` instead.
+- **Description**: Upstash Redis REST API URL (fallback, primary is `AUTH_KV_REST_API_URL`)
+- **Status**: Supported as fallback for backward compatibility
+- **Note**: If `AUTH_KV_REST_API_URL` is not set, the code will check for this variable.
 
-### KV_REST_API_TOKEN (Deprecated)
+### UPSTASH_REDIS_REST_TOKEN (Fallback)
 
-- **Description**: Legacy Vercel KV REST API token (deprecated, use `UPSTASH_REDIS_REST_TOKEN` instead)
-- **Status**: Deprecated but still supported for backward compatibility
-- **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `UPSTASH_REDIS_REST_TOKEN` instead.
+- **Description**: Upstash Redis REST API token (fallback, primary is `AUTH_KV_REST_API_TOKEN`)
+- **Status**: Supported as fallback for backward compatibility
+- **Note**: If `AUTH_KV_REST_API_TOKEN` is not set, the code will check for this variable.
+
+### KV_REST_API_URL (Legacy)
+
+- **Description**: Legacy Vercel KV REST API URL (legacy support, primary is `AUTH_KV_REST_API_URL`)
+- **Status**: Supported for backward compatibility
+- **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `AUTH_KV_REST_API_URL` instead.
+
+### KV_REST_API_TOKEN (Legacy)
+
+- **Description**: Legacy Vercel KV REST API token (legacy support, primary is `AUTH_KV_REST_API_TOKEN`)
+- **Status**: Supported for backward compatibility
+- **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `AUTH_KV_REST_API_TOKEN` instead.
 
 ### NEXT_PUBLIC_BUILD_TIME
 
@@ -333,10 +345,11 @@ This error occurs when `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTIO
    - Navigate to the **"Integrations"** tab
    - Search for **"Upstash"** and click **"Add"** or **"Install"**
    - Follow the setup wizard to create or connect an Upstash Redis database
-   - Vercel will automatically inject `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+   - Vercel will automatically inject `AUTH_KV_REST_API_URL` and `AUTH_KV_REST_API_TOKEN`
    - **重要**: 添加后必须重新部署应用，环境变量才会生效
    - 验证变量是否设置：Settings → Environment Variables，确认以下变量存在：
-     - `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN` (推荐)
+     - `AUTH_KV_REST_API_URL` 和 `AUTH_KV_REST_API_TOKEN` (主要)
+     - 或 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN` (备用)
      - 或 `KV_REST_API_URL` 和 `KV_REST_API_TOKEN` (向后兼容)
    - **Alternative**: 也可以通过 **"Storage"** 标签页 → **"Upstash"** → **"Serverless DB (Redis)"** 添加
    - **Reference**: [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
@@ -353,7 +366,10 @@ This error occurs when `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTIO
 - If you added Upstash Redis but still see the error, make sure you **redeployed** your application after adding the integration
 - Check that the integration is actually connected to your project in the Integrations tab
 - Verify environment variables exist in Settings → Environment Variables (they should be automatically added by Vercel)
-- The code supports both new (`UPSTASH_REDIS_REST_*`) and old (`KV_REST_API_*`) environment variable names for backward compatibility
+- The code supports multiple environment variable names (in order of priority):
+  1. `AUTH_KV_REST_API_URL` and `AUTH_KV_REST_API_TOKEN` (primary, automatically set by Vercel)
+  2. `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (fallback)
+  3. `KV_REST_API_URL` and `KV_REST_API_TOKEN` (legacy, backward compatibility)
 
 ## References
 

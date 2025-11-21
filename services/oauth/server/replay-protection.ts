@@ -8,8 +8,25 @@
 import { Redis } from '@upstash/redis'
 import { randomUUID } from 'crypto'
 
-// Initialize Redis client (automatically reads from UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN)
-const redis = Redis.fromEnv()
+/**
+ * Initialize Redis client with custom environment variable names
+ * Supports AUTH_KV_REST_API_* (primary), UPSTASH_REDIS_REST_* (fallback), and KV_REST_API_* (legacy)
+ */
+function getRedisClient(): Redis | null {
+  const url = process.env.AUTH_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
+  const token = process.env.AUTH_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
+
+  if (!url || !token) {
+    return null
+  }
+
+  return new Redis({
+    url,
+    token,
+  })
+}
+
+const redis = getRedisClient()
 
 const KV_PREFIX = 'token:'
 const KV_TTL_BUFFER_SECONDS = 10 // Add 10 second buffer to token TTL (tokens expire in 3 minutes)
@@ -47,6 +64,10 @@ export async function isTokenUsed(jti: string, options?: ReplayProtectionOptions
     return false // If protection is disabled, tokens are never considered "used"
   }
 
+  if (!redis) {
+    return false // Redis not available, fail open
+  }
+
   try {
     const key = `${KV_PREFIX}${jti}`
     const exists = await redis.exists(key)
@@ -70,6 +91,10 @@ export async function markTokenAsUsed(jti: string, ttlSeconds: number, options?:
   const enabled = options?.enabled ?? isReplayProtectionEnabled()
   if (!enabled) {
     return // Skip if protection is disabled
+  }
+
+  if (!redis) {
+    return // Redis not available, skip marking
   }
 
   try {

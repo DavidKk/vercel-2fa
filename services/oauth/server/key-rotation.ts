@@ -11,8 +11,25 @@ import { createPrivateKey, generateKeyPairSync } from 'crypto'
 
 import { DEFAULT_KEY_ROTATION_TRANSITION_SECONDS, DEFAULT_KEY_ROTATION_TTL_SECONDS } from './constants'
 
-// Initialize Redis client (automatically reads from UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN)
-const redis = Redis.fromEnv()
+/**
+ * Initialize Redis client with custom environment variable names
+ * Supports AUTH_KV_REST_API_* (primary), UPSTASH_REDIS_REST_* (fallback), and KV_REST_API_* (legacy)
+ */
+function getRedisClient(): Redis | null {
+  const url = process.env.AUTH_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
+  const token = process.env.AUTH_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
+
+  if (!url || !token) {
+    return null
+  }
+
+  return new Redis({
+    url,
+    token,
+  })
+}
+
+const redis = getRedisClient()
 
 const KV_PREFIX = 'oauth:server-key:'
 const KEY_LIST_KEY = 'oauth:server-keys:list'
@@ -58,8 +75,12 @@ export function isKeyRotationEnabled(): boolean {
  * @returns true if Redis is available, false otherwise
  */
 function isRedisAvailable(): boolean {
-  // Support both old KV_REST_API_* and new UPSTASH_REDIS_REST_* environment variables
-  return !!((process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) || (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN))
+  // Support AUTH_KV_REST_API_* (primary), UPSTASH_REDIS_REST_* (fallback), and KV_REST_API_* (legacy)
+  return !!(
+    (process.env.AUTH_KV_REST_API_URL && process.env.AUTH_KV_REST_API_TOKEN) ||
+    (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) ||
+    (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+  )
 }
 
 /**
@@ -106,10 +127,10 @@ export async function getActiveKeyPairs(): Promise<ServerKeyPair[]> {
   }
 
   // Check if Redis is available before attempting to use it
-  if (!isRedisAvailable()) {
+  if (!isRedisAvailable() || !redis) {
     // eslint-disable-next-line no-console
     console.warn(
-      'Upstash Redis is not configured (missing UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN or KV_REST_API_URL/KV_REST_API_TOKEN). Key rotation will fall back to environment variables.'
+      'Upstash Redis is not configured (missing AUTH_KV_REST_API_URL/AUTH_KV_REST_API_TOKEN, UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN, or KV_REST_API_URL/KV_REST_API_TOKEN). Key rotation will fall back to environment variables.'
     )
     return []
   }
@@ -181,9 +202,9 @@ export async function rotateKeyPair(): Promise<ServerKeyPair> {
   }
 
   // Check if Redis is available before attempting to use it
-  if (!isRedisAvailable()) {
+  if (!isRedisAvailable() || !redis) {
     throw new Error(
-      'Upstash Redis is not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables (or KV_REST_API_URL and KV_REST_API_TOKEN for backward compatibility), or disable key rotation by unsetting ENABLE_KEY_ROTATION.'
+      'Upstash Redis is not configured. Please set AUTH_KV_REST_API_URL and AUTH_KV_REST_API_TOKEN environment variables (or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN, or KV_REST_API_URL/KV_REST_API_TOKEN for backward compatibility), or disable key rotation by unsetting ENABLE_KEY_ROTATION.'
     )
   }
 
@@ -260,7 +281,7 @@ export async function ensureKeyRotation(): Promise<ServerKeyPair | null> {
   }
 
   // Check if Redis is available before attempting to use it
-  if (!isRedisAvailable()) {
+  if (!isRedisAvailable() || !redis) {
     // Redis is not available, silently return null to allow fallback to environment variables
     // This matches the documented behavior: "If enabled but Upstash Redis is not configured,
     // the service will fall back to environment variable keys"
