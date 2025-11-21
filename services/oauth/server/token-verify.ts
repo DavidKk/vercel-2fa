@@ -8,7 +8,7 @@ import type { JwtPayload } from 'jsonwebtoken'
 import { generateJWTToken, verifyJWTToken } from '@/app/actions/jwt'
 import { extractJti, generateJti, isReplayProtectionEnabled, isTokenUsed, markTokenAsUsed } from '@/services/token-replay-protection'
 
-const ACCESS_TOKEN_TTL_SECONDS = 180 // 3 minutes - tokens are short-lived for login verification only
+import { ACCESS_TOKEN_TTL_SECONDS } from './constants'
 
 export interface VerifyTokenOptions {
   audience?: string

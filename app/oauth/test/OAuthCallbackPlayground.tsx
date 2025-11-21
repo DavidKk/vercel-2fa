@@ -18,12 +18,10 @@ export function OAuthCallbackPlayground() {
     const url = new URL(window.location.href)
     url.search = ''
     url.hash = ''
-    // Add mode parameter to callback URL
-    url.searchParams.set('mode', mode)
 
     const defaultCallbackUrl = url.toString()
     setEditableCallbackUrl(defaultCallbackUrl)
-  }, [mode])
+  }, [])
 
   const handleGenerateKeys = async () => {
     try {

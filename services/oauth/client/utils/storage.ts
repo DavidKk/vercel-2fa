@@ -3,11 +3,9 @@
  * Handles OAuth session data and client key pairs
  */
 
-export const STORAGE_KEYS = {
-  STATE: 'oauth_state',
-  CLIENT_PUBLIC_KEY: 'oauth_client_public_key',
-  CLIENT_PRIVATE_KEY: 'oauth_client_private_key',
-} as const
+import { STORAGE_KEYS } from '../constants'
+
+export { STORAGE_KEYS }
 
 export interface OAuthSession {
   state: string

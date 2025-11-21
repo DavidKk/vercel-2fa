@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
+import { assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
 import { verifyTokenAndGenerateAccessToken } from '@/services/oauth/server/token-verify'
-import { assertOriginAllowed, buildCorsHeaders } from '@/services/whitelist'
 
 interface VerifyTokenPayload {
   token: string

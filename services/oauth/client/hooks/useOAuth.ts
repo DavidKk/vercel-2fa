@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getStoredPrivateKey, getStoredState, STORAGE_KEYS } from '@/services/oauth/client/utils'
 
-export const OAUTH_POSTMESSAGE_TYPE = 'OAUTH_RESULT' as const
+import { OAUTH_POSTMESSAGE_TYPE } from '../constants'
 
 export interface OAuthPostMessageData {
   type: typeof OAUTH_POSTMESSAGE_TYPE

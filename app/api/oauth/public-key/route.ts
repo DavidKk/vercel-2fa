@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
-import { assertOriginAllowed, buildCorsHeaders } from '@/services/whitelist'
+import { assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
 import { getServerPublicKey } from '@/utils/ecdh-server-keys'
 
 interface PublicKeyResponse {

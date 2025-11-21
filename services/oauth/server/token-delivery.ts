@@ -3,6 +3,8 @@
  * Handles delivery of encrypted tokens via postMessage or URL redirect
  */
 
+import { OAUTH_POSTMESSAGE_TYPE } from './constants'
+
 /**
  * Send token via postMessage (for popup window flow)
  */
@@ -15,7 +17,7 @@ export function sendTokenViaPostMessage(token: string, state: string | undefined
   if (window.opener && callbackOrigin) {
     try {
       const message = {
-        type: 'OAUTH_RESULT',
+        type: OAUTH_POSTMESSAGE_TYPE,
         state: state || '',
         encryptedToken: token,
       }

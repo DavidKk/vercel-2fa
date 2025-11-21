@@ -51,8 +51,10 @@ interface MemoryKeyPair {
   privateKey: string
 }
 
+import { DEFAULT_FLOW_MODE, DEFAULT_PROVIDER_URL } from '../constants'
+
 export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult {
-  const { providerUrl = 'https://vercel-2fa.vercel.app/oauth', defaultMode = 'popup' } = options
+  const { providerUrl = DEFAULT_PROVIDER_URL, defaultMode = DEFAULT_FLOW_MODE } = options
   const [modeState, setModeState] = useState<OAuthFlowMode>(defaultMode)
   const modeRef = useRef<OAuthFlowMode>(defaultMode)
   const [status, setStatus] = useState<OAuthFlowStatus>('idle')
@@ -156,7 +158,12 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
       memoryStateRef.current = state
 
       try {
-        const loginUrl = buildProviderLoginUrl(redirectUrl, state)
+        // Add mode parameter to redirectUrl before building login URL
+        const redirectUrlWithMode = new URL(redirectUrl, window.location.origin)
+        redirectUrlWithMode.searchParams.set('mode', modeState)
+        const finalRedirectUrl = redirectUrlWithMode.toString()
+
+        const loginUrl = buildProviderLoginUrl(finalRedirectUrl, state)
 
         if (modeState === 'popup') {
           const keyPair = await generateECDHKeyPair()

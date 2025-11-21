@@ -12,7 +12,6 @@ interface OAuthTestContentProps {
 
 export function OAuthTestContent({ mode }: OAuthTestContentProps) {
   const oauthOptions = {
-    ...(process.env.NODE_ENV === 'development' && { providerUrl: '/oauth' }),
     defaultMode: mode,
   }
 
