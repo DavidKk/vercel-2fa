@@ -1,3 +1,5 @@
+import type { NextRequest } from 'next/server'
+
 import { textUnauthorized } from '@/initializer/response'
 
 type CorsMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS'
@@ -18,6 +20,48 @@ function parseAllowedOrigins(): string[] {
 
 function isLocalhostHostname(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.local')
+}
+
+/**
+ * Check if an IP address is a local/private IP address
+ * @param ip - IP address to check
+ * @returns true if local/private IP, false otherwise
+ */
+function isLocalIp(ip: string): boolean {
+  // IPv4 localhost
+  if (ip === '127.0.0.1' || ip === '::1') {
+    return true
+  }
+
+  // IPv4 private ranges
+  // 10.0.0.0/8
+  if (/^10\./.test(ip)) {
+    return true
+  }
+  // 172.16.0.0/12
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) {
+    return true
+  }
+  // 192.168.0.0/16
+  if (/^192\.168\./.test(ip)) {
+    return true
+  }
+  // 169.254.0.0/16 (link-local)
+  if (/^169\.254\./.test(ip)) {
+    return true
+  }
+
+  // IPv6 local/private ranges
+  // fc00::/7 (unique local address)
+  if (/^fc[0-9a-f]{2}:/.test(ip.toLowerCase())) {
+    return true
+  }
+  // fe80::/10 (link-local)
+  if (/^fe[89ab][0-9a-f]:/.test(ip.toLowerCase())) {
+    return true
+  }
+
+  return false
 }
 
 function normalizeOrigin(origin: string) {
@@ -102,4 +146,80 @@ export function buildCorsHeaders(origin?: string | null, options?: BuildCorsHead
   }
 
   return headers
+}
+
+/**
+ * Check if the request is using HTTPS
+ * @param req - NextRequest object
+ * @returns true if HTTPS, false otherwise
+ */
+export function isHttps(req: NextRequest): boolean {
+  // Check X-Forwarded-Proto header (set by reverse proxies/load balancers)
+  const forwardedProto = req.headers.get('x-forwarded-proto')
+  if (forwardedProto) {
+    return forwardedProto.toLowerCase() === 'https'
+  }
+
+  // Check the request URL protocol
+  try {
+    const url = new URL(req.url)
+    return url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Check if HTTPS is required for the given origin
+ * - In development: Always allow HTTP (no HTTPS required)
+ * - In production: Require HTTPS, except for localhost and local IP addresses
+ */
+export function isHttpsRequired(origin?: string | null): boolean {
+  // In development, always allow HTTP
+  if (process.env.NODE_ENV !== 'production') {
+    return false
+  }
+
+  // In production, require HTTPS unless origin is localhost or local IP
+  if (!origin) {
+    return true // Require HTTPS if no origin provided
+  }
+
+  try {
+    const url = new URL(origin)
+    const hostname = url.hostname.toLowerCase()
+
+    // Allow HTTP for localhost hostnames
+    if (isLocalhostHostname(hostname)) {
+      return false
+    }
+
+    // Allow HTTP for local/private IP addresses
+    if (isLocalIp(hostname)) {
+      return false
+    }
+
+    // For all other origins in production, require HTTPS
+    return true
+  } catch {
+    // Invalid origin format, require HTTPS for safety
+    return true
+  }
+}
+
+/**
+ * Assert that the request is using HTTPS (if required)
+ * @param req - NextRequest object
+ * @param origin - Optional origin header to check
+ * @throws {NextResponse} If HTTPS is required but not used
+ */
+export function assertHttpsRequired(req: NextRequest, origin?: string | null) {
+  if (!isHttpsRequired(origin)) {
+    // HTTPS not required (e.g., localhost in development)
+    return
+  }
+
+  if (!isHttps(req)) {
+    throw textUnauthorized('HTTPS is required. Please use HTTPS to access this endpoint.')
+  }
 }

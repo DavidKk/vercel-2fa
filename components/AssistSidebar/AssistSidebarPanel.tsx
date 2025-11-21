@@ -16,7 +16,7 @@ export function AssistSidebarPanel() {
 
       {/* Sidebar drawer */}
       <aside
-        className={`fixed left-0 top-0 w-full md:w-[700px] lg:w-[800px] h-screen bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out flex ${
+        className={`fixed left-0 top-0 w-full md:w-[900px] lg:w-[1100px] h-screen bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out flex ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

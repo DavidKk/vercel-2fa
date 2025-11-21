@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
-import { assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
+import { assertHttpsRequired, assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
 import { verifyTokenAndGenerateAccessToken } from '@/services/oauth/server/token-verify'
 
 interface VerifyTokenPayload {
@@ -28,6 +28,7 @@ export const POST = api(async (req) => {
   const corsHeaders = buildCorsHeaders(origin, { methods: ['POST', 'OPTIONS'], allowCredentials: true })
 
   assertOriginAllowed(origin)
+  assertHttpsRequired(req, origin)
 
   if (!token) {
     return jsonInvalidParameters('token is required', { headers: corsHeaders })

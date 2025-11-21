@@ -11,6 +11,8 @@ export interface PublicKeyResponse {
 
 /**
  * Fetch server public key from /api/oauth/public-key
+ * Uses no-store cache policy to ensure we always get the latest public key
+ * (important when server public key is rotated)
  */
 export async function fetchServerPublicKey(apiUrl = '/api/oauth/public-key'): Promise<string> {
   const response = await fetch(apiUrl, {
@@ -18,6 +20,7 @@ export async function fetchServerPublicKey(apiUrl = '/api/oauth/public-key'): Pr
     headers: {
       'Content-Type': 'application/json',
     },
+    cache: 'no-store', // Always fetch fresh public key to prevent stale key issues
   })
 
   const body = await response.json()

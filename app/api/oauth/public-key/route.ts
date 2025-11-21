@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
-import { assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
+import { assertHttpsRequired, assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
 import { getServerPublicKey } from '@/utils/ecdh-server-keys'
 
 interface PublicKeyResponse {
@@ -18,6 +18,7 @@ export const GET = api(async (req) => {
   const corsHeaders = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'] })
 
   assertOriginAllowed(origin)
+  assertHttpsRequired(req, origin)
 
   const publicKey = getServerPublicKey()
   if (!publicKey) {
@@ -29,6 +30,12 @@ export const GET = api(async (req) => {
     format: 'spki-base64',
     algorithm: 'ECDH-P256',
   }
+
+  // Set cache control headers to prevent stale public key caching
+  // Use no-cache to ensure clients always validate with server, but allow conditional requests
+  // This prevents issues when server public key is rotated
+  corsHeaders.set('Cache-Control', 'no-cache, must-revalidate')
+  corsHeaders.set('Pragma', 'no-cache')
 
   return jsonSuccess(response, { headers: corsHeaders })
 })
