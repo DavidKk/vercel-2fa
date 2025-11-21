@@ -9,6 +9,7 @@ import { getLoginWithWebauthnOptions, loginWithECDH, verfiyTOTPToken, verifyWeba
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
 import { Spinner } from '@/components/Spinner'
+import { deliverToken } from '@/services/oauth/server'
 
 export interface OAuthLoginFormProps {
   enableTotp?: boolean
@@ -36,50 +37,15 @@ export function OAuthLoginForm(props: OAuthLoginFormProps) {
       return
     }
 
-    // Use postMessage if opened via window.open (has opener)
-    if (window.opener && callbackOrigin) {
-      try {
-        const message = {
-          type: 'OAUTH_RESULT',
-          state: state || '',
-          encryptedToken: token,
-        }
-        // eslint-disable-next-line no-console
-        console.log('Sending postMessage to:', callbackOrigin, 'message type:', message.type, 'has token:', !!message.encryptedToken)
-        window.opener.postMessage(message, callbackOrigin)
-        setComplete(true)
-        // Close the window after a short delay to allow message to be sent
-        setTimeout(() => {
-          window.close()
-        }, 100)
-        return
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to send postMessage:', error)
-        // Fallback to redirect if postMessage fails
-      }
-    } else {
-      // eslint-disable-next-line no-console
-      console.log('postMessage not available:', { hasOpener: !!window.opener, callbackOrigin })
-    }
-
-    // Fallback to redirect if no opener or callbackOrigin
-    // Use hash instead of query params for security (hash is not sent to server)
-    const url = buildRedirectUrl(redirectUrl)
-
-    // Build hash parameters
-    const hashParams = new URLSearchParams()
-    hashParams.set('token', token)
-    if (state) {
-      hashParams.set('state', state)
-    }
-    url.hash = hashParams.toString()
-
-    if (typeof window !== 'undefined' && window.location.origin !== url.origin) {
-      window.location.href = url.toString()
-    } else {
-      router.push(url.toString())
-    }
+    deliverToken({
+      token,
+      redirectUrl,
+      state,
+      callbackOrigin,
+      onRedirect: (url) => {
+        router.push(url)
+      },
+    })
 
     setComplete(true)
   }
@@ -242,15 +208,4 @@ export function OAuthLoginForm(props: OAuthLoginFormProps) {
       </form>
     </div>
   )
-}
-
-function buildRedirectUrl(target: string) {
-  try {
-    return new URL(target)
-  } catch {
-    if (typeof window !== 'undefined') {
-      return new URL(target, window.location.origin)
-    }
-    throw new Error('Invalid redirect URL')
-  }
 }

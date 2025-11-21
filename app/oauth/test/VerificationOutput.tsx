@@ -1,19 +1,21 @@
 'use client'
 
+import type { OAuthFlowStatus, OAuthFlowVerifyResult } from '@/services/oauth/client'
+
 export interface VerificationOutputProps {
-  token: string
-  verifyResult: { decryptedPayload?: Record<string, unknown>; verification?: Record<string, unknown> } | null
-  status: 'idle' | 'redirecting' | 'verifying' | 'error'
+  result: OAuthFlowVerifyResult | null
+  status: OAuthFlowStatus
   error: string | null
   onBack: () => void
 }
 
 export function VerificationOutput(props: VerificationOutputProps) {
-  const { token, verifyResult, status, error, onBack } = props
+  const { result, status, error, onBack } = props
 
   const hasError = status === 'error' && error
-  const decryptedPayload = verifyResult?.decryptedPayload
-  const verification = verifyResult?.verification
+  const decryptedPayload = result?.decryptedPayload
+  const verification = result?.verification ? (result.verification as unknown as Record<string, unknown>) : undefined
+  const token = typeof decryptedPayload?.token === 'string' ? (decryptedPayload.token as string) : ''
 
   return (
     <section className="bg-white p-6 rounded-md shadow-md flex flex-col gap-4">
@@ -50,7 +52,7 @@ export function VerificationOutput(props: VerificationOutputProps) {
         ) : (
           <div className="flex flex-col gap-1">
             <label className="text-base font-semibold text-gray-700">Status</label>
-            <p className="text-gray-600">{status === 'verifying' ? 'Verifying token...' : 'Awaiting verification...'}</p>
+            <p className="text-gray-600">{status === 'verifying' ? 'Verifying token...' : status === 'waiting' ? 'Waiting for OAuth callback...' : 'Awaiting verification...'}</p>
           </div>
         )}
       </div>

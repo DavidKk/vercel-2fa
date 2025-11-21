@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
-import { jsonInvalidParameters, jsonSuccess, jsonUnauthorized } from '@/initializer/response'
+import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
 import { assertOriginAllowed, buildCorsHeaders } from '@/services/whitelist'
 import { getServerPublicKey } from '@/utils/ecdh-server-keys'
 

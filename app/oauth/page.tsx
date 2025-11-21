@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 
 import { OAuthHelpSidebar } from '@/app/oauth/OAuthHelpSidebar'
 import { OAuthLoginForm } from '@/app/oauth/OAuthLoginForm'
-import { isAllowedRedirectUrl } from '@/utils/url'
+import { getOAuthServerConfig, isOAuthEnabled, validateOAuthParams } from '@/services/oauth/server'
 
 // Force dynamic rendering because we use searchParams and headers
 export const dynamic = 'force-dynamic'
@@ -18,58 +18,40 @@ export interface OAuthLoginPageProps {
 
 export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
   try {
-    const enableTotp = !!process.env.ACCESS_TOTP_SECRET
-    const enableWebAuthn = !!process.env.ACCESS_WEBAUTHN_SECRET
-
-    if (!enableTotp && !enableWebAuthn) {
+    if (!isOAuthEnabled()) {
       return <div>2FA is not enabled</div>
     }
 
     const { searchParams } = props
-    const { redirectUrl: encodedRedirectUrl, state, clientPublicKey: rawClientPublicKey, callbackOrigin } = await searchParams
-    const clientPublicKey = normalizeClientPublicKey(rawClientPublicKey)
-
-    if (!clientPublicKey || !isValidBase64Key(clientPublicKey)) {
-      return (
-        <ErrorPanel
-          title="Missing Client Public Key"
-          description="OAuth requests must include a valid client public key so we can encrypt the token. Make sure you append the clientPublicKey query parameter."
-          value={rawClientPublicKey || 'Not provided'}
-        />
-      )
-    }
+    const params = await searchParams
 
     const headersList = await headers()
     const protocol = headersList.get('x-forwarded-proto') ?? 'https'
     const host = headersList.get('host')
     const currentPageUrl = host ? `${protocol}://${host}/oauth` : '/oauth'
 
-    let redirectUrl = currentPageUrl
-    if (encodedRedirectUrl) {
-      try {
-        redirectUrl = decodeURIComponent(encodedRedirectUrl)
-      } catch {
-        redirectUrl = encodedRedirectUrl
-      }
-    }
-    if (!redirectUrl) {
-      redirectUrl = currentPageUrl
+    const validation = validateOAuthParams({
+      ...params,
+      currentHost: host || undefined,
+      currentPageUrl,
+    })
+
+    if (!validation.valid) {
+      return <ErrorPanel {...validation.error!} />
     }
 
-    if (!isAllowedRedirectUrl(redirectUrl, host || undefined)) {
-      return <ErrorPanel title="Invalid Redirect URL" description="The redirect URL is not in the allowed list. Please contact your administrator." value={redirectUrl} />
-    }
+    const config = getOAuthServerConfig()
 
     return (
       <>
         <OAuthHelpSidebar />
         <OAuthLoginForm
-          enableTotp={enableTotp}
-          enableWebAuthn={enableWebAuthn}
-          redirectUrl={redirectUrl}
-          state={state}
-          clientPublicKey={clientPublicKey}
-          callbackOrigin={callbackOrigin}
+          enableTotp={config.enableTotp}
+          enableWebAuthn={config.enableWebAuthn}
+          redirectUrl={validation.redirectUrl!}
+          state={validation.state}
+          clientPublicKey={validation.clientPublicKey!}
+          callbackOrigin={validation.callbackOrigin}
         />
       </>
     )
@@ -78,40 +60,6 @@ export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
     console.error('OAuth login page error:', error)
     // Don't expose internal error details to prevent information leakage
     return <ErrorPanel title="Server Error" description="An error occurred while processing your request. Please try again later." value="Internal server error" />
-  }
-}
-
-function normalizeClientPublicKey(value?: string) {
-  if (!value) {
-    return undefined
-  }
-  const decoded = safeDecodeURIComponent(value)
-  // Some clients send base64 with '+' signs without encoding; browsers convert '+' to ' ' when parsing querystring.
-  // Convert spaces back to '+' to ensure we use the original base64 string.
-  return decoded.replace(/ /g, '+').trim()
-}
-
-function safeDecodeURIComponent(value: string) {
-  try {
-    return decodeURIComponent(value)
-  } catch {
-    return value
-  }
-}
-
-function isValidBase64Key(value: string) {
-  if (!value || value.length < 32) {
-    return false
-  }
-  try {
-    // Reject characters outside base64 alphabet
-    if (!/^[A-Za-z0-9+/=]+$/.test(value)) {
-      return false
-    }
-    Buffer.from(value, 'base64').toString('base64')
-    return true
-  } catch {
-    return false
   }
 }
 

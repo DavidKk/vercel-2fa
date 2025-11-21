@@ -3,6 +3,8 @@
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { getStoredPrivateKey, getStoredState, STORAGE_KEYS } from '@/services/oauth/client/utils'
+
 export const OAUTH_POSTMESSAGE_TYPE = 'OAUTH_RESULT' as const
 
 export interface OAuthPostMessageData {
@@ -78,9 +80,6 @@ export interface UseOAuthResult {
    */
   source: OAuthSource | null
 }
-
-const STATE_STORAGE = 'oauth_state'
-const CLIENT_PRIVATE_KEY_STORAGE = 'oauth_client_private_key'
 
 /**
  * Unified hook for handling OAuth callbacks via postMessage or URL parameters
@@ -311,7 +310,7 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
       }
 
       // Get private key: prefer getPrivateKey function, fallback to sessionStorage
-      const clientPrivateKey = getPrivateKey ? getPrivateKey() : sessionStorage.getItem(CLIENT_PRIVATE_KEY_STORAGE)
+      const clientPrivateKey = getPrivateKey ? getPrivateKey() : getStoredPrivateKey()
       if (!clientPrivateKey) {
         const errorMsg = 'Client private key not found'
         setError(errorMsg)
@@ -337,7 +336,7 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
           // Don't re-add listener on error, user should start a new flow
         })
     },
-    [authWindow, authOrigin, expectedState, processToken, onError]
+    [authWindow, authOrigin, expectedState, processToken, onError, getPrivateKey]
   )
 
   // Setup postMessage listener
@@ -457,7 +456,17 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     }
 
     // Validate state
-    const storedState = sessionStorage.getItem(STATE_STORAGE)
+    const storedState = getStoredState()
+    // eslint-disable-next-line no-console
+    console.log('[useOAuth] State validation:', {
+      hasUrlState: !!urlState,
+      urlStateLength: urlState?.length || 0,
+      hasStoredState: !!storedState,
+      storedStateLength: storedState?.length || 0,
+      urlStatePreview: urlState?.substring(0, 8) || 'none',
+      storedStatePreview: storedState?.substring(0, 8) || 'none',
+      sessionStorageKeys: typeof window !== 'undefined' ? Object.keys(sessionStorage).filter((k) => k.startsWith('oauth_')) : [],
+    })
     if (!urlState) {
       const errorMsg = 'State parameter is missing from the callback URL. Please start a new OAuth login.'
       setError(errorMsg)
@@ -468,6 +477,12 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     }
     if (!storedState) {
       const errorMsg = 'State not found in session storage. This may happen if you refreshed the page or opened the callback in a new tab. Please start a new OAuth login.'
+      // eslint-disable-next-line no-console
+      console.error('[useOAuth] State not found in sessionStorage:', {
+        urlState,
+        storedState,
+        allSessionStorageKeys: typeof window !== 'undefined' ? Object.keys(sessionStorage) : [],
+      })
       setError(errorMsg)
       setIsProcessing(false)
       onError?.(errorMsg)
@@ -484,10 +499,12 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     }
 
     // Only remove state after successful validation
-    sessionStorage.removeItem(STATE_STORAGE)
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(STORAGE_KEYS.STATE)
+    }
 
     // Get private key: prefer getPrivateKey function, fallback to sessionStorage
-    const clientPrivateKey = getPrivateKey ? getPrivateKey() : sessionStorage.getItem(CLIENT_PRIVATE_KEY_STORAGE)
+    const clientPrivateKey = getPrivateKey ? getPrivateKey() : getStoredPrivateKey()
     if (!clientPrivateKey) {
       const errorMsg = 'Client private key not found. Please start a new OAuth login.'
       // eslint-disable-next-line no-console
