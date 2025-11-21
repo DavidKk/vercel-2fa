@@ -13,7 +13,10 @@ interface VerifyTokenPayload {
 
 export const OPTIONS = plainText(async (req) => {
   const origin = req.headers.get('origin')
-  assertOriginAllowed(origin)
+  if (!assertOriginAllowed(origin)) {
+    // For OPTIONS requests, return 403 if origin is not allowed
+    return new NextResponse(null, { status: 403 })
+  }
   const headers = buildCorsHeaders(origin, { methods: ['POST', 'OPTIONS'], allowCredentials: true })
   return new NextResponse(null, { status: 204, headers })
 })
@@ -27,8 +30,13 @@ export const POST = api(async (req) => {
   const origin = req.headers.get('origin')
   const corsHeaders = buildCorsHeaders(origin, { methods: ['POST', 'OPTIONS'], allowCredentials: true })
 
-  assertOriginAllowed(origin)
-  assertHttpsRequired(req, origin)
+  if (!assertOriginAllowed(origin)) {
+    return jsonInvalidParameters('origin is not allowed', { headers: corsHeaders })
+  }
+
+  if (!assertHttpsRequired(req, origin)) {
+    return jsonInvalidParameters('HTTPS is required. Please use HTTPS to access this endpoint.', { headers: corsHeaders })
+  }
 
   if (!token) {
     return jsonInvalidParameters('token is required', { headers: corsHeaders })

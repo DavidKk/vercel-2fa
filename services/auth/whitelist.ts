@@ -1,7 +1,5 @@
 import type { NextRequest } from 'next/server'
 
-import { textUnauthorized } from '@/initializer/response'
-
 type CorsMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS'
 
 const allowedOriginPatterns = parseAllowedOrigins()
@@ -117,10 +115,16 @@ export function isOriginAllowed(origin?: string | null) {
   return allowedOriginPatterns.some((pattern) => matchPattern(pattern, normalizedOrigin))
 }
 
-export function assertOriginAllowed(origin?: string | null, message = 'origin is not allowed') {
-  if (origin && !isOriginAllowed(origin)) {
-    throw textUnauthorized(message)
+/**
+ * Check if origin is allowed
+ * @param origin - Origin to check
+ * @returns true if origin is allowed, false otherwise
+ */
+export function assertOriginAllowed(origin?: string | null): boolean {
+  if (!origin) {
+    return true
   }
+  return isOriginAllowed(origin)
 }
 
 interface BuildCorsHeadersOptions {
@@ -208,18 +212,16 @@ export function isHttpsRequired(origin?: string | null): boolean {
 }
 
 /**
- * Assert that the request is using HTTPS (if required)
+ * Check if the request is using HTTPS (if required)
  * @param req - NextRequest object
  * @param origin - Optional origin header to check
- * @throws {NextResponse} If HTTPS is required but not used
+ * @returns true if HTTPS is valid (either not required or using HTTPS), false otherwise
  */
-export function assertHttpsRequired(req: NextRequest, origin?: string | null) {
+export function assertHttpsRequired(req: NextRequest, origin?: string | null): boolean {
   if (!isHttpsRequired(origin)) {
     // HTTPS not required (e.g., localhost in development)
-    return
+    return true
   }
 
-  if (!isHttps(req)) {
-    throw textUnauthorized('HTTPS is required. Please use HTTPS to access this endpoint.')
-  }
+  return isHttps(req)
 }

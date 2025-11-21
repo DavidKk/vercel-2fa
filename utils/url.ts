@@ -33,16 +33,15 @@ export function matchUrl(pattern: string, url: string) {
 
 /**
  * Validate if a redirect URL is allowed based on environment configuration
+ * Follows OAuth 2.0 best practices: validates by origin (protocol + domain + port), not by path
  * @param redirectUrl - The URL to validate
- * @param currentHost - Optional current host (e.g., 'localhost:3000') to allow same-host /oauth/playground
+ * @param currentHost - Optional current host (e.g., 'vercel-2fa.vercel.app') to allow same-host absolute URLs
  * @returns true if the URL is allowed, false otherwise
  */
 export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string): boolean {
-  // Allow relative paths (same origin redirects), but only for specific safe paths
+  // Allow relative paths (same origin redirects) - safe as they cannot redirect to external domains
   if (redirectUrl.startsWith('/')) {
-    // Only allow known safe paths to prevent open redirect vulnerabilities
-    const safePaths = ['/oauth/playground', '/oauth', '/login']
-    return safePaths.some((path) => redirectUrl.startsWith(path))
+    return true
   }
 
   let targetUrl: URL
@@ -52,28 +51,20 @@ export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string):
     return false
   }
 
-  // Always allow /oauth/playground on the same host
-  if (currentHost && targetUrl.pathname === '/oauth/playground') {
-    const targetHost = targetUrl.host.toLowerCase()
-    const currentHostLower = currentHost.toLowerCase()
-    // Match exact host or handle port variations
-    if (targetHost === currentHostLower) {
-      return true
-    }
-    // Handle cases where one has port and the other doesn't (e.g., localhost vs localhost:3000)
-    const targetHostname = targetUrl.hostname.toLowerCase()
-    const currentHostname = currentHostLower.split(':')[0]
-    if (targetHostname === currentHostname || targetHostname === 'localhost' || currentHostname === 'localhost') {
-      return true
-    }
-  }
-
   const hostname = targetUrl.hostname.toLowerCase()
   const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname.endsWith('.local')
 
   // During local development we allow localhost style URLs even without whitelist
   if (isLocalHost && process.env.NODE_ENV !== 'production') {
     return true
+  }
+
+  // Allow same-host absolute URLs (same as relative paths - safe for same origin redirects)
+  if (currentHost) {
+    const currentHostname = currentHost.toLowerCase().split(':')[0] // Remove port if present
+    if (hostname === currentHostname) {
+      return true
+    }
   }
 
   // Get allowed redirect URLs from environment

@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
-import { jsonSuccess } from '@/initializer/response'
+import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
 import { assertHttpsRequired, assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
 import { getActiveKeyPairs, getKeyRotationConfig } from '@/services/oauth/server/key-rotation'
 
@@ -16,8 +16,13 @@ export const GET = api(async (req) => {
   const origin = req.headers.get('origin')
   const corsHeaders = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'] })
 
-  assertOriginAllowed(origin)
-  assertHttpsRequired(req, origin)
+  if (!assertOriginAllowed(origin)) {
+    return jsonInvalidParameters('origin is not allowed', { headers: corsHeaders })
+  }
+
+  if (!assertHttpsRequired(req, origin)) {
+    return jsonInvalidParameters('HTTPS is required. Please use HTTPS to access this endpoint.', { headers: corsHeaders })
+  }
 
   const config = getKeyRotationConfig()
   const activeKeys = await getActiveKeyPairs()
@@ -43,7 +48,10 @@ export const GET = api(async (req) => {
 
 export const OPTIONS = plainText(async (req) => {
   const origin = req.headers.get('origin')
-  assertOriginAllowed(origin)
+  if (!assertOriginAllowed(origin)) {
+    // For OPTIONS requests, return 403 if origin is not allowed
+    return new NextResponse(null, { status: 403 })
+  }
   const headers = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'] })
   return new NextResponse(null, { status: 204, headers })
 })

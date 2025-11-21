@@ -477,12 +477,6 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
     }
     if (!storedState) {
       const errorMsg = 'State not found in session storage. This may happen if you refreshed the page or opened the callback in a new tab. Please start a new OAuth login.'
-      // eslint-disable-next-line no-console
-      console.error('[useOAuth] State not found in sessionStorage:', {
-        urlState,
-        storedState,
-        allSessionStorageKeys: typeof window !== 'undefined' ? Object.keys(sessionStorage) : [],
-      })
       setError(errorMsg)
       setIsProcessing(false)
       onError?.(errorMsg)
@@ -490,7 +484,7 @@ export function useOAuth(options: UseOAuthOptions): UseOAuthResult {
       return
     }
     if (storedState !== urlState) {
-      const errorMsg = `State validation failed. Expected: ${storedState.substring(0, 8)}..., Got: ${urlState.substring(0, 8)}... Please start over.`
+      const errorMsg = 'State validation failed. Please start a new OAuth login.'
       setError(errorMsg)
       setIsProcessing(false)
       onError?.(errorMsg)
