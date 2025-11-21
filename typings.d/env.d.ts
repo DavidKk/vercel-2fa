@@ -22,8 +22,6 @@ declare namespace NodeJS {
     ECDH_SERVER_PRIVATE_KEY?: string
     /** Server's ECDH public key for debugging (PEM format) */
     ECDH_SERVER_PUBLIC_KEY?: string
-    /** Server's ECDH public key for client-side use (Base64 SPKI format) */
-    NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY?: string
     /** Enable automatic ECDH key pair rotation (requires @vercel/kv package) */
     ENABLE_KEY_ROTATION?: string
     /** Key pair TTL in seconds for key rotation (default: 604800 = 7 days) */

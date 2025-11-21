@@ -137,21 +137,9 @@ export function EnvironmentContent() {
               </div>
               <p className="text-[10px] text-gray-500">Only needed for debugging. In production, only the private key is required.</p>
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <code className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY</code>
-                <span className="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">debug only</span>
-              </div>
-              <p className="text-xs text-gray-600 mb-1">
-                Server's ECDH public key (base64 SPKI format) for client-side debugging. Not required for production - only needed for local testing.
-              </p>
-              <div className="bg-gray-50 rounded p-2 mb-1">
-                <code className="text-[11px] text-gray-700 break-all">NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="base64-encoded-spki-format-public-key"</code>
-              </div>
-              <p className="text-[10px] text-gray-500">Only needed for debugging. In production, the public key is shared with clients separately.</p>
-            </div>
             <div className="bg-blue-50 border border-blue-200 rounded p-2 text-[11px] text-blue-800">
-              <strong>Note:</strong> For production, only <code>ECDH_SERVER_PRIVATE_KEY</code> is required. The public keys are only needed for local debugging and testing.
+              <strong>Note:</strong> For production, only <code>ECDH_SERVER_PRIVATE_KEY</code> is required. The public key is automatically shared with clients via the{' '}
+              <code>/api/oauth/public-key</code> endpoint. The <code>ECDH_SERVER_PUBLIC_KEY</code> is only needed for debugging.
             </div>
           </div>
         </div>

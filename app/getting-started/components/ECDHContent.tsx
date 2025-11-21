@@ -39,9 +39,6 @@ export function ECDHContent() {
           <li>
             <strong>Public Key (PEM Format)</strong> — Only needed for debugging, copy into <code>ECDH_SERVER_PUBLIC_KEY</code>
           </li>
-          <li>
-            <strong>Public Key (Base64 SPKI Format)</strong> — Only needed for debugging, copy into <code>NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY</code>
-          </li>
         </ul>
         <div className="bg-white rounded border border-blue-200 p-3">
           <p className="text-[11px] font-mono text-gray-700 break-all">ECDH_SERVER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"</p>
@@ -72,7 +69,8 @@ export function ECDHContent() {
             For production, only <code>ECDH_SERVER_PRIVATE_KEY</code> is required
           </li>
           <li>
-            The public keys (<code>ECDH_SERVER_PUBLIC_KEY</code> and <code>NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY</code>) are only needed for debugging
+            The public key (<code>ECDH_SERVER_PUBLIC_KEY</code>) is only needed for debugging. The public key is automatically shared with clients via the{' '}
+            <code>/api/oauth/public-key</code> endpoint.
           </li>
           <li>Rotate keys periodically for enhanced security</li>
         </ul>

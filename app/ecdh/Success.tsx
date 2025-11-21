@@ -14,9 +14,6 @@ export interface SuccessProps {
 export default function Success(props: SuccessProps) {
   const { keys } = props
   const [copiedField, setCopiedField] = useState<string | null>(null)
-  const [decodedBase64, setDecodedBase64] = useState<string>('')
-  const [decodeError, setDecodeError] = useState<string | null>(null)
-  const [isDecoding, setDecoding] = useState(false)
 
   const handleCopy = async (text: string, fieldName: string) => {
     try {
@@ -26,35 +23,6 @@ export default function Success(props: SuccessProps) {
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to copy:', error)
-    }
-  }
-
-  const handleDecodeBase64 = async () => {
-    try {
-      setDecoding(true)
-      if (!keys.publicKeyBase64) {
-        throw new Error('Public key is empty')
-      }
-
-      const cleaned = keys.publicKeyBase64.trim()
-      const decoded = atob(cleaned)
-      setDecodedBase64(decoded)
-      setDecodeError(null)
-
-      const container = document.querySelector<HTMLElement>('.ecdh-decode-result')
-      if (container) {
-        requestAnimationFrame(() => {
-          container.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        })
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error'
-      setDecodeError(`[ECDH] Failed to decode base64 public key: ${message}`)
-      setDecodedBase64('')
-      // eslint-disable-next-line no-console
-      console.error('[ECDH] Failed to decode base64 public key:', error)
-    } finally {
-      setDecoding(false)
     }
   }
 
@@ -81,7 +49,7 @@ export default function Success(props: SuccessProps) {
             <li>The private key must be kept secret and never exposed</li>
             <li>Do not commit keys to version control</li>
             <li>Store keys securely in environment variables</li>
-            <li>The public key (base64) is safe to expose in client-side code</li>
+            <li>The public key is automatically shared with clients via the API endpoint</li>
           </ul>
         </div>
 
@@ -139,63 +107,6 @@ export default function Success(props: SuccessProps) {
           </p>
         </div>
 
-        {/* Public Key (Base64) */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">Public Key (Base64 SPKI Format) - Client-side</label>
-            <div className="flex items-center gap-3">
-              <button onClick={() => handleDecodeBase64()} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700" type="button" disabled={isDecoding}>
-                {isDecoding ? (
-                  <>
-                    <FeatherIcon icon="loader" size={16} className="animate-spin" />
-                    <span>Decoding...</span>
-                  </>
-                ) : (
-                  <>
-                    <FeatherIcon icon="code" size={16} />
-                    <span>Decode Base64</span>
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => handleCopy(keys.publicKeyBase64, 'publicKeyBase64')}
-                className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700"
-                type="button"
-              >
-                {copiedField === 'publicKeyBase64' ? (
-                  <>
-                    <FeatherIcon icon="check" size={16} />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <FeatherIcon icon="copy" size={16} />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-            <code className="text-xs break-all font-mono">{keys.publicKeyBase64}</code>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Add to <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY</code> in your <code className="bg-gray-100 px-1 rounded">.env.local</code>
-          </p>
-          {decodedBase64 && (
-            <div className="ecdh-decode-result mt-3 bg-green-50 border border-green-200 p-3 rounded-md">
-              <p className="text-xs font-medium text-green-800 mb-1">Decoded Result (PEM preview)</p>
-              <pre className="text-xs text-green-900 whitespace-pre-wrap break-all">{decodedBase64}</pre>
-            </div>
-          )}
-          {decodeError && (
-            <div className="mt-3 bg-red-50 border border-red-200 p-3 rounded-md">
-              <p className="text-xs font-medium text-red-800 mb-1">Decode Failed</p>
-              <p className="text-xs text-red-700 break-all">{decodeError}</p>
-            </div>
-          )}
-        </div>
-
         {/* Environment Variable Configuration */}
         <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-md">
           <div className="flex items-center justify-between mb-2">
@@ -205,10 +116,7 @@ export default function Success(props: SuccessProps) {
                 handleCopy(
                   `# Server-side keys (PEM format)
 ECDH_SERVER_PRIVATE_KEY="${formatKeyForEnv(keys.privateKey)}"
-ECDH_SERVER_PUBLIC_KEY="${formatKeyForEnv(keys.publicKey)}"
-
-# Client-side public key (base64 SPKI format)
-NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="${keys.publicKeyBase64}"`,
+ECDH_SERVER_PUBLIC_KEY="${formatKeyForEnv(keys.publicKey)}"`,
                   'envConfig'
                 )
               }
@@ -231,13 +139,13 @@ NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="${keys.publicKeyBase64}"`,
           <pre className="text-xs bg-white p-3 rounded border border-indigo-200 overflow-auto">
             <code>{`# Server-side keys (PEM format)
 ECDH_SERVER_PRIVATE_KEY="${formatKeyForEnv(keys.privateKey)}"
-ECDH_SERVER_PUBLIC_KEY="${formatKeyForEnv(keys.publicKey)}"
-
-# Client-side public key (base64 SPKI format)
-NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="${keys.publicKeyBase64}"`}</code>
+ECDH_SERVER_PUBLIC_KEY="${formatKeyForEnv(keys.publicKey)}"`}</code>
           </pre>
           <p className="text-xs text-indigo-900 mt-2">
             These values are the actual environment variables used by this project. Copy them directly into your <code className="bg-indigo-100 px-1 rounded">.env.local</code>.
+            <br />
+            <strong>Note:</strong> The public key is automatically shared with clients via the <code className="bg-indigo-100 px-1 rounded">/api/oauth/public-key</code> endpoint.
+            No client-side environment variable is needed.
           </p>
         </div>
       </div>
