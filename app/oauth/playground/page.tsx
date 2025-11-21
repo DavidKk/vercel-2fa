@@ -2,7 +2,7 @@ import { headers } from 'next/headers'
 
 import { generateTemporaryKeyPair, getServerPublicKey } from '@/app/actions/oauth'
 
-import { OAuthTestContent } from './OAuthTestContent'
+import { OAuthPlaygroundContent } from './OAuthPlaygroundContent'
 
 interface OAuthTestPageProps {
   searchParams: Promise<{ mode?: string; resultPage?: string }>
@@ -40,7 +40,7 @@ export default async function OAuthTestPage(props: OAuthTestPageProps) {
   }
 
   return (
-    <OAuthTestContent
+    <OAuthPlaygroundContent
       mode={mode}
       isResultPage={isResultPage}
       flowType={flowType}

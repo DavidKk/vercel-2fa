@@ -6,7 +6,7 @@ import { OAuthFlowProvider } from '@/services/oauth/client'
 import { OAuthHelpSidebar } from '../OAuthHelpSidebar'
 import { OAuthPlayground } from './OAuthPlayground'
 
-interface OAuthTestContentProps {
+interface OAuthPlaygroundContentProps {
   mode: OAuthFlowMode
   isResultPage?: boolean
   /** Flow type: 'login' or 'callback' */
@@ -19,7 +19,7 @@ interface OAuthTestContentProps {
   defaultCallbackUrl?: string | null
 }
 
-export function OAuthTestContent({ mode, isResultPage, flowType, initialServerPublicKey, initialKeyPair, defaultCallbackUrl }: OAuthTestContentProps) {
+export function OAuthPlaygroundContent({ mode, isResultPage, flowType, initialServerPublicKey, initialKeyPair, defaultCallbackUrl }: OAuthPlaygroundContentProps) {
   const oauthOptions = {
     defaultMode: mode,
     flowType,
