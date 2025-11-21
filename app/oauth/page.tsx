@@ -58,8 +58,20 @@ export default async function OAuthLoginPage(props: OAuthLoginPageProps) {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('OAuth login page error:', error)
+    // eslint-disable-next-line no-console
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    })
     // Don't expose internal error details to prevent information leakage
-    return <ErrorPanel title="Server Error" description="An error occurred while processing your request. Please try again later." value="Internal server error" />
+    return (
+      <ErrorPanel
+        title="Server Error"
+        description="An error occurred while processing your request. Please try again later."
+        value={error instanceof Error ? error.message : 'Internal server error'}
+      />
+    )
   }
 }
 

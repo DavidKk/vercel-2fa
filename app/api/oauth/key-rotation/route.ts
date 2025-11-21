@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 import { api, plainText } from '@/initializer/controller'
 import { jsonInvalidParameters, jsonSuccess } from '@/initializer/response'
-import { assertHttpsRequired, assertOriginAllowed, buildCorsHeaders } from '@/services/auth/whitelist'
+import { assertHttpsRequired, assertOriginAllowed, buildCorsHeaders, getCurrentOrigin } from '@/services/auth/whitelist'
 import { getActiveKeyPairs, getKeyRotationConfig } from '@/services/oauth/server/key-rotation'
 
 /**
@@ -14,9 +14,10 @@ import { getActiveKeyPairs, getKeyRotationConfig } from '@/services/oauth/server
  */
 export const GET = api(async (req) => {
   const origin = req.headers.get('origin')
-  const corsHeaders = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'] })
+  const currentOrigin = getCurrentOrigin(req)
+  const corsHeaders = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'], currentOrigin })
 
-  if (!assertOriginAllowed(origin)) {
+  if (!assertOriginAllowed(origin, currentOrigin)) {
     return jsonInvalidParameters('origin is not allowed', { headers: corsHeaders })
   }
 
@@ -48,10 +49,11 @@ export const GET = api(async (req) => {
 
 export const OPTIONS = plainText(async (req) => {
   const origin = req.headers.get('origin')
-  if (!assertOriginAllowed(origin)) {
+  const currentOrigin = getCurrentOrigin(req)
+  if (!assertOriginAllowed(origin, currentOrigin)) {
     // For OPTIONS requests, return 403 if origin is not allowed
     return new NextResponse(null, { status: 403 })
   }
-  const headers = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'] })
+  const headers = buildCorsHeaders(origin, { methods: ['GET', 'OPTIONS'], currentOrigin })
   return new NextResponse(null, { status: 204, headers })
 })

@@ -103,8 +103,19 @@ export function validateOAuthParams(params: OAuthRequestParams): ValidateOAuthPa
     redirectUrl = currentPageUrl
   }
 
+  // Extract hostname from currentPageUrl if currentHost is not provided
+  let hostForValidation = currentHost
+  if (!hostForValidation && currentPageUrl && !currentPageUrl.startsWith('/')) {
+    try {
+      const currentPageUrlObj = new URL(currentPageUrl)
+      hostForValidation = currentPageUrlObj.host
+    } catch {
+      // If parsing fails, use currentHost as is (undefined)
+    }
+  }
+
   // Validate redirect URL
-  if (!isAllowedRedirectUrl(redirectUrl, currentHost)) {
+  if (!isAllowedRedirectUrl(redirectUrl, hostForValidation)) {
     return {
       valid: false,
       error: {

@@ -34,14 +34,19 @@ export function matchUrl(pattern: string, url: string) {
 /**
  * Validate if a redirect URL is allowed based on environment configuration
  * Follows OAuth 2.0 best practices: validates by origin (protocol + domain + port), not by path
- * @param redirectUrl - The URL to validate
- * @param currentHost - Optional current host (e.g., 'vercel-2fa.vercel.app') to allow same-host absolute URLs
+ * @param redirectUrl - The URL to validate (must be absolute URL with host)
+ * @param currentHost - Optional current host (e.g., 'vercel-2fa.vercel.app') to allow same-host URLs
  * @returns true if the URL is allowed, false otherwise
  */
 export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string): boolean {
-  // Allow relative paths (same origin redirects) - safe as they cannot redirect to external domains
+  // Handle empty or invalid URLs
+  if (!redirectUrl || typeof redirectUrl !== 'string') {
+    return false
+  }
+
+  // OAuth redirect URLs must be absolute URLs (with host), relative paths are not allowed
   if (redirectUrl.startsWith('/')) {
-    return true
+    return false
   }
 
   let targetUrl: URL
@@ -59,7 +64,7 @@ export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string):
     return true
   }
 
-  // Allow same-host absolute URLs (same as relative paths - safe for same origin redirects)
+  // Allow same-host absolute URLs (default behavior - no whitelist needed)
   if (currentHost) {
     const currentHostname = currentHost.toLowerCase().split(':')[0] // Remove port if present
     if (hostname === currentHostname) {
@@ -67,10 +72,10 @@ export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string):
     }
   }
 
-  // Get allowed redirect URLs from environment
+  // Get allowed redirect URLs from environment (for cross-origin redirects)
   const allowedUrls = process.env.ALLOWED_REDIRECT_URLS
 
-  // If no whitelist configured, only allow relative paths
+  // If no whitelist configured, only allow same-host URLs (already checked above)
   if (!allowedUrls) {
     return false
   }

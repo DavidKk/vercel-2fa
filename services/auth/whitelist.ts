@@ -2,6 +2,32 @@ import type { NextRequest } from 'next/server'
 
 type CorsMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS'
 
+/**
+ * Extract current server origin from NextRequest
+ * Uses headers (host + x-forwarded-proto) which works in all environments including Vercel
+ */
+export function getCurrentOrigin(req: NextRequest): string | null {
+  const host = req.headers.get('host')
+  if (!host) {
+    return null
+  }
+
+  // Check X-Forwarded-Proto header (set by reverse proxies/load balancers like Vercel)
+  let protocol = req.headers.get('x-forwarded-proto')
+  if (!protocol) {
+    // Fallback: check request URL protocol or default based on environment
+    try {
+      const url = new URL(req.url)
+      protocol = url.protocol.replace(':', '')
+    } catch {
+      // Default to https in production, http in development
+      protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+    }
+  }
+
+  return `${protocol}://${host}`
+}
+
 const allowedOriginPatterns = parseAllowedOrigins()
 const hasWhitelist = allowedOriginPatterns.length > 0
 
@@ -90,7 +116,7 @@ function matchPattern(pattern: string, origin: string) {
   }
 }
 
-export function isOriginAllowed(origin?: string | null) {
+export function isOriginAllowed(origin?: string | null, currentOrigin?: string | null) {
   if (!origin) {
     return true
   }
@@ -100,15 +126,30 @@ export function isOriginAllowed(origin?: string | null) {
     return false
   }
 
-  if (!hasWhitelist) {
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        const { hostname } = new URL(normalizedOrigin)
-        return isLocalhostHostname(hostname.toLowerCase())
-      } catch {
-        return false
+  // Allow same-origin requests (even without whitelist) - works in both dev and production
+  if (currentOrigin) {
+    try {
+      const currentOriginNormalized = normalizeOrigin(currentOrigin)
+      if (currentOriginNormalized && normalizedOrigin.toLowerCase() === currentOriginNormalized.toLowerCase()) {
+        return true
       }
+    } catch {
+      // If parsing fails, continue to other checks
     }
+  }
+
+  // Allow localhost in all environments (for local development)
+  try {
+    const { hostname } = new URL(normalizedOrigin)
+    if (isLocalhostHostname(hostname.toLowerCase())) {
+      return true
+    }
+  } catch {
+    // If parsing fails, continue to other checks
+  }
+
+  // If no whitelist configured, only allow same-origin and localhost (already checked above)
+  if (!hasWhitelist) {
     return false
   }
 
@@ -118,13 +159,14 @@ export function isOriginAllowed(origin?: string | null) {
 /**
  * Check if origin is allowed
  * @param origin - Origin to check
+ * @param currentOrigin - Optional current server origin for same-origin comparison
  * @returns true if origin is allowed, false otherwise
  */
-export function assertOriginAllowed(origin?: string | null): boolean {
+export function assertOriginAllowed(origin?: string | null, currentOrigin?: string | null): boolean {
   if (!origin) {
     return true
   }
-  return isOriginAllowed(origin)
+  return isOriginAllowed(origin, currentOrigin)
 }
 
 interface BuildCorsHeadersOptions {
@@ -134,13 +176,13 @@ interface BuildCorsHeadersOptions {
   maxAgeSeconds?: number
 }
 
-export function buildCorsHeaders(origin?: string | null, options?: BuildCorsHeadersOptions) {
+export function buildCorsHeaders(origin?: string | null, options?: BuildCorsHeadersOptions & { currentOrigin?: string | null }) {
   const headers = new Headers()
   headers.set('Access-Control-Allow-Methods', (options?.methods ?? ['GET', 'OPTIONS']).join(', '))
   headers.set('Access-Control-Allow-Headers', options?.allowHeaders ?? 'Content-Type, Authorization')
   headers.set('Access-Control-Max-Age', (options?.maxAgeSeconds ?? 86400).toString())
 
-  if (origin && isOriginAllowed(origin)) {
+  if (origin && isOriginAllowed(origin, options?.currentOrigin)) {
     headers.set('Access-Control-Allow-Origin', origin)
     if (options?.allowCredentials) {
       headers.set('Access-Control-Allow-Credentials', 'true')
