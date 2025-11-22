@@ -28,5 +28,9 @@ declare namespace NodeJS {
     KEY_ROTATION_TTL_SECONDS?: string
     /** Transition period in seconds for key rotation (default: 86400 = 1 day) */
     KEY_ROTATION_TRANSITION_SECONDS?: string
+    /** Salt for generating user subject (sub) identifier. If not set, uses first 32 chars of JWT_SECRET */
+    USER_SUB_SALT?: string
+    /** OAuth issuer identifier (iss claim). If not set, constructs from NEXT_PUBLIC_VERCEL_URL or defaults to 'https://vercel-2fa.local' */
+    OAUTH_ISSUER?: string
   }
 }

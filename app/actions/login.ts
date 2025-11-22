@@ -113,8 +113,9 @@ export async function loginWithECDH(payload: LoginWithECDHPayload) {
   // Verify credentials
   await vierfyForm({ username, password })
 
-  // Generate signed JWT token (same as legacy flow)
-  const jwtToken = await generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
+  // Generate signed JWT token with standard claims (iss, sub, authenticated)
+  // generateJWTToken automatically includes iss and sub
+  const jwtToken = await generateJWTToken({ authenticated: true }, { expiresIn: '5m' })
   const payloadJson = JSON.stringify({
     token: jwtToken,
     issuedAt: Date.now(),

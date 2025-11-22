@@ -17,6 +17,8 @@ export const POST = api(async (req) => {
     return jsonUnauthorized()
   }
 
-  const authToken = generateJWTToken({ authenticated: true })
+  // Generate JWT token with standard claims (iss, sub, authenticated)
+  // generateJWTToken automatically includes iss and sub
+  const authToken = await generateJWTToken({ authenticated: true })
   return jsonSuccess({ authToken })
 })

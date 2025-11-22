@@ -8,7 +8,7 @@ export interface VerifyTokenResult {
   token_type: string
   expires_in: number
   user: {
-    username?: string
+    sub?: string
     authenticated?: boolean
   }
   claims?: Record<string, unknown>

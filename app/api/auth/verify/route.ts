@@ -45,7 +45,9 @@ export const POST = api(async (req) => {
   }
 
   try {
-    const response = await verifyTokenAndGenerateAccessToken(token, { audience, scope })
+    // Use current origin as issuer if available (for better OIDC compliance)
+    const issuer = currentOrigin || undefined
+    const response = await verifyTokenAndGenerateAccessToken(token, { audience, scope, issuer })
     return jsonSuccess(response, { headers: corsHeaders })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Token verification failed'

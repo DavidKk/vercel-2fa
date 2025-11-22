@@ -153,6 +153,35 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Example**: `86400` (1 day), `172800` (2 days)
 - **Note**: During the transition period, both old and new keys are active. This ensures smooth key rotation without breaking active sessions. The system will attempt decryption with all active keys.
 
+### USER_SUB_SALT
+
+- **Description**: Salt for generating user subject (sub) identifier in OAuth tokens
+- **Required**: No (if not set, uses first 32 characters of `JWT_SECRET`)
+- **Format**: String (recommended: 32+ characters)
+- **Security**: Keep this secret secure. Used to generate unique, non-reversible user identifiers.
+- **Purpose**:
+  - Generates `sub` (subject) identifier from username using HMAC-SHA256
+  - Ensures privacy: username is not exposed in tokens
+  - Provides uniqueness: same username + salt always generates same sub
+- **Example**: `USER_SUB_SALT=your-secret-salt-minimum-32-characters-long`
+- **Note**: If not set, the system will use the first 32 characters of `JWT_SECRET` as a fallback. For better security, use a dedicated salt.
+
+### OAUTH_ISSUER
+
+- **Description**: OAuth/OIDC issuer identifier (iss claim) for JWT tokens
+- **Required**: No (if not set, constructs from `VERCEL_URL` or defaults to `https://vercel-2fa.local`)
+- **Format**: Full URL (e.g., `https://your-domain.com`)
+- **Purpose**:
+  - Identifies the token issuer (OIDC standard)
+  - Used in JWT `iss` claim for token validation
+  - Helps clients verify tokens are from the correct issuer
+- **Priority**:
+  1. Explicit `OAUTH_ISSUER` environment variable
+  2. Constructed from `VERCEL_URL` or `NEXT_PUBLIC_VERCEL_URL` (if available)
+  3. Default: `https://vercel-2fa.local` (should be overridden in production)
+- **Example**: `OAUTH_ISSUER=https://auth.yourcompany.com`
+- **Note**: In production, always set this to your actual domain to ensure proper OIDC compliance.
+
 ### AUTH_KV_REST_API_URL
 
 - **Description**: Upstash Redis REST API URL (automatically provided by Vercel/Upstash integration)
@@ -241,6 +270,12 @@ NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="base64-encoded-spki-format-public-key"
 # ENABLE_KEY_ROTATION=0
 # KEY_ROTATION_TTL_SECONDS=604800
 # KEY_ROTATION_TRANSITION_SECONDS=86400
+
+# User Subject (sub) Generation (Optional)
+# USER_SUB_SALT=your-secret-salt-minimum-32-characters-long
+
+# OAuth Issuer (Optional, recommended for production)
+# OAUTH_ISSUER=https://your-2fa-domain.com
 ```
 
 ### Production Environment (Vercel)
@@ -271,6 +306,12 @@ ENABLE_TOKEN_REPLAY_PROTECTION=1
 ENABLE_KEY_ROTATION=1
 KEY_ROTATION_TTL_SECONDS=604800
 KEY_ROTATION_TRANSITION_SECONDS=86400
+
+# User Subject (sub) Generation (Recommended for production)
+USER_SUB_SALT=your-production-sub-salt-minimum-32-characters-long
+
+# OAuth Issuer (Required for production)
+OAUTH_ISSUER=https://your-2fa-domain.com
 ```
 
 ## Security Best Practices

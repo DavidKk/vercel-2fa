@@ -6,6 +6,8 @@
 import type { JwtPayload } from 'jsonwebtoken'
 
 import { generateJWTToken, verifyJWTToken } from '@/app/actions/jwt'
+import { buildStandardClaims } from '@/services/jwt'
+import { generateUserSubForConfiguredUser, verifyUserSubForConfiguredUser } from '@/utils/user-sub'
 
 import { ACCESS_TOKEN_TTL_SECONDS } from './constants'
 import { extractJti, generateJti, isReplayProtectionEnabled, isTokenUsed, markTokenAsUsed } from './replay-protection'
@@ -14,6 +16,7 @@ export interface VerifyTokenOptions {
   audience?: string
   scope?: string
   enableReplayProtection?: boolean
+  issuer?: string // Optional issuer override (if not provided, uses OAUTH_ISSUER env var or default)
 }
 
 export interface VerifyTokenResult {
@@ -21,7 +24,7 @@ export interface VerifyTokenResult {
   token_type: 'Bearer'
   expires_in: number
   user: {
-    username?: string
+    sub?: string
     authenticated?: boolean
   }
   claims?: JwtPayload
@@ -38,14 +41,28 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
 
   const payload = normalizePayload((await verifyJWTToken(token)) as JwtPayload | string | null)
 
-  if (!payload || !payload.username || !payload.authenticated) {
+  // Support both old format (username) and new format (sub) for backward compatibility
+  const hasSub = payload && typeof payload.sub === 'string'
+  const hasUsername = payload && typeof payload.username === 'string'
+
+  if (!payload || !payload.authenticated) {
     throw new Error('Invalid or expired token')
   }
 
-  // Validate username matches configured ACCESS_USERNAME
-  const allowedUsername = process.env.ACCESS_USERNAME
-  if (allowedUsername && payload.username !== allowedUsername) {
-    throw new Error('Token username does not match configured ACCESS_USERNAME')
+  // Validate sub (preferred) or username (legacy)
+  if (hasSub) {
+    // New format: validate sub matches configured user
+    if (!verifyUserSubForConfiguredUser(payload.sub as string)) {
+      throw new Error('Token sub does not match configured user')
+    }
+  } else if (hasUsername) {
+    // Legacy format: validate username matches configured ACCESS_USERNAME
+    const allowedUsername = process.env.ACCESS_USERNAME
+    if (allowedUsername && payload.username !== allowedUsername) {
+      throw new Error('Token username does not match configured ACCESS_USERNAME')
+    }
+  } else {
+    throw new Error('Token missing required user identifier (sub or username)')
   }
 
   // Check if replay protection is enabled (from environment variable or options)
@@ -75,6 +92,11 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
 
   const accessToken = await generateJWTToken(accessTokenClaims, { expiresIn })
 
+  // Decode the generated token to get complete claims including iat and exp
+  // This ensures the returned claims object matches the actual JWT payload
+  const decodedToken = (await verifyJWTToken(accessToken, { ignoreExpiration: true })) as JwtPayload | null
+  const completeClaims = decodedToken || accessTokenClaims
+
   // Mark the original token as used (if replay protection is enabled)
   // This prevents the same OAuth callback token from being reused
   if (replayProtectionEnabled) {
@@ -88,15 +110,18 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
     // should be handled by the client service if needed.
   }
 
+  // Get sub from payload or generate it
+  const userSub = (payload.sub as string | undefined) || generateUserSubForConfiguredUser()
+
   return {
     access_token: accessToken,
     token_type: 'Bearer',
     expires_in: expiresIn,
     user: {
-      username: payload.username as string | undefined,
+      sub: userSub,
       authenticated: payload.authenticated as boolean | undefined,
     },
-    claims: accessTokenClaims,
+    claims: completeClaims, // Complete claims including iat and exp from the actual JWT
   }
 }
 
@@ -123,30 +148,46 @@ function getExpiresInSeconds(payload: JwtPayload): number {
 
 function buildAccessTokenClaims(payload: JwtPayload, options?: VerifyTokenOptions): JwtPayload {
   const { audience, scope } = options || {}
-  const username = payload.username
   const authenticated = payload.authenticated
-
-  if (!username) {
-    throw new Error('token payload missing username')
-  }
 
   if (!authenticated) {
     throw new Error('token payload missing authenticated flag')
   }
 
+  // Get sub from payload (new format) or generate from username (legacy format)
+  let userSub: string
+  if (payload.sub && typeof payload.sub === 'string') {
+    // New format: use existing sub
+    userSub = payload.sub
+  } else if (payload.username && typeof payload.username === 'string') {
+    // Legacy format: generate sub from username
+    // This ensures backward compatibility while migrating to sub
+    userSub = generateUserSubForConfiguredUser()
+  } else {
+    throw new Error('token payload missing user identifier (sub or username)')
+  }
+
+  // Use unified buildStandardClaims function with explicit issuer support
+  const standardClaims = buildStandardClaims(
+    {
+      authenticated,
+      provider: 'vercel-2fa',
+    },
+    options?.issuer // Pass explicit issuer if provided
+  )
+
+  // Override sub if we have a specific one (from payload)
   const claims: JwtPayload = {
-    sub: username,
-    username,
-    authenticated,
-    provider: 'vercel-2fa',
+    ...standardClaims,
+    sub: userSub, // Use the sub from payload or generated one
   }
 
   if (audience) {
-    claims.aud = audience
+    claims.aud = audience // Audience (OAuth2/OIDC standard)
   }
 
   if (scope) {
-    claims.scope = scope
+    claims.scope = scope // Scope (OAuth2 standard)
   }
 
   return claims

@@ -71,7 +71,7 @@ function OAuthCallback() {
       // - access_token: string
       // - token_type: 'Bearer'
       // - expires_in: number (seconds)
-      // - user: { username?: string, authenticated?: boolean }
+      // - user: { sub?: string, authenticated?: boolean }
       // - claims?: JwtPayload
 
       // Store the access token and create your session
@@ -303,10 +303,19 @@ interface VerifyTokenResponse {
   token_type: 'Bearer'
   expires_in: number // 180 seconds (3 minutes)
   user: {
-    username?: string
+    sub?: string // User subject identifier (OIDC compliant, generated from username + salt)
     authenticated?: boolean
   }
-  claims?: JwtPayload // Full JWT claims
+  claims?: JwtPayload // Full JWT claims containing:
+  // - iss: Issuer identifier (OIDC standard)
+  // - sub: Subject identifier (OIDC standard, user identifier)
+  // - authenticated: Authentication status
+  // - provider: 'vercel-2fa'
+  // - aud?: Audience (if provided)
+  // - scope?: Scope (if provided)
+  // - jti?: JWT ID (if replay protection enabled)
+  // - iat: Issued at (automatically added by JWT library)
+  // - exp: Expiration time (automatically added by JWT library)
 }
 ```
 

@@ -5,7 +5,7 @@ import { useRequest } from 'ahooks'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-import { generateJWTToken } from '@/app/actions/jwt'
+import { generateJWTTokenWithSub } from '@/app/actions/jwt'
 import { getLoginWithWebauthnOptions, loginWithECDH, verfiyTOTPToken, verifyWebauthn, vierfyForm } from '@/app/actions/login'
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
@@ -68,8 +68,8 @@ export default function LoginForm(props: LoginFormProps) {
         return await loginWithECDH({ username, password, clientPublicKey })
       }
 
-      // Otherwise, use legacy JWT token
-      return generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
+      // Otherwise, use JWT token with sub identifier
+      return generateJWTTokenWithSub({ authenticated: true }, { expiresIn: '5m' })
     },
     {
       manual: true,
@@ -100,7 +100,7 @@ export default function LoginForm(props: LoginFormProps) {
 
       await verifyWebauthn({ username, password, challenge, credentials, expectedOrigin, expectedRPID })
 
-      return generateJWTToken({ username, authenticated: true }, { expiresIn: '5m' })
+      return generateJWTTokenWithSub({ authenticated: true }, { expiresIn: '5m' })
     },
     {
       manual: true,
