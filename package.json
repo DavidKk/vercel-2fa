@@ -22,7 +22,8 @@
     "test": "jest -c ./jest.config.ts --coverage --reporters=default --reporters=jest-junit --passWithNoTests",
     "test:e2e": "playwright test --reporter=list",
     "test:watch": "jest --watch",
-    "ok": "pnpm format && pnpm lint && pnpm build && pnpm test"
+    "ok": "pnpm format && pnpm lint && pnpm build && pnpm test",
+    "prepare": "husky"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.1.0",
@@ -66,7 +67,7 @@
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
-    "husky": "^9.1.1",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
     "jest-runner-tsd": "^6.0.0",
