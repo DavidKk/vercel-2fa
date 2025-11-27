@@ -176,6 +176,9 @@ pnpm commitlint --edit "$1"
   try {
     if (compatible === true) {
       const hooksPath = path.join(cwd, '.git/hooks')
+      if (!fs.existsSync(hooksPath)) {
+        await fs.promises.mkdir(hooksPath, { recursive: true })
+      }
       const files = await fs.promises.readdir(huskyHooksPath)
       if (files.length > 0) {
         info(`Compatible with some GUI tools that do not use \`git config core.hooksPath\` as the custom hook path.`)
