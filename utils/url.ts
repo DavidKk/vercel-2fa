@@ -32,11 +32,35 @@ export function matchUrl(pattern: string, url: string) {
 }
 
 /**
- * Validate if a redirect URL is allowed based on environment configuration
- * Follows OAuth 2.0 best practices: validates by origin (protocol + domain + port), not by path
- * @param redirectUrl - The URL to validate (must be absolute URL with host)
- * @param currentHost - Optional current host (e.g., 'vercel-2fa.vercel.app') to allow same-host URLs
- * @returns true if the URL is allowed, false otherwise
+ * Build a base URL from the incoming Host header for same-origin checks (supports bracketed IPv6).
+ */
+function baseUrlFromHostHeader(host: string): URL | null {
+  let scheme: 'http' | 'https' = 'http'
+  if (process.env.NODE_ENV === 'production') {
+    scheme = 'https'
+    try {
+      const { hostname } = new URL(`http://${host}`)
+      const h = hostname.toLowerCase()
+      if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h.endsWith('.local')) {
+        scheme = 'http'
+      }
+    } catch {
+      scheme = 'https'
+    }
+  }
+  try {
+    return new URL(`${scheme}://${host}`)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Validate if a redirect URL is allowed based on environment configuration.
+ * Allows absolute URLs (origin checked against whitelist / same host) and same-origin root-relative paths.
+ * @param redirectUrl - Absolute URL or same-app path starting with a single `/` (not `//`)
+ * @param currentHost - Optional Host header value (e.g. `app.example.com` or `localhost:3000`); required for root-relative URLs
+ * @returns True if the redirect URL is allowed, false otherwise
  */
 export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string): boolean {
   // Handle empty or invalid URLs
@@ -44,9 +68,24 @@ export function isAllowedRedirectUrl(redirectUrl: string, currentHost?: string):
     return false
   }
 
-  // OAuth redirect URLs must be absolute URLs (with host), relative paths are not allowed
+  // Same-app relative paths (e.g. /login/blank). Reject protocol-relative "//host" and backslash tricks.
   if (redirectUrl.startsWith('/')) {
-    return false
+    if (redirectUrl.startsWith('//') || redirectUrl.includes('\\')) {
+      return false
+    }
+    if (!currentHost) {
+      return false
+    }
+    const base = baseUrlFromHostHeader(currentHost)
+    if (!base) {
+      return false
+    }
+    try {
+      const resolved = new URL(redirectUrl, base)
+      return resolved.hostname === base.hostname
+    } catch {
+      return false
+    }
   }
 
   let targetUrl: URL

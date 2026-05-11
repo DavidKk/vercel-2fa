@@ -6,7 +6,6 @@
   --background: #ffffff;
   --foreground: #171717;
   --header-height: 60px;
-  --footer-height: 64px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,7 +63,8 @@ body {
   overflow-wrap: break-word;
 }
 
-.sidebar-content ul, .sidebar-content ol {
+.sidebar-content ul,
+.sidebar-content ol {
   margin-bottom: 0.75rem;
   padding-left: 1.25rem;
 }

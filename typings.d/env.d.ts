@@ -1,7 +1,5 @@
 declare namespace NodeJS {
   interface ProcessEnv {
-    /** time of project build */
-    NEXT_PUBLIC_BUILD_TIME: string
     /** Admin Username */
     ACCESS_USERNAME: string
     /** Admin Password */

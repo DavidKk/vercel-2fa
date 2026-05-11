@@ -233,12 +233,6 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Status**: Supported for backward compatibility
 - **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `AUTH_KV_REST_API_TOKEN` instead.
 
-### NEXT_PUBLIC_BUILD_TIME
-
-- **Description**: Build timestamp (auto-generated)
-- **Required**: No
-- **Note**: Automatically set during build process, do not modify manually
-
 ## Configuration Examples
 
 ### Development Environment
