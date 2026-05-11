@@ -35,9 +35,12 @@ export function IntegrationContent() {
           <p className="text-blue-800 text-xs mb-3">Use the same JWT secret inside your project:</p>
           <div className="bg-white rounded border border-blue-200 p-3 mb-2">
             <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-              {`import jwt from 'jsonwebtoken'
+              {`import { jwtVerify } from 'jose'
 
-const payload = jwt.verify(token, process.env.JWT_SECRET)
+const { payload } = await jwtVerify(
+  token,
+  new TextEncoder().encode(process.env.JWT_SECRET!)
+)
 if (payload?.authenticated) {
   // create your local session
 }`}
