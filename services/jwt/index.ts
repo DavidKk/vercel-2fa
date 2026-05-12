@@ -150,3 +150,13 @@ function getJWTConfig() {
     JWT_EXPIRES_IN,
   }
 }
+
+/**
+ * Resolves session JWT expiration for the login "remember me" choice.
+ * @param rememberMe When true, uses configured JWT_EXPIRES_IN; when false, uses one day
+ * @returns Value suitable for jose `setExpirationTime` (for example `30d` or `1d`)
+ */
+export function getLoginSessionExpiresIn(rememberMe: boolean): string {
+  const { JWT_EXPIRES_IN } = getJWTConfig()
+  return rememberMe ? JWT_EXPIRES_IN : '1d'
+}

@@ -4,12 +4,13 @@ import { startAuthentication } from '@simplewebauthn/browser'
 import { useRequest } from 'ahooks'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { FiLogIn, FiShield, FiUser } from 'react-icons/fi'
 
-import { generateJWTTokenWithSub } from '@/app/actions/jwt'
+import { generateLoginSessionJWT } from '@/app/actions/jwt'
 import { getLoginWithWebauthnOptions, loginWithECDH, verfiyTOTPToken, verifyWebauthn, vierfyForm } from '@/app/actions/login'
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
-import { Spinner } from '@/components/Spinner'
+import { LoginAuthenticatorCodeField, LoginFormButton, LoginIconTextField, LoginPasswordField, LoginRememberMeCheckbox } from '@/components/login'
 
 export interface LoginFormProps {
   enableTotp?: boolean
@@ -25,12 +26,12 @@ export default function LoginForm(props: LoginFormProps) {
   const [password, setPassword] = useState('')
   const [access2FAToken, setAccess2FAToken] = useState('')
   const [complete, setComplete] = useState(false)
-  const [totpVisible, setTotpVisible] = useState(!!enableTotp && !enableWebAuthn)
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const formRef = useRef<HTMLFormElement>(null)
   const alertRef = useRef<AlertImperativeHandler>(null)
   const router = useRouter()
 
-  // Get client public key from URL params (for ECDH flow)
   const [clientPublicKey, setClientPublicKey] = useState<string | null>(null)
 
   useEffect(() => {
@@ -63,13 +64,11 @@ export default function LoginForm(props: LoginFormProps) {
         await verfiyTOTPToken({ username, password, token: access2FAToken })
       }
 
-      // If client public key is provided, use ECDH encryption
       if (clientPublicKey) {
-        return await loginWithECDH({ username, password, clientPublicKey })
+        return await loginWithECDH({ username, password, clientPublicKey, rememberMe })
       }
 
-      // Otherwise, use JWT token with sub identifier
-      return generateJWTTokenWithSub({ authenticated: true }, { expiresIn: '5m' })
+      return generateLoginSessionJWT(rememberMe)
     },
     {
       manual: true,
@@ -89,18 +88,16 @@ export default function LoginForm(props: LoginFormProps) {
         throw new Error('WebAuthn is not enabled')
       }
 
-      await vierfyForm({ username, password })
-
-      const options = await getLoginWithWebauthnOptions({ username, password })
+      const options = await getLoginWithWebauthnOptions()
       const credentials = await startAuthentication({ optionsJSON: options })
 
       const challenge = options.challenge
       const expectedOrigin = window.location.origin
       const expectedRPID = options.rpId!
 
-      await verifyWebauthn({ username, password, challenge, credentials, expectedOrigin, expectedRPID })
+      await verifyWebauthn({ challenge, credentials, expectedOrigin, expectedRPID })
 
-      return generateJWTTokenWithSub({ authenticated: true }, { expiresIn: '5m' })
+      return generateLoginSessionJWT(rememberMe)
     },
     {
       manual: true,
@@ -117,16 +114,6 @@ export default function LoginForm(props: LoginFormProps) {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
 
-    if (!enableTotp) {
-      submit()
-      return
-    }
-
-    if (!totpVisible) {
-      setTotpVisible(true)
-      return
-    }
-
     if (!formRef.current?.checkValidity()) {
       formRef.current?.reportValidity()
       return
@@ -136,8 +123,6 @@ export default function LoginForm(props: LoginFormProps) {
   }
 
   const handleWebAuthn = () => {
-    setTotpVisible(false)
-    setAccess2FAToken('')
     submitWebAuthn()
   }
 
@@ -145,78 +130,76 @@ export default function LoginForm(props: LoginFormProps) {
     return null
   }
 
+  const busy = submitting || webAuthnSubmitting || complete
+
   return (
-    <div className="flex justify-center pt-[20vh] h-screen bg-gray-100 pt-12">
-      <form onSubmit={handleSubmit} className="w-full max-w-lg flex flex-col items-center gap-4 p-4" ref={formRef}>
-        <h1 className="text-2xl">Login</h1>
+    <div className="flex min-h-[calc(100vh-var(--header-height))] flex-1 flex-col bg-[var(--nav-link-hover-bg)] px-4 py-10 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center">
+        <form ref={formRef} onSubmit={handleSubmit} className="rounded-xl border border-[var(--app-header-border)] bg-[var(--app-header-bg)] p-6 shadow-sm sm:p-8">
+          <div className="mb-6 text-center">
+            <h1 className="text-xl font-semibold tracking-tight text-[var(--nav-brand-text)]">Sign in</h1>
+            <p className="mt-1.5 text-sm leading-relaxed text-[var(--app-header-text)]">Enter your credentials and complete second-factor verification.</p>
+          </div>
 
-        <input
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          placeholder="Username"
-          required
-          className="mt-1 w-full px-3 py-2 border rounded-md placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
-        />
+          <div className="flex flex-col gap-4">
+            <LoginIconTextField
+              id="login-username"
+              label="Username"
+              value={username}
+              onChange={setUsername}
+              leadingIcon={<FiUser strokeWidth={2} aria-hidden />}
+              placeholder="admin"
+              autoComplete="username"
+              disabled={busy}
+            />
 
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="Password"
-          required
-          className="mt-1 w-full px-3 py-2 border rounded-md placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
-        />
+            <LoginPasswordField
+              id="login-password"
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              showPassword={showPassword}
+              onToggleShowPassword={() => setShowPassword((v) => !v)}
+              disabled={busy}
+            />
 
-        {enableTotp && totpVisible && (
-          <input
-            className="mt-1 w-full px-3 py-2 border rounded-md text-center tracking-[1em] placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
-            value={access2FAToken}
-            onChange={(event) => setAccess2FAToken(event.target.value)}
-            placeholder="2FA Code"
-            maxLength={6}
-            pattern="\d{6}"
-            required
-          />
-        )}
+            {enableTotp ? <LoginAuthenticatorCodeField id="login-totp" value={access2FAToken} onChange={setAccess2FAToken} disabled={busy} /> : null}
 
-        <button
-          disabled={submitting || complete}
-          type="submit"
-          className="relative w-full max-w-lg bg-indigo-500 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? (
-            <div className="flex items-center justify-center gap-2">
-              <Spinner />
-              <span>Verifying...</span>
+            <LoginRememberMeCheckbox id="login-remember-me" checked={rememberMe} onChange={setRememberMe} disabled={busy} />
+
+            <div className="flex flex-col gap-2 pt-1">
+              <LoginFormButton
+                type="submit"
+                variant="primary"
+                loading={submitting}
+                loadingLabel="Verifying…"
+                disabled={complete}
+                leadingIcon={complete ? undefined : <FiLogIn size={18} aria-hidden />}
+              >
+                {complete ? 'Redirecting…' : 'Sign in'}
+              </LoginFormButton>
+
+              {enableWebAuthn ? (
+                <LoginFormButton
+                  type="button"
+                  variant="secondary"
+                  loading={webAuthnSubmitting}
+                  loadingLabel="Authenticating…"
+                  disabled={complete}
+                  leadingIcon={<FiShield size={18} aria-hidden />}
+                  onClick={handleWebAuthn}
+                >
+                  Sign in with WebAuthn
+                </LoginFormButton>
+              ) : null}
             </div>
-          ) : complete ? (
-            <span>jumpping, please wait...</span>
-          ) : (
-            <span>Login</span>
-          )}
-        </button>
+          </div>
 
-        {enableWebAuthn && (
-          <button
-            type="button"
-            disabled={webAuthnSubmitting || complete}
-            onClick={handleWebAuthn}
-            className="relative w-full max-w-lg border border-indigo-500 text-indigo-600 px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {webAuthnSubmitting ? (
-              <div className="flex items-center justify-center gap-2">
-                <Spinner />
-                <span>Authenticating...</span>
-              </div>
-            ) : (
-              <span>Login with WebAuthn</span>
-            )}
-          </button>
-        )}
-
-        <Alert ref={alertRef} />
-      </form>
+          <div className="mt-5">
+            <Alert ref={alertRef} />
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

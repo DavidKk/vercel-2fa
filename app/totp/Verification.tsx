@@ -5,7 +5,7 @@ import { useCallback, useRef, useState } from 'react'
 
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
-import { Spinner } from '@/components/Spinner'
+import { LoginAuthenticatorCodeField, LoginFormButton } from '@/components/login'
 import { verifyTOTPToken } from '@/utils/totp'
 
 export interface VerificationProps {
@@ -52,35 +52,26 @@ export default function Verification(props: VerificationProps) {
   }, [])
 
   return (
-    <form className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4" ref={formRef}>
-      <div className="w-full max-w-md bg-white p-6 rounded-md shadow-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Two-Factor Authentication</h1>
-        <p className="text-sm text-gray-500 mb-6">Please enter the 6-digit verification code from your authenticator app.</p>
+    <form className="flex min-h-screen flex-col items-center justify-center bg-[var(--nav-link-hover-bg)] px-4" ref={formRef}>
+      <div className="w-full max-w-md rounded-xl border border-[var(--app-header-border)] bg-[var(--app-header-bg)] p-6 shadow-sm sm:p-8">
+        <h1 className="mb-2 text-center text-xl font-semibold tracking-tight text-[var(--nav-brand-text)]">Two-Factor Authentication</h1>
+        <p className="mb-6 text-center text-sm text-[var(--app-header-text)]">Please enter the 6-digit verification code from your authenticator app.</p>
 
-        <div className="mb-6">
-          <input
-            type="text"
-            className="mt-1 w-full px-3 py-2 border rounded-md text-center tracking-[1em] placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter 6-digit code"
-            value={token}
-            disabled={completed}
-            onChange={(e) => setToken(e.target.value)}
-            maxLength={6}
-            pattern="\d{6}"
-            required
-          />
-        </div>
+        <LoginAuthenticatorCodeField
+          id="totp-setup-verify"
+          hideLabel
+          value={token}
+          onChange={setToken}
+          placeholder="Enter 6-digit code"
+          disabled={completed}
+          className="mb-6 w-full"
+        />
 
-        <button
-          onClick={verify}
-          disabled={completed || submitting}
-          className="w-full py-2 px-4 rounded-md text-white bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700"
-          type="button"
-        >
-          {submitting ? <Spinner /> : 'Verify Code'}
-        </button>
+        <LoginFormButton type="button" variant="primary" loading={submitting} loadingLabel="Verifying…" disabled={completed} onClick={verify}>
+          Verify Code
+        </LoginFormButton>
 
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="mt-5 flex flex-col gap-2">
           <Alert ref={alertRef} />
         </div>
       </div>

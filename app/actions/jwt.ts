@@ -1,7 +1,7 @@
 'use server'
 
 import type { SignOptions, VerifyOptions } from '@/services/jwt'
-import { generateTokenWithStandardClaims, verifyToken } from '@/services/jwt'
+import { generateTokenWithStandardClaims, getLoginSessionExpiresIn, verifyToken } from '@/services/jwt'
 
 /**
  * Generate JWT token with standard claims (iss, sub) automatically included
@@ -24,6 +24,16 @@ export async function generateJWTToken(payload: Record<string, unknown>, options
  */
 export async function generateJWTTokenWithSub(payload: { authenticated: boolean }, options?: SignOptions) {
   return generateTokenWithStandardClaims(payload as Record<string, unknown>, options)
+}
+
+/**
+ * Issue a post-login session JWT with expiration based on "remember me".
+ * @param rememberMe When true, expiration follows JWT_EXPIRES_IN; otherwise one day
+ * @returns Signed JWT string
+ */
+export async function generateLoginSessionJWT(rememberMe: boolean) {
+  const expiresIn = getLoginSessionExpiresIn(rememberMe)
+  return generateTokenWithStandardClaims({ authenticated: true }, { expiresIn })
 }
 
 /**

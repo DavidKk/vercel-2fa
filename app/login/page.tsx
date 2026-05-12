@@ -15,7 +15,14 @@ export default async function LoginPage(props: LoginPageProps) {
   const enableTotp = !!process.env.ACCESS_TOTP_SECRET
   const enableWebAuthn = !!process.env.ACCESS_WEBAUTHN_SECRET
   if (!enableTotp && !enableWebAuthn) {
-    return <div>2FA is not enabled</div>
+    return (
+      <div className="flex min-h-[calc(100vh-var(--header-height))] flex-1 flex-col items-center justify-center bg-[var(--nav-link-hover-bg)] px-4 py-12">
+        <div className="w-full max-w-md rounded-xl border border-[var(--app-header-border)] bg-[var(--app-header-bg)] p-8 text-center shadow-sm">
+          <p className="text-sm font-medium text-[var(--nav-brand-text)]">Two-factor authentication is not configured</p>
+          <p className="mt-2 text-sm text-[var(--app-header-text)]">Set ACCESS_TOTP_SECRET and/or ACCESS_WEBAUTHN_SECRET to enable sign-in.</p>
+        </div>
+      </div>
+    )
   }
 
   const { searchParams } = props
@@ -29,11 +36,13 @@ export default async function LoginPage(props: LoginPageProps) {
   // Validate redirect URL against whitelist
   if (!isAllowedRedirectUrl(redirectUrl, host || undefined)) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 border border-red-200">
-          <h2 className="text-center text-xl font-semibold mb-4 text-red-600">Invalid Redirect URL</h2>
-          <p className="text-center text-gray-700">The redirect URL is not in the allowed list. Please contact your administrator.</p>
-          <p className="text-center text-sm text-gray-500 mt-4">Redirect URL: {redirectUrl}</p>
+      <div className="flex min-h-[calc(100vh-var(--header-height))] flex-1 flex-col items-center justify-center bg-[var(--nav-link-hover-bg)] px-4 py-12">
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-[var(--app-header-bg)] p-8 shadow-sm dark:border-red-900/50">
+          <h2 className="text-center text-lg font-semibold tracking-tight text-red-600 dark:text-red-400">Invalid redirect URL</h2>
+          <p className="mt-3 text-center text-sm leading-relaxed text-[var(--app-header-text)]">The redirect URL is not in the allowed list. Please contact your administrator.</p>
+          <p className="mt-4 break-all rounded-lg border border-[var(--app-header-border)] bg-[var(--nav-link-hover-bg)] px-3 py-2 text-left font-mono text-xs text-[var(--nav-brand-text)]">
+            {redirectUrl}
+          </p>
         </div>
       </div>
     )
