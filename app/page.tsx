@@ -33,7 +33,7 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
           <Link
-            href="/getting-started"
+            href="/getting-started/overview"
             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl"
           >
             <FiPlayCircle size={18} />
@@ -112,7 +112,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified Auth Center</h3>
               <p className="text-gray-600 text-sm mb-3">One authentication service for all your personal projects, no need to build login for each app</p>
-              <Link href="/getting-started" className="text-purple-600 hover:text-purple-700 font-medium text-sm inline-flex items-center gap-2">
+              <Link href="/getting-started/overview" className="text-purple-600 hover:text-purple-700 font-medium text-sm inline-flex items-center gap-2">
                 Learn Integration
                 <FiArrowRight size={14} />
               </Link>
@@ -212,7 +212,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/getting-started"
+              href="/getting-started/overview"
               className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-lg"
             >
               <FiBookOpen size={18} />

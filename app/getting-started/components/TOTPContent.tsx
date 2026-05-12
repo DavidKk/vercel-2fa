@@ -1,73 +1,116 @@
 import Link from 'next/link'
-import { FiArrowRight, FiSmartphone } from 'react-icons/fi'
+import { FiArrowRight } from 'react-icons/fi'
+
+import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 
 export function TOTPContent() {
+  const d = gettingStartedDoc
+
   return (
-    <div className="prose max-w-none prose-sm">
-      <h2 className="text-xl font-bold text-gray-900 mb-3">Set up TOTP</h2>
+    <div className={d.article}>
+      <header className="mb-10">
+        <h2 className={d.h2}>TOTP setup</h2>
+        <p className={`${d.lead} mb-3`}>
+          RFC 6238 time-based one-time passwords work with any authenticator app (Google Authenticator, Microsoft Authenticator, Authy, 1Password, and others). You generate a
+          secret once, store it in the server environment, pair your phone, then confirm codes on the tool page before relying on login.
+        </p>
+        <p className={`${d.lead} mb-0`}>
+          At least one second factor is required for this deployment: configure TOTP here, or WebAuthn in{' '}
+          <Link href="/getting-started/webauthn" className={d.link}>
+            WebAuthn setup
+          </Link>
+          , or both for redundancy.
+        </p>
+      </header>
 
-      <p className="text-gray-600 text-sm mb-4">
-        Time-based One-Time Passwords (TOTP) are the easiest way to add 2FA. Any authenticator app that supports RFC 6238 will work, so you can use the tools you already trust.
-      </p>
+      <div className="flex flex-col gap-10">
+        <section aria-labelledby="totp-prereq">
+          <h3 id="totp-prereq" className={d.docSectionLabel}>
+            Prerequisites
+          </h3>
+          <div className={d.calloutInfo}>
+            <ul className={`${d.listDisc} mb-0`}>
+              <li>
+                <code className={d.codeInline}>ACCESS_USERNAME</code> and <code className={d.codeInline}>ACCESS_PASSWORD</code> must already be set so the TOTP tool can bind the
+                secret to the same admin identity as login.
+              </li>
+              <li>Server and phone clocks should be accurate within a typical 30-second window; large drift causes valid-looking codes to fail.</li>
+            </ul>
+          </div>
+        </section>
 
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-indigo-900 mb-2">📱 Step 1 · Generate secret</h3>
-        <ol className="text-indigo-800 text-sm space-y-1 list-decimal list-inside mb-3">
-          <li>
-            Visit{' '}
-            <Link href="/totp" className="text-indigo-600 hover:underline font-medium">
-              /totp
+        <section aria-labelledby="totp-generate">
+          <h3 id="totp-generate" className={d.docSectionLabel}>
+            Generate
+          </h3>
+          <div className={d.cardMuted}>
+            <ol className={`${d.listDecimal} mb-4`}>
+              <li>
+                Open{' '}
+                <Link href="/totp" className={d.link}>
+                  /totp
+                </Link>
+              </li>
+              <li>
+                Use the same admin username as <code className={d.codeInline}>ACCESS_USERNAME</code>
+              </li>
+              <li>Add a label (for example &quot;Personal auth&quot;) so you can tell this entry apart in your authenticator</li>
+              <li>Click Generate — the page shows a QR and a Base32 secret string</li>
+            </ol>
+            <Link href="/totp" className={d.btnPrimary}>
+              <FiArrowRight size={14} aria-hidden />
+              Open TOTP tool
             </Link>
-          </li>
-          <li>Enter the admin username (e.g. admin)</li>
-          <li>Add a label so you can recognise the account (e.g. "Personal Auth")</li>
-          <li>Click Generate</li>
-        </ol>
-        <Link href="/totp" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm">
-          <FiArrowRight size={14} />
-          open totp tool
-        </Link>
-      </div>
+          </div>
+        </section>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-blue-900 mb-2">🔑 Step 2 · Store secret</h3>
-        <p className="text-blue-800 text-xs mb-3">The generator shows two important pieces of data:</p>
-        <ul className="text-blue-800 space-y-1 list-disc list-inside text-xs mb-3">
-          <li>
-            <strong>QR Code</strong> — scan with your authenticator app
-          </li>
-          <li>
-            <strong>Secret</strong> — copy the Base32 string into <code>ACCESS_TOTP_SECRET</code>
-          </li>
-        </ul>
-        <div className="bg-white rounded border border-blue-200 p-3">
-          <p className="text-[11px] font-mono text-gray-700 break-all">ACCESS_TOTP_SECRET=JBSWY3DPEHPK3PXP</p>
-        </div>
-      </div>
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-green-900 mb-2">📲 Step 3 · Pair an authenticator</h3>
-        <p className="text-green-800 text-xs mb-3">Scan the QR with any app:</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-green-900 text-xs">
-          {['Google Authenticator', 'Microsoft Authenticator', 'Authy', '1Password'].map((app) => (
-            <div key={app}>
-              <div className="bg-white rounded-lg p-2 border border-green-200 mb-1">
-                <FiSmartphone size={28} className="mx-auto text-green-600" />
-              </div>
-              {app}
+        <section aria-labelledby="totp-store">
+          <h3 id="totp-store" className={d.docSectionLabel}>
+            Store & pair
+          </h3>
+          <div className={d.card}>
+            <p className={`${d.muted} mb-3`}>
+              Scan the QR with your authenticator, or type the Base32 secret manually. The secret never leaves your control if you only paste it into env and your password manager—
+              do not embed it in client-side code or public repos.
+            </p>
+            <p className={`${d.muted} mb-3`}>
+              Put the secret string into <code className={d.codeInline}>ACCESS_TOTP_SECRET</code> (single line, no spaces). See{' '}
+              <Link href="/getting-started/env" className={d.link}>
+                Environment variables
+              </Link>{' '}
+              for the full list of keys.
+            </p>
+            <div className={d.preBox}>
+              <span className="text-[var(--app-header-text)]">Example · </span>
+              ACCESS_TOTP_SECRET=JBSWY3DPEHPK3PXP
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </section>
 
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-        <h3 className="text-base font-semibold text-purple-900 mb-2">✅ Step 4 · Test a code</h3>
-        <ol className="text-purple-800 text-xs space-y-1 list-decimal list-inside">
-          <li>Open your authenticator and copy the 6 digit code</li>
-          <li>Enter it in the "Verify" section on the TOTP page</li>
-          <li>Click Verify — you should see "Token is valid"</li>
-        </ol>
-        <p className="text-[11px] text-purple-700 mt-2">Once TOTP works you can turn it on for login.</p>
+        <section aria-labelledby="totp-test">
+          <h3 id="totp-test" className={d.docSectionLabel}>
+            Test & go live
+          </h3>
+          <div className={d.cardMuted}>
+            <ol className={`${d.listDecimal} mb-4`}>
+              <li>Redeploy or restart your dev server so the new env is picked up</li>
+              <li>
+                Copy the 6-digit code from your authenticator and use Verify on <code className={d.codeInline}>/totp</code>
+              </li>
+              <li>
+                Complete a full{' '}
+                <Link href="/login" className={d.link}>
+                  /login
+                </Link>{' '}
+                run-through with password + TOTP before pointing production apps at this host
+              </li>
+            </ol>
+            <p className={`${d.muted} mb-0`}>
+              If verification fails immediately after pairing, wait for the next 30s window, confirm the account in the app matches this site label, and check system time on both
+              devices.
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   )

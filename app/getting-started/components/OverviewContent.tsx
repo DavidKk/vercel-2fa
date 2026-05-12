@@ -1,107 +1,275 @@
 import Link from 'next/link'
-import { FiAlertTriangle, FiCheck, FiInfo, FiKey, FiShield, FiSmartphone } from 'react-icons/fi'
+import { FiAlertTriangle, FiArrowRight, FiCheck, FiInfo, FiKey, FiShield, FiSmartphone } from 'react-icons/fi'
+
+import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 
 export function OverviewContent() {
+  const {
+    article,
+    h2,
+    h4,
+    lead,
+    muted,
+    link,
+    linkWithArrow,
+    codeInline,
+    iconBox,
+    docSectionLabel,
+    docGridTwoCol,
+    calloutInfo,
+    calloutWarn,
+    calloutWarnTitle,
+    calloutWarnBody,
+    listDecimal,
+    listDisc,
+    cardMuted,
+  } = gettingStartedDoc
+
+  const guideLinks = [
+    { href: '/getting-started/totp', label: 'TOTP Setup', hint: 'Base32 secret and QR' },
+    { href: '/getting-started/webauthn', label: 'WebAuthn Setup', hint: 'Passkeys / security keys' },
+    { href: '/getting-started/ecdh', label: 'ECDH Setup', hint: 'Encrypted token return' },
+    { href: '/getting-started/integration', label: 'Project Integration', hint: 'Redirect flow and JWT' },
+    { href: '/getting-started/env', label: 'Environment Variables', hint: 'All env keys explained' },
+  ] as const
+
   return (
-    <div className="prose max-w-none prose-sm">
-      <h2 className="text-xl font-bold text-gray-900 mb-3">Welcome to Your Personal Auth Hub</h2>
+    <div className={article}>
+      <header className="mb-10">
+        <h2 className={h2}>Personal auth hub</h2>
+        <p className={`${lead} mb-3`}>
+          Deploy this app once, then point every small project at the same admin login. You keep one username, password, second factor, and JWT signing key — consumers only verify
+          the token (or call the verify API) instead of shipping their own credential store.
+        </p>
+        <p className={`${lead} mb-0`}>Typical uses: personal dashboards, internal tools, staging apps, and OAuth-style redirects where you already trust this host.</p>
+      </header>
 
-      <p className="text-gray-600 text-sm mb-4">
-        Host one login service and reuse it across every side project. This app bundles TOTP and WebAuthn so you can protect dashboards, admin tools, and playground ideas without
-        rewriting auth each time.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="bg-indigo-100 rounded-lg p-1.5">
-              <FiSmartphone size={20} className="text-indigo-600" />
+      <section className="mb-10" aria-labelledby="overview-tools">
+        <h3 id="overview-tools" className={docSectionLabel}>
+          Built-in tools
+        </h3>
+        <div className="overflow-hidden rounded-xl border border-[var(--app-header-border)] bg-[var(--app-header-bg)] shadow-sm">
+          <div className="flex snap-x snap-mandatory gap-0 overflow-x-auto md:grid md:grid-cols-3 md:overflow-visible md:snap-none md:divide-x md:divide-y-0 md:divide-[var(--app-header-border)]">
+            <div className="flex min-w-[min(17.5rem,calc(100vw-2.75rem))] shrink-0 snap-start flex-col border-[var(--app-header-border)] p-5 max-md:border-r max-md:last:border-r-0 md:min-w-0 md:border-r-0">
+              <div className="mb-3 flex items-center gap-2">
+                <div className={iconBox}>
+                  <FiSmartphone size={20} aria-hidden />
+                </div>
+                <h4 className={h4}>TOTP</h4>
+              </div>
+              <p className={`${muted} mb-2 flex-1`}>RFC 6238 time-based codes from any authenticator app.</p>
+              <p className={`${muted} mb-4`}>
+                Generate a Base32 secret, copy it into <code className={codeInline}>ACCESS_TOTP_SECRET</code>, then verify codes on the tool page before enabling login.
+              </p>
+              <Link href="/totp" className={`${link} ${linkWithArrow} text-xs`}>
+                Open TOTP
+                <FiArrowRight size={14} className="shrink-0 opacity-90" aria-hidden />
+              </Link>
             </div>
-            <h3 className="text-base font-semibold text-gray-900">TOTP Auth</h3>
+            <div className="flex min-w-[min(17.5rem,calc(100vw-2.75rem))] shrink-0 snap-start flex-col border-[var(--app-header-border)] p-5 max-md:border-r max-md:last:border-r-0 md:min-w-0 md:border-r-0">
+              <div className="mb-3 flex items-center gap-2">
+                <div className={iconBox}>
+                  <FiShield size={20} aria-hidden />
+                </div>
+                <h4 className={h4}>WebAuthn</h4>
+              </div>
+              <p className={`${muted} mb-2 flex-1`}>Platform authenticators and roaming security keys.</p>
+              <p className={`${muted} mb-4`}>
+                RP ID must match the deployed hostname. Export the JSON credential into <code className={codeInline}>ACCESS_WEBAUTHN_SECRET</code>; you can keep TOTP as a fallback.
+              </p>
+              <Link href="/webauthn" className={`${link} ${linkWithArrow} text-xs`}>
+                Register credential
+                <FiArrowRight size={14} className="shrink-0 opacity-90" aria-hidden />
+              </Link>
+            </div>
+            <div className="flex min-w-[min(17.5rem,calc(100vw-2.75rem))] shrink-0 snap-start flex-col border-[var(--app-header-border)] p-5 max-md:border-r max-md:last:border-r-0 md:min-w-0 md:border-r-0">
+              <div className="mb-3 flex items-center gap-2">
+                <div className={iconBox}>
+                  <FiKey size={20} aria-hidden />
+                </div>
+                <h4 className={h4}>ECDH</h4>
+              </div>
+              <p className={`${muted} mb-2 flex-1`}>Optional encryption for OAuth-style return payloads.</p>
+              <p className={`${muted} mb-4`}>
+                Used when the browser sends an ephemeral public key with login or{' '}
+                <Link href="/oauth" className={link}>
+                  OAuth
+                </Link>{' '}
+                flows so only that client can decrypt the session token.
+              </p>
+              <Link href="/ecdh" className={`${link} ${linkWithArrow} text-xs`}>
+                Open ECDH
+                <FiArrowRight size={14} className="shrink-0 opacity-90" aria-hidden />
+              </Link>
+            </div>
           </div>
-          <p className="text-gray-600 text-xs mb-3">Works with Google Authenticator, Authy, 1Password, and more.</p>
-          <Link href="/totp" className="text-indigo-600 hover:text-indigo-700 text-xs font-medium">
-            Generate Secret →
-          </Link>
         </div>
+      </section>
 
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="bg-green-100 rounded-lg p-1.5">
-              <FiShield size={20} className="text-green-600" />
-            </div>
-            <h3 className="text-base font-semibold text-gray-900">WebAuthn Auth</h3>
-          </div>
-          <p className="text-gray-600 text-xs mb-3">Use Touch ID, Face ID, Windows Hello, or hardware keys.</p>
-          <Link href="/webauthn" className="text-green-600 hover:text-green-700 text-xs font-medium">
-            Register Credential →
-          </Link>
+      <section className="mb-10" aria-labelledby="overview-guide-index">
+        <h3 id="overview-guide-index" className={docSectionLabel}>
+          In this guide
+        </h3>
+        <div className={`${calloutInfo} space-y-2`}>
+          <p className={`${muted} mb-0`}>Each topic has its own URL so you can bookmark or share it.</p>
+          <ul className="space-y-2 text-sm text-[var(--app-header-text)]">
+            {guideLinks.map(({ href, label, hint }) => (
+              <li key={href}>
+                <Link href={href} className={`${link} font-medium`}>
+                  {label}
+                </Link>
+                <span className={muted}> — {hint}</span>
+              </li>
+            ))}
+          </ul>
         </div>
+      </section>
 
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="bg-purple-100 rounded-lg p-1.5">
-              <FiKey size={20} className="text-purple-600" />
+      <div className={docGridTwoCol}>
+        <section aria-labelledby="overview-checklist" className="min-w-0">
+          <h3 id="overview-checklist" className={docSectionLabel}>
+            First-time setup
+          </h3>
+          <div className={calloutInfo}>
+            <div className="flex items-start gap-2">
+              <FiInfo size={18} className="mt-0.5 shrink-0 text-[var(--nav-brand-text)]" aria-hidden />
+              <div>
+                <h4 className={`${h4} mb-2`}>Checklist</h4>
+                <ol className={`${listDecimal} mb-0`}>
+                  <li>
+                    <strong className="text-[var(--nav-brand-text)]">Env core:</strong> set <code className={codeInline}>ACCESS_USERNAME</code>,{' '}
+                    <code className={codeInline}>ACCESS_PASSWORD</code>, <code className={codeInline}>JWT_SECRET</code> (≥32 chars), and at least one of{' '}
+                    <code className={codeInline}>ACCESS_TOTP_SECRET</code> or <code className={codeInline}>ACCESS_WEBAUTHN_SECRET</code>. See{' '}
+                    <Link href="/getting-started/env" className={link}>
+                      Environment variables
+                    </Link>
+                    .
+                  </li>
+                  <li>
+                    <strong className="text-[var(--nav-brand-text)]">Second factor:</strong> create TOTP material on{' '}
+                    <Link href="/totp" className={link}>
+                      /totp
+                    </Link>{' '}
+                    and/or register WebAuthn on{' '}
+                    <Link href="/webauthn" className={link}>
+                      /webauthn
+                    </Link>
+                    , then paste values into env and redeploy.
+                  </li>
+                  <li>
+                    <strong className="text-[var(--nav-brand-text)]">ECDH (optional):</strong> only if you use encrypted return from login/OAuth — generate keys on{' '}
+                    <Link href="/ecdh" className={link}>
+                      /ecdh
+                    </Link>{' '}
+                    and set <code className={codeInline}>ECDH_SERVER_PRIVATE_KEY</code>.
+                  </li>
+                  <li>
+                    <strong className="text-[var(--nav-brand-text)]">Callbacks:</strong> if <code className={codeInline}>redirectUrl</code> points to another origin, list those
+                    URLs in <code className={codeInline}>ALLOWED_REDIRECT_URLS</code> (comma-separated; wildcards supported). Same-origin relative paths work without the list.
+                  </li>
+                  <li>
+                    <strong className="text-[var(--nav-brand-text)]">Integrate:</strong> send users to <code className={codeInline}>/login?redirectUrl=…&amp;state=…</code>{' '}
+                    (URL-encode the callback). After sign-in they return with <code className={codeInline}>token</code> and optional <code className={codeInline}>state</code>.
+                    Verify JWT with <code className={codeInline}>jose</code> or POST to <code className={codeInline}>/api/auth/verify</code> — see{' '}
+                    <Link href="/getting-started/integration" className={link}>
+                      Project Integration
+                    </Link>
+                    .
+                  </li>
+                </ol>
+              </div>
             </div>
-            <h3 className="text-base font-semibold text-gray-900">ECDH Key Exchange</h3>
           </div>
-          <p className="text-gray-600 text-xs mb-3">Secure OAuth token encryption using Elliptic Curve Diffie-Hellman.</p>
-          <Link href="/ecdh" className="text-purple-600 hover:text-purple-700 text-xs font-medium">
-            Generate Key Pair →
-          </Link>
-        </div>
-      </div>
+        </section>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5">
-        <div className="flex items-start gap-2">
-          <FiInfo size={18} className="mt-0.5 flex-shrink-0 text-blue-600" />
-          <div>
-            <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">Quick Start Checklist</h4>
-            <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-              <li>Configure env vars (username, password, JWT secret, 2FA method)</li>
-              <li>Create a TOTP secret or WebAuthn credential</li>
-              <li>Generate ECDH key pair if using encrypted OAuth flow (optional)</li>
-              <li>Add allowed redirect URLs (your projects)</li>
-              <li>Redirect projects to this login and verify the token</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      <h3 className="text-lg font-bold text-gray-900 mb-3">Why it helps</h3>
-      <div className="space-y-3 mb-5">
-        {[
-          { title: 'One Auth for Everything', desc: 'Central place for all personal apps, SSO-style but self-hosted.' },
-          { title: 'JWT Tokens', desc: 'Signed tokens with customizable TTL, easy to verify in any backend.' },
-          { title: 'Redirect Whitelist', desc: 'Protects against open redirects; wildcard domains supported.' },
-          { title: 'State / CSRF Guard', desc: 'Optional state param keeps the login flow safe.' },
-        ].map(({ title, desc }) => (
-          <div className="flex items-start gap-2" key={title}>
-            <div className="bg-indigo-100 rounded-full p-0.5 mt-0.5 flex-shrink-0">
-              <FiCheck size={14} className="text-indigo-600" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
-              <p className="text-gray-600 text-xs">{desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-start gap-2">
-          <FiAlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-yellow-600" />
-          <div>
-            <h4 className="font-semibold text-yellow-900 mb-1.5 text-sm">Security Notes</h4>
-            <ul className="text-xs text-yellow-800 space-y-0.5 list-disc list-inside">
-              <li>Keep JWT_SECRET private and rotate when needed</li>
-              <li>Use strong admin credentials in prod</li>
-              <li>Only whitelist redirects you trust</li>
-              <li>Prefer HTTPS everywhere (localhost is fine for dev)</li>
+        <section aria-labelledby="overview-why" className="min-w-0">
+          <h3 id="overview-why" className={docSectionLabel}>
+            Why centralize
+          </h3>
+          <div className="rounded-xl border border-[var(--app-header-border)] bg-[var(--nav-link-hover-bg)] p-4">
+            <ul className="space-y-3">
+              {[
+                { title: 'One place to rotate secrets', desc: 'JWT signing key and admin password change here; apps only validate tokens.' },
+                { title: 'Stable identity claims', desc: 'Issued tokens include iss, sub, username, preferred_username, and optional email for your UI.' },
+                { title: 'Safer redirects', desc: 'Host allowlist blocks open redirects; pair with a random state on each login.' },
+                { title: 'Playground for OAuth', desc: 'Use /oauth/playground to exercise flows without wiring a separate client first.' },
+              ].map(({ title, desc }) => (
+                <li className="flex items-start gap-2" key={title}>
+                  <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-[var(--app-header-border)] bg-[var(--app-header-bg)]">
+                    <FiCheck size={14} className="text-[var(--nav-brand-text)]" aria-hidden />
+                  </div>
+                  <div>
+                    <p className={`${h4} mb-0.5`}>{title}</p>
+                    <p className={muted}>{desc}</p>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
-        </div>
+        </section>
       </div>
+
+      <section className="mb-10" aria-labelledby="overview-jwt">
+        <h3 id="overview-jwt" className={docSectionLabel}>
+          Session JWT (what apps should read)
+        </h3>
+        <div className={cardMuted}>
+          <p className={`${muted} mb-3`}>
+            After a successful password / TOTP / WebAuthn path, this service issues a signed JWT. Your callback should treat it like an opaque credential until verified.
+          </p>
+          <p className={`${muted} mb-2 font-semibold text-[var(--nav-brand-text)]`}>Claims you can rely on (when present)</p>
+          <ul className={`${listDisc} mb-3`}>
+            <li>
+              <code className={codeInline}>authenticated</code> — must be true for a completed login
+            </li>
+            <li>
+              <code className={codeInline}>iss</code> — issuer; overridable with <code className={codeInline}>OAUTH_ISSUER</code>
+            </li>
+            <li>
+              <code className={codeInline}>sub</code> — stable subject for the configured admin user
+            </li>
+            <li>
+              <code className={codeInline}>username</code> / <code className={codeInline}>preferred_username</code> — from <code className={codeInline}>ACCESS_USERNAME</code>
+            </li>
+            <li>
+              <code className={codeInline}>email</code> — only when <code className={codeInline}>ACCESS_EMAIL</code> is set
+            </li>
+            <li>
+              <code className={codeInline}>iat</code> / <code className={codeInline}>exp</code> — standard time bounds; session length follows Remember me and{' '}
+              <code className={codeInline}>JWT_EXPIRES_IN</code>
+            </li>
+          </ul>
+          <p className={muted}>
+            Inspect a decoded sample at{' '}
+            <Link href="/login/blank" className={link}>
+              /login/blank
+            </Link>{' '}
+            with <code className={codeInline}>redirectUrl=/login/blank</code> after configuring env.
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="overview-security">
+        <h3 id="overview-security" className={docSectionLabel}>
+          Security
+        </h3>
+        <div className={calloutWarn}>
+          <div className="flex items-start gap-2">
+            <FiAlertTriangle size={18} className={`mt-0.5 shrink-0 ${calloutWarnTitle}`} aria-hidden />
+            <div>
+              <h4 className={`${calloutWarnTitle} mb-1.5`}>Reminders</h4>
+              <ul className={`${calloutWarnBody} list-disc space-y-0.5`}>
+                <li>
+                  Never ship <code className={codeInline}>JWT_SECRET</code> to browsers or public repos
+                </li>
+                <li>Use long random passwords in production; rotate when people leave</li>
+                <li>Only whitelist redirect origins you control; prefer HTTPS for callbacks</li>
+                <li>Keep server time accurate for TOTP (NTP); skew breaks verification</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

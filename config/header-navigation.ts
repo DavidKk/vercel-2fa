@@ -24,7 +24,7 @@ export const HEADER_TOOLS: HeaderToolLink[] = [
 /** Docs hub */
 export const HEADER_DOCS: HeaderPlainLink = {
   label: 'Docs',
-  href: '/getting-started',
+  href: '/getting-started/overview',
 }
 
 /** OAuth sandbox entry (distinct from production sign-in in copy and styling) */
@@ -38,7 +38,7 @@ export const HEADER_PLAYGROUND: HeaderPlainLink = {
  */
 export const HEADER_MCP: HeaderPlainLink = {
   label: 'MCP',
-  href: '/getting-started#mcp',
+  href: '/getting-started/overview#mcp',
 }
 
 /** Primary authentication entry */

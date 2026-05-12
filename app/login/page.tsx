@@ -26,7 +26,8 @@ export default async function LoginPage(props: LoginPageProps) {
   }
 
   const { searchParams } = props
-  const { redirectUrl: url = '/login/blank', state } = await searchParams
+  // Default `/` after sign-in; pass `redirectUrl=/login/blank` for token inspection (playground / docs).
+  const { redirectUrl: url = '/', state } = await searchParams
 
   const redirectUrl = decodeURIComponent(url)
 
