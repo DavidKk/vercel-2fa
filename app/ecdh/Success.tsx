@@ -1,7 +1,7 @@
 'use client'
 
-import FeatherIcon from 'feather-icons-react'
 import { useState } from 'react'
+import { FiCheck, FiCopy } from 'react-icons/fi'
 
 export interface SuccessProps {
   keys: {
@@ -62,12 +62,12 @@ export default function Success(props: SuccessProps) {
             <button onClick={() => handleCopy(formatKeyForEnv(keys.privateKey), 'privateKey')} className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700">
               {copiedField === 'privateKey' ? (
                 <>
-                  <FeatherIcon icon="check" size={16} />
+                  <FiCheck size={16} />
                   <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <FeatherIcon icon="copy" size={16} />
+                  <FiCopy size={16} />
                   <span>Copy</span>
                 </>
               )}
@@ -88,12 +88,12 @@ export default function Success(props: SuccessProps) {
             <button onClick={() => handleCopy(formatKeyForEnv(keys.publicKey), 'publicKey')} className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700">
               {copiedField === 'publicKey' ? (
                 <>
-                  <FeatherIcon icon="check" size={16} />
+                  <FiCheck size={16} />
                   <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <FeatherIcon icon="copy" size={16} />
+                  <FiCopy size={16} />
                   <span>Copy</span>
                 </>
               )}
@@ -125,12 +125,12 @@ ECDH_SERVER_PUBLIC_KEY="${formatKeyForEnv(keys.publicKey)}"`,
             >
               {copiedField === 'envConfig' ? (
                 <>
-                  <FeatherIcon icon="check" size={14} />
+                  <FiCheck size={14} />
                   <span className="uppercase tracking-wide">Copied</span>
                 </>
               ) : (
                 <>
-                  <FeatherIcon icon="copy" size={14} />
+                  <FiCopy size={14} />
                   <span className="uppercase tracking-wide">Copy</span>
                 </>
               )}

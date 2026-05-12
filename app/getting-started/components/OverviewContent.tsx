@@ -1,5 +1,5 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
+import { FiAlertTriangle, FiCheck, FiInfo, FiKey, FiShield, FiSmartphone } from 'react-icons/fi'
 
 export function OverviewContent() {
   return (
@@ -15,7 +15,7 @@ export function OverviewContent() {
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="bg-indigo-100 rounded-lg p-1.5">
-              <FeatherIcon icon="smartphone" size={20} className="text-indigo-600" />
+              <FiSmartphone size={20} className="text-indigo-600" />
             </div>
             <h3 className="text-base font-semibold text-gray-900">TOTP Auth</h3>
           </div>
@@ -28,7 +28,7 @@ export function OverviewContent() {
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="bg-green-100 rounded-lg p-1.5">
-              <FeatherIcon icon="shield" size={20} className="text-green-600" />
+              <FiShield size={20} className="text-green-600" />
             </div>
             <h3 className="text-base font-semibold text-gray-900">WebAuthn Auth</h3>
           </div>
@@ -41,7 +41,7 @@ export function OverviewContent() {
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="bg-purple-100 rounded-lg p-1.5">
-              <FeatherIcon icon="key" size={20} className="text-purple-600" />
+              <FiKey size={20} className="text-purple-600" />
             </div>
             <h3 className="text-base font-semibold text-gray-900">ECDH Key Exchange</h3>
           </div>
@@ -54,7 +54,7 @@ export function OverviewContent() {
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5">
         <div className="flex items-start gap-2">
-          <FeatherIcon icon="info" size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+          <FiInfo size={18} className="mt-0.5 flex-shrink-0 text-blue-600" />
           <div>
             <h4 className="font-semibold text-blue-900 mb-1.5 text-sm">Quick Start Checklist</h4>
             <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
@@ -78,7 +78,7 @@ export function OverviewContent() {
         ].map(({ title, desc }) => (
           <div className="flex items-start gap-2" key={title}>
             <div className="bg-indigo-100 rounded-full p-0.5 mt-0.5 flex-shrink-0">
-              <FeatherIcon icon="check" size={14} className="text-indigo-600" />
+              <FiCheck size={14} className="text-indigo-600" />
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
@@ -90,7 +90,7 @@ export function OverviewContent() {
 
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-start gap-2">
-          <FeatherIcon icon="alert-triangle" size={18} className="text-yellow-600 mt-0.5 flex-shrink-0" />
+          <FiAlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-yellow-600" />
           <div>
             <h4 className="font-semibold text-yellow-900 mb-1.5 text-sm">Security Notes</h4>
             <ul className="text-xs text-yellow-800 space-y-0.5 list-disc list-inside">

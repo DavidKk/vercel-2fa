@@ -1,6 +1,6 @@
 'use client'
 
-import { HelpCircle } from 'feather-icons-react'
+import { FiHelpCircle } from 'react-icons/fi'
 
 import { useAssistSidebar } from './AssistSidebarContext'
 
@@ -18,7 +18,7 @@ export function AssistSidebarTrigger({ contentKey }: AssistSidebarTriggerProps) 
       aria-label="View contextual guide"
       title="View contextual guide"
     >
-      <HelpCircle size={24} />
+      <FiHelpCircle size={24} />
     </button>
   )
 }

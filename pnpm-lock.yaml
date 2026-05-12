@@ -29,9 +29,6 @@ importers:
       ahooks:
         specifier: ^3.8.4
         version: 3.8.4(react@19.2.1)
-      feather-icons-react:
-        specifier: ^0.8.1
-        version: 0.8.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       jose:
         specifier: ^6.2.1
         version: 6.2.3
@@ -53,6 +50,9 @@ importers:
       react-dom:
         specifier: ^19.1.2
         version: 19.2.1(react@19.2.1)
+      react-icons:
+        specifier: ^5.5.0
+        version: 5.6.0(react@19.2.1)
     devDependencies:
       '@commitlint/cli':
         specifier: ^19.3.0
@@ -2129,12 +2129,6 @@ packages:
   fb-watchman@2.0.2:
     resolution: {integrity: sha512-p5161BqbuCaSnB8jIbzQHOlpgsPmK5rJVDfDKO91Axs5NC1uu3HRQm6wt9cd9/+GtQQIO53JdGXXoyDpTAsgYA==}
 
-  feather-icons-react@0.8.1:
-    resolution: {integrity: sha512-3qGHyiVpUaIyNOFehqQ/bEFLDFXezWWt250g1gJfKokffuVaLt0P+es8kddf+SaxA0qqiK7tt/uxvFXjDscDKw==}
-    peerDependencies:
-      react: ^16.8.4 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.8.4 || ^17.0.0 || ^18.0.0
-
   figures@2.0.0:
     resolution: {integrity: sha512-Oa2M9atig69ZkfwiApY8F2Yy+tzMbazyvqv21R0NsSC8floSOC09BbT1ITWAdoMGQvJ/aZnR1KMwdx9tvHnTNA==}
     engines: {node: '>=4'}
@@ -3495,6 +3489,11 @@ packages:
 
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
+
+  react-icons@5.6.0:
+    resolution: {integrity: sha512-RH93p5ki6LfOiIt0UtDyNg/cee+HLVR6cHHtW3wALfo+eOHTp8RnU2kRkI6E+H19zMIs03DyxUG/GfZMOGvmiA==}
+    peerDependencies:
+      react: '*'
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -6563,11 +6562,6 @@ snapshots:
     dependencies:
       bser: 2.1.1
 
-  feather-icons-react@0.8.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
-    dependencies:
-      react: 19.2.1
-      react-dom: 19.2.1(react@19.2.1)
-
   figures@2.0.0:
     dependencies:
       escape-string-regexp: 1.0.5
@@ -8106,6 +8100,10 @@ snapshots:
       scheduler: 0.27.0
 
   react-fast-compare@3.2.2: {}
+
+  react-icons@5.6.0(react@19.2.1):
+    dependencies:
+      react: 19.2.1
 
   react-is@16.13.1: {}
 

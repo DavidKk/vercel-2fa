@@ -2,7 +2,7 @@
 
 # Two-Factor Authentication Service
 
-[online](https://vercel-2fa.vercel.app)
+[online](https://signet.vercel.app)
 
 A simple and user-friendly two-factor authentication service based on TOTP (Time-Based One-Time Password) and WebAuthn standards for enhanced security.
 
@@ -80,7 +80,7 @@ This system can serve as a unified login portal for all your personal projects. 
 Redirect users to the authentication center with callback URL:
 
 ```
-https://your-2fa-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
+https://your-signet-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
 ```
 
 **Parameters**:
@@ -131,7 +131,7 @@ async function verifyToken(token: string) {
 **Method B: API Verification (For scenarios without shared secrets)**
 
 ```typescript
-const response = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ if (result.code === 0 && result.data.valid) {
 }
 ```
 
-#### Static ESM SDK (`/sdk/vercel-2fa-client.mjs`)
+#### Static ESM SDK (`/sdk/signet-client.mjs`)
 
 The deployment serves a tiny ES module (optional helper; no npm package required):
 
@@ -154,7 +154,7 @@ The deployment serves a tiny ES module (optional helper; no npm package required
 - **`parseLoginCallbackParams`** — read `token` / `state` from the callback query string
 - **`verifyTokenAtAuthCenter`** — `POST /api/auth/verify` using `fetch` (works in Node and the browser; server-side calls do not need an `Origin` header)
 
-Example URL after deploy: `https://your-2fa-domain.com/sdk/vercel-2fa-client.mjs`
+Example URL after deploy: `https://your-signet-domain.com/sdk/signet-client.mjs`
 
 **Next.js:** For **Route Handlers / Server Actions**, prefer copying this file into your repo (or importing it via a normal filesystem path in a monorepo). Using [`experimental.urlImports`](https://nextjs.org/docs/app/api-reference/config/next-config-js/urlImports) for server bundles has been reported to fail at runtime on some Next.js 15–16 + Webpack setups (`__webpack_modules__[moduleId] is not a function`) even when the build succeeds. Client-only code or non-Next runtimes may still use `urlImports` or dynamic `import()` of the deployed URL.
 
@@ -183,7 +183,7 @@ ALLOWED_REDIRECT_URLS=https://*.example.com,https://*.company.com
 const state = crypto.randomUUID()
 sessionStorage.setItem('oauth_state', state)
 
-const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
 window.location.href = loginUrl
 
 // Verify state on callback
@@ -209,7 +209,7 @@ function handleLogin() {
   sessionStorage.setItem('oauth_state', state)
 
   const callbackUrl = `${window.location.origin}/auth/callback`
-  const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+  const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
 
   window.location.href = loginUrl
 }

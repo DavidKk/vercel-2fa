@@ -1,11 +1,11 @@
 /**
- * Vercel 2FA — minimal browser + Node (Next.js) integration helpers.
+ * Signet — minimal browser + Node (Next.js) integration helpers.
  * Hosted as static ESM; use with Next.js experimental.urlImports or any ESM bundler.
  */
 
 /**
  * Normalize auth center base URL (no trailing slash).
- * @param {string} origin - Base URL (e.g. https://your-2fa.example.com)
+ * @param {string} origin - Base URL (e.g. https://your-signet.example.com)
  * @returns {string}
  */
 export function normalizeAuthCenterOrigin(origin) {

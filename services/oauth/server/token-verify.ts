@@ -183,7 +183,7 @@ function buildAccessTokenClaims(payload: JWTPayload, options?: VerifyTokenOption
   const standardClaims = buildStandardClaims(
     {
       authenticated,
-      provider: 'vercel-2fa',
+      provider: 'signet',
     },
     options?.issuer // Pass explicit issuer if provided
   )

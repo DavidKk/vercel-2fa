@@ -1,5 +1,5 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
+import { FiArrowRight, FiSmartphone } from 'react-icons/fi'
 
 export function TOTPContent() {
   return (
@@ -24,7 +24,7 @@ export function TOTPContent() {
           <li>Click Generate</li>
         </ol>
         <Link href="/totp" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm">
-          <FeatherIcon icon="arrow-right" size={14} />
+          <FiArrowRight size={14} />
           open totp tool
         </Link>
       </div>
@@ -52,7 +52,7 @@ export function TOTPContent() {
           {['Google Authenticator', 'Microsoft Authenticator', 'Authy', '1Password'].map((app) => (
             <div key={app}>
               <div className="bg-white rounded-lg p-2 border border-green-200 mb-1">
-                <FeatherIcon icon="smartphone" size={28} className="text-green-600 mx-auto" />
+                <FiSmartphone size={28} className="mx-auto text-green-600" />
               </div>
               {app}
             </div>

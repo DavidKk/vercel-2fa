@@ -5,13 +5,66 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --header-height: 60px;
+  --header-height: 56px;
+  /* App shell / header (semantic; used by AppHeader) */
+  --app-header-bg: #ffffff;
+  --app-header-border: #e5e5e5;
+  --app-header-text: #525252;
+  /** Focus ring (monochrome) */
+  --app-header-focus: #171717;
+  /** Primary CTA — black on white */
+  --app-primary: #171717;
+  --app-primary-hover: #404040;
+  --app-primary-fg: #ffffff;
+  /** Nav links — grayscale; active pill uses solid #f3f3f3 on white header */
+  --nav-link: #525252;
+  --nav-link-hover-bg: #fafafa;
+  --nav-link-hover-text: #0a0a0a;
+  --nav-link-active-bg: #f3f3f3;
+  --nav-link-active-text: #0a0a0a;
+  --nav-dropdown-hover-bg: #fafafa;
+  --nav-dropdown-active-bg: #f3f3f3;
+  --nav-dropdown-active-text: #0a0a0a;
+  --nav-brand-text: #0a0a0a;
+  --nav-icon-muted: #737373;
+  --nav-icon-hover-bg: #f3f3f3;
+  --nav-icon-hover-text: #0a0a0a;
+  /** Playground Demo badge — orange border, fill, and label */
+  --nav-demo-badge-border: #fb923c;
+  --nav-demo-badge-bg: #fff7ed;
+  --nav-demo-badge-text: #c2410c;
+  --nav-drawer-group-bg: rgba(245, 245, 245, 0.9);
+  --nav-drawer-group-border: #e5e5e5;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --app-header-bg: #0a0a0a;
+    --app-header-border: #262626;
+    --app-header-text: #a3a3a3;
+    --app-header-focus: #fafafa;
+    --app-primary: #fafafa;
+    --app-primary-hover: #e5e5e5;
+    --app-primary-fg: #0a0a0a;
+    --nav-link: #a3a3a3;
+    --nav-link-hover-bg: rgba(255, 255, 255, 0.06);
+    --nav-link-hover-text: #fafafa;
+    --nav-link-active-bg: rgba(255, 255, 255, 0.11);
+    --nav-link-active-text: #fafafa;
+    --nav-dropdown-hover-bg: rgba(255, 255, 255, 0.06);
+    --nav-dropdown-active-bg: rgba(255, 255, 255, 0.14);
+    --nav-dropdown-active-text: #fafafa;
+    --nav-brand-text: #fafafa;
+    --nav-icon-muted: #a3a3a3;
+    --nav-icon-hover-bg: rgba(255, 255, 255, 0.1);
+    --nav-icon-hover-text: #fafafa;
+    --nav-demo-badge-border: #ea580c;
+    --nav-demo-badge-bg: rgba(234, 88, 12, 0.18);
+    --nav-demo-badge-text: #fdba74;
+    --nav-drawer-group-bg: rgba(38, 38, 38, 0.75);
+    --nav-drawer-group-border: #404040;
   }
 }
 

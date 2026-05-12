@@ -1,8 +1,7 @@
 'use client'
 
-import type { FeatherIconName } from 'feather-icons-react'
-import FeatherIcon from 'feather-icons-react'
-import { useState } from 'react'
+import { type FC, useState } from 'react'
+import { FiHome, FiKey, FiLink, FiSettings, FiShield, FiSmartphone } from 'react-icons/fi'
 
 import { ECDHContent } from './components/ECDHContent'
 import { EnvironmentContent } from './components/EnvironmentContent'
@@ -16,22 +15,23 @@ type Tab = 'overview' | 'totp' | 'webauthn' | 'ecdh' | 'integration' | 'env'
 export function GettingStartedContent() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
 
-  const tabs: Array<{ key: Tab; label: string; icon: FeatherIconName }> = [
-    { key: 'overview', label: 'Overview', icon: 'home' },
-    { key: 'totp', label: 'TOTP Setup', icon: 'smartphone' },
-    { key: 'webauthn', label: 'WebAuthn Setup', icon: 'shield' },
-    { key: 'ecdh', label: 'ECDH Setup', icon: 'key' },
-    { key: 'integration', label: 'Project Integration', icon: 'link' },
-    { key: 'env', label: 'Environment Vars', icon: 'settings' },
+  const tabs: Array<{ key: Tab; label: string; icon: FC<{ size?: number }> }> = [
+    { key: 'overview', label: 'Overview', icon: FiHome },
+    { key: 'totp', label: 'TOTP Setup', icon: FiSmartphone },
+    { key: 'webauthn', label: 'WebAuthn Setup', icon: FiShield },
+    { key: 'ecdh', label: 'ECDH Setup', icon: FiKey },
+    { key: 'integration', label: 'Project Integration', icon: FiLink },
+    { key: 'env', label: 'Environment Vars', icon: FiSettings },
   ]
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div id="mcp" className="col-span-full h-0 scroll-mt-28 overflow-hidden" aria-hidden tabIndex={-1} />
       {/* Sidebar Navigation */}
       <div className="lg:col-span-1">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sticky top-4">
           <nav className="space-y-0.5">
-            {tabs.map(({ key, label, icon }) => (
+            {tabs.map(({ key, label, icon: TabIcon }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key as Tab)}
@@ -40,7 +40,7 @@ export function GettingStartedContent() {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <FeatherIcon icon={icon} size={16} />
+                  <TabIcon size={16} />
                   <span>{label}</span>
                 </div>
               </button>

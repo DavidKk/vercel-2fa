@@ -1,4 +1,4 @@
-import FeatherIcon from 'feather-icons-react'
+import { FiCheckCircle, FiShield } from 'react-icons/fi'
 
 export function IntegrationContent() {
   return (
@@ -47,7 +47,7 @@ if (payload?.authenticated) {
             </pre>
           </div>
           <div className="flex items-center gap-2 text-xs text-blue-700">
-            <FeatherIcon icon="check-circle" size={14} />
+            <FiCheckCircle size={14} />
             <span>Fastest and simplest</span>
           </div>
         </div>
@@ -57,7 +57,7 @@ if (payload?.authenticated) {
           <p className="text-green-800 text-xs mb-3">When you cannot share secrets, call the verify endpoint:</p>
           <div className="bg-white rounded border border-green-200 p-3 mb-2">
             <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-              {`const res = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+              {`const res = await fetch('https://your-signet-domain.com/api/auth/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ token })
@@ -69,7 +69,7 @@ if (data.code === 0 && data.data.valid) {
             </pre>
           </div>
           <div className="flex items-center gap-2 text-xs text-green-700">
-            <FeatherIcon icon="shield" size={14} />
+            <FiShield size={14} />
             <span>No key sharing required</span>
           </div>
         </div>

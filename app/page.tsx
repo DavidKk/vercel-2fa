@@ -1,10 +1,10 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
+import { FiArrowRight, FiBookOpen, FiCheckCircle, FiCheckSquare, FiKey, FiLink, FiLock, FiLogIn, FiPlayCircle, FiShield, FiSmartphone } from 'react-icons/fi'
 
 import { generate } from '@/components/Meta'
 
 const { generateMetadata } = generate({
-  title: 'Two-Factor Authentication Service',
+  title: 'Signet · Two-Factor Authentication',
   description: 'A simple and user-friendly two-factor authentication service based on the TOTP standard for enhanced security.',
 })
 
@@ -16,7 +16,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="max-w-6xl mx-auto px-4 pt-12 pb-8 text-center">
         <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-medium mb-4">
-          <FeatherIcon icon="shield" size={14} />
+          <FiShield size={14} />
           <span>Secure · Reliable · Easy to Use</span>
         </div>
 
@@ -36,7 +36,7 @@ export default function Home() {
             href="/getting-started"
             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl"
           >
-            <FeatherIcon icon="play-circle" size={18} />
+            <FiPlayCircle size={18} />
             Get Started
           </Link>
 
@@ -44,7 +44,7 @@ export default function Home() {
             href="/login?redirectUrl=/login/blank"
             className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-all border-2 border-indigo-600"
           >
-            <FeatherIcon icon="log-in" size={18} />
+            <FiLogIn size={18} />
             Try Login
           </Link>
         </div>
@@ -82,51 +82,51 @@ export default function Home() {
             {/* TOTP */}
             <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-6 shadow-sm border border-indigo-100 hover:shadow-lg transition-shadow">
               <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FeatherIcon icon="smartphone" size={24} className="text-indigo-600" />
+                <FiSmartphone size={24} className="text-indigo-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">TOTP Authentication</h3>
               <p className="text-gray-600 text-sm mb-3">Time-based one-time password, compatible with Google Authenticator, Microsoft Authenticator, and more</p>
               <Link href="/totp" className="text-indigo-600 hover:text-indigo-700 font-medium text-sm inline-flex items-center gap-2">
                 Generate Secret
-                <FeatherIcon icon="arrow-right" size={14} />
+                <FiArrowRight size={14} />
               </Link>
             </div>
 
             {/* WebAuthn */}
             <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 shadow-sm border border-green-100 hover:shadow-lg transition-shadow">
               <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FeatherIcon icon="shield" size={24} className="text-green-600" />
+                <FiShield size={24} className="text-green-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">WebAuthn Authentication</h3>
               <p className="text-gray-600 text-sm mb-3">Support for biometrics, hardware keys like YubiKey, and FIDO2-compliant modern authentication</p>
               <Link href="/webauthn" className="text-green-600 hover:text-green-700 font-medium text-sm inline-flex items-center gap-2">
                 Register Credential
-                <FeatherIcon icon="arrow-right" size={14} />
+                <FiArrowRight size={14} />
               </Link>
             </div>
 
             {/* SSO */}
             <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-6 shadow-sm border border-purple-100 hover:shadow-lg transition-shadow">
               <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FeatherIcon icon="link" size={24} className="text-purple-600" />
+                <FiLink size={24} className="text-purple-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified Auth Center</h3>
               <p className="text-gray-600 text-sm mb-3">One authentication service for all your personal projects, no need to build login for each app</p>
               <Link href="/getting-started" className="text-purple-600 hover:text-purple-700 font-medium text-sm inline-flex items-center gap-2">
                 Learn Integration
-                <FeatherIcon icon="arrow-right" size={14} />
+                <FiArrowRight size={14} />
               </Link>
             </div>
 
             {/* JWT Token */}
             <div className="bg-gradient-to-br from-orange-50 to-white rounded-xl p-6 shadow-sm border border-orange-100 hover:shadow-lg transition-shadow">
               <div className="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FeatherIcon icon="key" size={24} className="text-orange-600" />
+                <FiKey size={24} className="text-orange-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">JWT Token Auth</h3>
               <p className="text-gray-600 text-sm mb-3">Standard JWT token implementation with customizable expiration time for easy user identity verification</p>
               <div className="text-orange-600 font-medium text-sm inline-flex items-center gap-2">
-                <FeatherIcon icon="check-circle" size={14} />
+                <FiCheckCircle size={14} />
                 Secure & Reliable
               </div>
             </div>
@@ -134,12 +134,12 @@ export default function Home() {
             {/* Whitelist */}
             <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-lg transition-shadow">
               <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FeatherIcon icon="check-square" size={24} className="text-blue-600" />
+                <FiCheckSquare size={24} className="text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">URL Whitelist</h3>
               <p className="text-gray-600 text-sm mb-3">Configure allowed redirect URL whitelist to prevent open redirect vulnerabilities, supports wildcard patterns</p>
               <div className="text-blue-600 font-medium text-sm inline-flex items-center gap-2">
-                <FeatherIcon icon="shield" size={14} />
+                <FiShield size={14} />
                 Complete Protection
               </div>
             </div>
@@ -147,12 +147,12 @@ export default function Home() {
             {/* CSRF Protection */}
             <div className="bg-gradient-to-br from-pink-50 to-white rounded-xl p-6 shadow-sm border border-pink-100 hover:shadow-lg transition-shadow">
               <div className="bg-pink-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FeatherIcon icon="lock" size={24} className="text-pink-600" />
+                <FiLock size={24} className="text-pink-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">CSRF Protection</h3>
               <p className="text-gray-600 text-sm mb-3">Built-in state parameter support to protect login flow from cross-site request forgery attacks</p>
               <div className="text-pink-600 font-medium text-sm inline-flex items-center gap-2">
-                <FeatherIcon icon="check-circle" size={14} />
+                <FiCheckCircle size={14} />
                 Security First
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function Home() {
               href="/getting-started"
               className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-lg"
             >
-              <FeatherIcon icon="book-open" size={18} />
+              <FiBookOpen size={18} />
               View Documentation
             </Link>
 
@@ -223,7 +223,7 @@ export default function Home() {
               href="/totp"
               className="inline-flex items-center gap-2 bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-800 transition-all border-2 border-white"
             >
-              <FeatherIcon icon="smartphone" size={18} />
+              <FiSmartphone size={18} />
               Generate TOTP Secret
             </Link>
           </div>

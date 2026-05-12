@@ -1,7 +1,7 @@
 import { startRegistration } from '@simplewebauthn/browser'
 import { useRequest } from 'ahooks'
-import { ChevronDown } from 'feather-icons-react'
 import { useEffect, useRef, useState } from 'react'
+import { FiChevronDown } from 'react-icons/fi'
 
 import { generateRegisterOptions, verifyRegister } from '@/app/actions/webauthn'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
@@ -104,7 +104,7 @@ export default function Form(props: FormProps) {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 opacity-[0.3]" />
+            <FiChevronDown size={18} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 opacity-[0.3]" />
           </div>
         </div>
 

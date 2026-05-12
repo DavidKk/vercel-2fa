@@ -25,7 +25,7 @@ export function getIssuer(explicitIssuer?: string): string {
     return `https://${vercelUrl}`
   }
 
-  return 'https://vercel-2fa.local'
+  return 'https://signet.local'
 }
 
 /**

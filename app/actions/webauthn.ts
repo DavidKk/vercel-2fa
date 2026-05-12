@@ -58,7 +58,7 @@ export async function generateRegisterOptions(props: GenerateRegisterOptionsProp
   crypto.getRandomValues(challenge)
 
   return generateRegistrationOptions({
-    rpName: appName || 'Vercel 2FA Demo',
+    rpName: appName || 'Signet Demo',
     rpID: rpId,
     userID: new TextEncoder().encode(username),
     userName: username,

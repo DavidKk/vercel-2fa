@@ -1,5 +1,5 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
+import { FiArrowRight } from 'react-icons/fi'
 
 export function ECDHContent() {
   return (
@@ -24,7 +24,7 @@ export function ECDHContent() {
           <li>Wait for the system to generate a new ECDH key pair</li>
         </ol>
         <Link href="/ecdh" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm">
-          <FeatherIcon icon="arrow-right" size={14} />
+          <FiArrowRight size={14} />
           open ecdh tool
         </Link>
       </div>

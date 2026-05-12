@@ -1,5 +1,5 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
+import { FiAlertCircle, FiAlertTriangle, FiKey, FiSettings, FiShield } from 'react-icons/fi'
 
 export function EnvironmentContent() {
   return (
@@ -13,7 +13,7 @@ export function EnvironmentContent() {
       <div className="space-y-5">
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
-            <FeatherIcon icon="alert-circle" size={18} className="text-red-600" />
+            <FiAlertCircle size={18} className="text-red-600" />
             <h3 className="text-base font-semibold text-gray-900">Required</h3>
           </div>
           <div className="space-y-3 text-sm">
@@ -45,7 +45,7 @@ export function EnvironmentContent() {
 
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
-            <FeatherIcon icon="shield" size={18} className="text-indigo-600" />
+            <FiShield size={18} className="text-indigo-600" />
             <h3 className="text-base font-semibold text-gray-900">2FA providers (pick at least one)</h3>
           </div>
           <div className="space-y-3 text-sm">
@@ -80,7 +80,7 @@ export function EnvironmentContent() {
 
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
-            <FeatherIcon icon="settings" size={18} className="text-gray-600" />
+            <FiSettings size={18} className="text-gray-600" />
             <h3 className="text-base font-semibold text-gray-900">Optional tweaks</h3>
           </div>
           <div className="space-y-3 text-sm">
@@ -107,7 +107,7 @@ export function EnvironmentContent() {
 
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
-            <FeatherIcon icon="key" size={18} className="text-purple-600" />
+            <FiKey size={18} className="text-purple-600" />
             <h3 className="text-base font-semibold text-gray-900">ECDH Key Exchange (for encrypted OAuth flow)</h3>
           </div>
           <div className="space-y-3 text-sm">
@@ -146,7 +146,7 @@ export function EnvironmentContent() {
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <FeatherIcon icon="alert-triangle" size={18} className="text-yellow-600 mt-0.5" />
+            <FiAlertTriangle size={18} className="mt-0.5 text-yellow-600" />
             <div>
               <h4 className="font-semibold text-yellow-900 mb-1 text-sm">Tips</h4>
               <ul className="text-xs text-yellow-800 space-y-1 list-disc list-inside">
