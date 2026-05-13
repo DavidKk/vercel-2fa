@@ -148,17 +148,30 @@ if (result.code === 0 && result.data.valid) {
 
 #### Static ESM SDK (`/sdk/signet-client.mjs`)
 
-The deployment serves a tiny ES module (optional helper; no npm package required):
+The deployment serves a tiny ES module (no npm package) so **consumer apps share the same helpers** as documentation and MCP:
 
-- **`buildLoginUrl`** — build `/login?redirectUrl=&state=`
-- **`parseLoginCallbackParams`** — read `token` / `state` from the callback query string
-- **`verifyTokenAtAuthCenter`** — `POST /api/auth/verify` using `fetch` (works in Node and the browser; server-side calls do not need an `Origin` header)
+- **`buildLoginUrl`** — `/login?redirectUrl=&state=`
+- **`buildOAuthLoginUrl`** — `/oauth?…` (ECDH; return puts `token` / `state` in the callback URL **hash**)
+- **`parseLoginCallbackParams`** — read `token` / `state` from a **full callback URL or `location.href`** (hash first, then query)
+- **`verifyTokenAtAuthCenter`** — `POST /api/auth/verify` via `fetch` (Node + browser; server calls do not need `Origin`)
+- **`getVerifyApiUrl` / `getOAuthPublicKeyUrl`** — canonical `/api/auth/verify` and `/api/oauth/public-key` URLs
+- **`getLoginCallbackFromWindow`** — browser helper = `parseLoginCallbackParams(location.href)`
+- **`stripLoginCallbackFromUrl`** — remove `token` / `state` from **query and hash** (for `history.replaceState`)
+- **`isLoginCallbackTokenInHash`** — quick check for typical `/oauth` hash returns
 
-Example URL after deploy: `https://your-signet-domain.com/sdk/signet-client.mjs`
+Example: `https://your-signet-domain.com/sdk/signet-client.mjs`. Responses include `Access-Control-Allow-Origin: *` on `/sdk/*` for browser `import()`.
 
-**Next.js:** For **Route Handlers / Server Actions**, prefer copying this file into your repo (or importing it via a normal filesystem path in a monorepo). Using [`experimental.urlImports`](https://nextjs.org/docs/app/api-reference/config/next-config-js/urlImports) for server bundles has been reported to fail at runtime on some Next.js 15–16 + Webpack setups (`__webpack_modules__[moduleId] is not a function`) even when the build succeeds. Client-only code or non-Next runtimes may still use `urlImports` or dynamic `import()` of the deployed URL.
+**Next.js / Webpack (aligned with [vercel-web-scripts](https://github.com/DavidKk/vercel-web-scripts)):**
 
-The deployment sends `Access-Control-Allow-Origin: *` on `/sdk/*.mjs` for browser `import()` when applicable.
+1. Resolve `sdkUrl` from env — e.g. `NEXT_PUBLIC_VERCEL_2FA_ORIGIN` (no trailing slash) + `/sdk/signet-client.mjs`, or `NEXT_PUBLIC_SIGNET_SDK_URL` for a full URL; optionally set `VERCEL_2FA_ORIGIN` for server-only verify + same-origin SDK fetch.
+2. In both **client components** and **Route Handlers**, prefer **`await import(/* webpackIgnore: true */ sdkUrl)`** with a **cached module promise** so you call the real `parseLoginCallbackParams` / `verifyTokenAtAuthCenter` instead of forking copies in the consumer repo.
+3. **`/oauth` callbacks:** do not rely on `useSearchParams()` alone — the payload is in the **hash**; use `parseLoginCallbackParams(window.location.href)` (or equivalent).
+4. **Server-only token read from the HTTP request** works for **`/login`** (query is on the wire). It does **not** work for **`/oauth`** hash fragments (they never hit the server).
+
+**Common mistakes**
+
+- OAuth callback page uses `URLSearchParams(location.search)` only → never sees `#token`.
+- Route Handler tries to parse `/oauth` token from `request.url` → hash is not present on the server.
 
 ### Security Configuration
 

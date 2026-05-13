@@ -81,7 +81,50 @@ export function createSignetMcpTools(context: SignetMcpContext) {
         const framework = stringParam(params, 'framework') || 'generic'
         const encryptedReturn = booleanParam(params, 'encryptedReturn')
         return {
-          summary: 'Integrate by redirecting users to Signet, verifying the returned token, then creating your own app session.',
+          summary:
+            'Integrate by redirecting users to Signet, verifying the returned token, then creating your own app session. Prefer the hosted SDK at /sdk/signet-client.mjs (see hostedSdkUrl) instead of duplicating parse/verify logic.',
+          hostedSdkUrl: `${context.origin}/sdk/signet-client.mjs`,
+          referenceImplementation: {
+            name: 'vercel-web-scripts (MagickMonkey)',
+            patterns: [
+              'lib/signet-sdk-url.ts — getSignetSdkModuleUrl() from NEXT_PUBLIC_VERCEL_2FA_ORIGIN / VERCEL_2FA_ORIGIN / NEXT_PUBLIC_SIGNET_SDK_URL',
+              'lib/load-signet-sdk.ts — cached loadSignetSdk() with import(/* webpackIgnore: true */ url)',
+              'App Router /auth/vercel-2fa/callback — await loadSignetSdk() then parseLoginCallbackParams(searchParams) + verifyTokenAtAuthCenter for /login flow',
+              'OAuth client hook — buildOAuthLoginUrl; parseLoginCallbackParams(href); stripLoginCallbackFromUrl after success',
+            ],
+          },
+          pitfalls: [
+            '/oauth puts token in URL hash — useSearchParams() alone will not see it; use parseLoginCallbackParams(window.location.href).',
+            'Server Route Handlers never receive the hash fragment; use /login + query callback if you need purely server-side token read.',
+            'ALLOWED_REDIRECT_URLS must include the exact callback origin used in production.',
+          ],
+          sdkExports: [
+            'normalizeAuthCenterOrigin',
+            'getVerifyApiUrl',
+            'getOAuthPublicKeyUrl',
+            'buildLoginUrl',
+            'buildOAuthLoginUrl',
+            'parseLoginCallbackParams',
+            'getLoginCallbackFromWindow',
+            'stripLoginCallbackFromUrl',
+            'isLoginCallbackTokenInHash',
+            'verifyTokenAtAuthCenter',
+          ],
+          mcpExamples: {
+            signet_get_integration_guide: { framework: 'nextjs', encryptedReturn: true },
+            signet_build_login_url: {
+              redirectUrl: 'https://your-app.example.com/auth/callback',
+              state: '550e8400-e29b-41d4-a716-446655440000',
+              encryptedReturn: false,
+            },
+            signet_build_login_url_oauth: {
+              redirectUrl: 'https://your-app.example.com/auth/callback',
+              state: '550e8400-e29b-41d4-a716-446655440000',
+              encryptedReturn: true,
+              clientPublicKey: '<base64 SPKI from your ECDH keypair>',
+            },
+            signet_validate_redirect_url: { redirectUrl: 'https://your-app.example.com/auth/callback' },
+          },
           flowSteps: [...SIGNET_INTEGRATION_FLOW_STEPS],
           routes: {
             directLogin: `${context.origin}/login?redirectUrl=<callback-url>`,
@@ -135,7 +178,9 @@ export function createSignetMcpTools(context: SignetMcpContext) {
         return {
           url: url.toString(),
           allowedByCurrentConfig: isAllowedRedirectUrl(redirectUrl, context.host),
-          note: encryptedReturn ? 'Use this URL only after generating a client ECDH key pair.' : 'Direct login returns a callback token to redirectUrl.',
+          note: encryptedReturn
+            ? 'Generate a client ECDH key pair first. OAuth return: token/state are in the callback URL hash (#…). Parse window.location.href (or hosted SDK parseLoginCallbackParams). Server Route Handlers cannot read the hash.'
+            : 'Direct login returns token+state in query on redirectUrl.',
         }
       }
     ),

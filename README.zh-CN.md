@@ -148,17 +148,27 @@ if (result.code === 0 && result.data.valid) {
 
 ##### 静态 ESM SDK（`/sdk/signet-client.mjs`）
 
-部署后可通过 HTTPS 提供极小 ES 模块（无需 npm），封装常用步骤：
+部署后通过 HTTPS 提供极小 ES 模块（无需 npm），与消费端仓库共用**同一份逻辑**：
 
 - **`buildLoginUrl`**：拼接 `/login?redirectUrl=&state=`
-- **`parseLoginCallbackParams`**：从回调 URL 读取 `token`、`state`
-- **`verifyTokenAtAuthCenter`**：使用 `fetch` 调用 `POST /api/auth/verify`（Node 与浏览器均可；服务端请求可无 `Origin` 头）
+- **`buildOAuthLoginUrl`**：拼接 `/oauth?redirectUrl=&state=&clientPublicKey=`（ECDH；回跳时 token/state 在回调页的 **hash**，见下）
+- **`parseLoginCallbackParams`**：从**完整回调 URL 或 href**读取 `token`、`state`（**优先 hash**，否则 query）
+- **`verifyTokenAtAuthCenter`**：`POST /api/auth/verify`（Node 与浏览器；服务端请求可无 `Origin`）
+- **`getVerifyApiUrl` / `getOAuthPublicKeyUrl`**：拼验票与公钥接口完整 URL（减少硬编码路径错误）
+- **`getLoginCallbackFromWindow`**：浏览器内等价于对 `location.href` 做 `parseLoginCallbackParams`
+- **`stripLoginCallbackFromUrl`**：从 query 与 hash 中移除 `token`/`state`，便于 `history.replaceState` 清栏
+- **`isLoginCallbackTokenInHash`**：判断是否为典型的 `/oauth` hash 回跳（便于分支 UI 或日志）
 
-示例：`https://your-signet-domain.com/sdk/signet-client.mjs`
+示例：`https://your-signet-domain.com/sdk/signet-client.mjs`。`/sdk/*.mjs` 已配置 `Access-Control-Allow-Origin: *`，便于浏览器 `import()`。
 
-**Next.js：** 对 **Route Handler / Server Action** 建议将上述 `.mjs` **拷贝进接入仓库**或在 monorepo 内用**普通文件路径** import。部分 Next.js 15–16 + Webpack 环境下，对服务端 bundle 使用 `experimental.urlImports` 可能在运行时报错（如 `__webpack_modules__[moduleId] is not a function`）。纯客户端或非 Next 运行时仍可使用 `urlImports` 或浏览器侧 `import()` 部署 URL。
+**Next.js / Webpack 接入（与 [vercel-web-scripts](https://github.com/DavidKk/vercel-web-scripts) 对齐）：**
 
-`/sdk/*.mjs` 响应携带 `Access-Control-Allow-Origin: *`，便于浏览器运行时 `import()`。
+1. 用环境变量拼出脚本 URL，例如 `NEXT_PUBLIC_VERCEL_2FA_ORIGIN`（无尾 `/`）+ `/sdk/signet-client.mjs`，或 `NEXT_PUBLIC_SIGNET_SDK_URL` 指向完整 `.mjs`；服务端可再配 `VERCEL_2FA_ORIGIN` 供 `verify` 与动态 `import` 同源拉 SDK。
+2. 客户端与 App Router Route Handler 均可 **`await import(/* webpackIgnore: true */ sdkUrl)`** 并**缓存 Promise**，直接调用上述导出，避免在接入仓库复制 `parse`/`verify`。
+3. **`/oauth` 回调**：不要用 `useSearchParams()` 只读 query；须处理 **hash**（或直接用 `parseLoginCallbackParams(window.location.href)`）。
+4. **纯服务端读 token**：仅 **`/login`** 回跳的 query 会到达服务器；**`/oauth` 的 hash 不会出现在 HTTP 请求里**。
+
+**反例：** OAuth 回跳页只写 `new URLSearchParams(location.search)` → 永远拿不到 `#token`；在 Route Handler 里从 `request.url` 解析 `/oauth` 的 hash token → 不可行。
 
 ### 安全配置建议
 

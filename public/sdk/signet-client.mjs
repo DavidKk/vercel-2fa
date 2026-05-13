@@ -3,6 +3,9 @@
  * Hosted as static ESM; use with Next.js experimental.urlImports or any ESM bundler.
  */
 
+/** Query + hash keys used on Signet login callbacks */
+const LOGIN_CALLBACK_PARAM_KEYS = ['token', 'state']
+
 /**
  * Normalize auth center base URL (no trailing slash).
  * @param {string} origin - Base URL (e.g. https://your-signet.example.com)
@@ -10,6 +13,26 @@
  */
 export function normalizeAuthCenterOrigin(origin) {
   return String(origin || '').replace(/\/+$/, '')
+}
+
+/**
+ * Full URL for `POST /api/auth/verify` on the auth center.
+ * @param {string} authCenterOrigin - Auth center base URL
+ * @returns {string}
+ */
+export function getVerifyApiUrl(authCenterOrigin) {
+  const base = normalizeAuthCenterOrigin(authCenterOrigin)
+  return `${base}/api/auth/verify`
+}
+
+/**
+ * Full URL for `GET /api/oauth/public-key` (ECDH flows).
+ * @param {string} authCenterOrigin - Auth center base URL
+ * @returns {string}
+ */
+export function getOAuthPublicKeyUrl(authCenterOrigin) {
+  const base = normalizeAuthCenterOrigin(authCenterOrigin)
+  return `${base}/api/oauth/public-key`
 }
 
 /**
@@ -32,21 +55,75 @@ export function buildLoginUrl(options) {
 }
 
 /**
- * Parse token and state from callback query string (after redirect from auth center).
- * @param {URLSearchParams | string} input - searchParams or full URL string
+ * Build `/oauth` URL for ECDH-encrypted return (cross-site redirect uses `#token=` / `#state=` on your callback).
+ * @param {object} options - Options
+ * @param {string} options.authCenterOrigin - Auth center base URL
+ * @param {string} options.redirectUrl - Absolute callback URL (allowlisted); Signet will encodeURIComponent this in the query
+ * @param {string} options.state - CSRF state (validate on callback)
+ * @param {string} options.clientPublicKey - Base64 SPKI client ECDH public key
+ * @param {string} [options.callbackOrigin] - Optional postMessage origin for popup flow
+ * @returns {string} Full `/oauth` URL
+ */
+export function buildOAuthLoginUrl(options) {
+  const { authCenterOrigin, redirectUrl, state, clientPublicKey, callbackOrigin } = options
+  const base = normalizeAuthCenterOrigin(authCenterOrigin)
+  const url = new URL('/oauth', `${base}/`)
+  url.searchParams.set('redirectUrl', encodeURIComponent(redirectUrl))
+  if (state != null && state !== '') {
+    url.searchParams.set('state', String(state))
+  }
+  if (clientPublicKey != null && clientPublicKey !== '') {
+    url.searchParams.set('clientPublicKey', String(clientPublicKey))
+  }
+  if (callbackOrigin != null && callbackOrigin !== '') {
+    url.searchParams.set('callbackOrigin', String(callbackOrigin))
+  }
+  return url.toString()
+}
+
+/**
+ * Parse token and state from callback after redirect from auth center.
+ * - **`/login`**: token and state are in the **query** (`?token=&state=`).
+ * - **`/oauth`** (cross-site): token and state are in the **hash** (`#token=&state=`); query is tried second.
+ *
+ * When `input` is `URLSearchParams`, only query keys are read (no hash context).
+ *
+ * @param {URLSearchParams | string} input - Full callback URL, `?query`, `#hash`, or `URLSearchParams`
  * @returns {{ token: string | null, state: string | null }}
  */
 export function parseLoginCallbackParams(input) {
-  let params
   if (typeof input === 'string') {
-    try {
-      params = new URL(input).searchParams
-    } catch {
-      params = new URLSearchParams(input.startsWith('?') ? input : `?${input}`)
+    const raw = String(input).trim()
+    if (raw.startsWith('#')) {
+      const hp = new URLSearchParams(raw.slice(1))
+      const th = hp.get('token')
+      if (th) {
+        return { token: th || null, state: hp.get('state') || null }
+      }
     }
-  } else {
-    params = input
+    try {
+      const u = new URL(raw)
+      const hash = u.hash.replace(/^#/, '')
+      if (hash) {
+        const hp = new URLSearchParams(hash)
+        const th = hp.get('token')
+        if (th) {
+          return { token: th || null, state: hp.get('state') || null }
+        }
+      }
+      const params = u.searchParams
+      const token = params.get('token')
+      const state = params.get('state')
+      return { token: token || null, state: state || null }
+    } catch {
+      const params = new URLSearchParams(raw.startsWith('?') ? raw : `?${raw}`)
+      const token = params.get('token')
+      const state = params.get('state')
+      return { token: token || null, state: state || null }
+    }
   }
+
+  const params = input
   const token = params.get('token')
   const state = params.get('state')
   return {
@@ -68,8 +145,7 @@ export function parseLoginCallbackParams(input) {
  */
 export async function verifyTokenAtAuthCenter(options) {
   const { authCenterOrigin, token, audience, scope, fetch: fetchImpl = globalThis.fetch } = options
-  const base = normalizeAuthCenterOrigin(authCenterOrigin)
-  const verifyUrl = `${base}/api/auth/verify`
+  const verifyUrl = getVerifyApiUrl(authCenterOrigin)
   /** @type {Record<string, unknown>} */
   const body = { token }
   if (audience != null) body.audience = audience
@@ -104,5 +180,59 @@ export async function verifyTokenAtAuthCenter(options) {
     status: res.status,
     response: json,
     error: ok ? undefined : message,
+  }
+}
+
+/**
+ * Read token/state from the current browser location (no-op on non-browser runtimes).
+ * @returns {{ token: string | null, state: string | null }}
+ */
+export function getLoginCallbackFromWindow() {
+  if (typeof globalThis.location === 'undefined' || !globalThis.location.href) {
+    return { token: null, state: null }
+  }
+  return parseLoginCallbackParams(globalThis.location.href)
+}
+
+/**
+ * Remove Signet callback `token` and `state` from both query and hash (safe for `history.replaceState`).
+ * @param {string} href - Full page URL (e.g. `window.location.href`)
+ * @returns {string} Sanitized absolute URL
+ */
+export function stripLoginCallbackFromUrl(href) {
+  const u = new URL(String(href))
+  for (const key of LOGIN_CALLBACK_PARAM_KEYS) {
+    u.searchParams.delete(key)
+  }
+  const rawHash = u.hash.replace(/^#/, '')
+  if (rawHash) {
+    const hp = new URLSearchParams(rawHash)
+    for (const key of LOGIN_CALLBACK_PARAM_KEYS) {
+      hp.delete(key)
+    }
+    const rest = hp.toString()
+    u.hash = rest ? `#${rest}` : ''
+  }
+  return u.toString()
+}
+
+/**
+ * Whether `href` carries a `token` in the **hash** (typical `/oauth` ECDH return).
+ * @param {string} href - Full URL or fragment
+ * @returns {boolean}
+ */
+export function isLoginCallbackTokenInHash(href) {
+  const raw = String(href || '').trim()
+  try {
+    const u = raw.includes('://') ? new URL(raw) : new URL(raw, 'http://local.invalid/')
+    const hash = u.hash.replace(/^#/, '')
+    if (!hash) return false
+    const th = new URLSearchParams(hash).get('token')
+    return Boolean(th)
+  } catch {
+    if (raw.startsWith('#')) {
+      return Boolean(new URLSearchParams(raw.slice(1)).get('token'))
+    }
+    return false
   }
 }
