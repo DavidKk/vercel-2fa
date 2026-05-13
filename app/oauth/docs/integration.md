@@ -140,7 +140,7 @@ If you prefer to implement the flow manually without using the provided hooks:
 
 ```ts
 async function fetchServerPublicKey(): Promise<string> {
-  const response = await fetch('https://your-2fa-domain.com/api/oauth/public-key', {
+  const response = await fetch('https://your-signet-domain.com/api/oauth/public-key', {
     method: 'GET',
     headers: {
       Origin: window.location.origin,
@@ -176,7 +176,7 @@ sessionStorage.setItem('oauth_client_private_key', privateKeyBase64)
 ```ts
 function buildLoginUrl(redirectUrl: string, mode: 'popup' | 'redirect'): string {
   const state = crypto.randomUUID()
-  const loginUrl = new URL('https://your-2fa-domain.com/oauth', window.location.origin)
+  const loginUrl = new URL('https://your-signet-domain.com/oauth', window.location.origin)
 
   // Add mode parameter to redirect URL
   const redirectUrlWithMode = new URL(redirectUrl, window.location.origin)
@@ -209,7 +209,7 @@ function buildLoginUrl(redirectUrl: string, mode: 'popup' | 'redirect'): string 
 // Register postMessage listener
 window.addEventListener('message', async (event) => {
   // Validate origin
-  if (event.origin !== 'https://your-2fa-domain.com') {
+  if (event.origin !== 'https://your-signet-domain.com') {
     return
   }
 
@@ -232,7 +232,7 @@ window.addEventListener('message', async (event) => {
   )
 
   // Verify token
-  const response = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+  const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -273,7 +273,7 @@ function handleRedirectCallback() {
   const decryptedToken = await decryptToken(token!, privateKeyBase64, serverPublicKey)
 
   // Verify token
-  const response = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+  const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -310,7 +310,7 @@ interface VerifyTokenResponse {
   // - iss: Issuer identifier (OIDC standard)
   // - sub: Subject identifier (OIDC standard, user identifier)
   // - authenticated: Authentication status
-  // - provider: 'vercel-2fa'
+  // - provider: 'signet'
   // - aud?: Audience (if provided)
   // - scope?: Scope (if provided)
   // - jti?: JWT ID (if replay protection enabled)

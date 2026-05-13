@@ -2,10 +2,13 @@
 
 import { useRequest } from 'ahooks'
 import { useRef } from 'react'
+import { FiKey, FiLoader } from 'react-icons/fi'
 
 import { generateECDHKeyPair } from '@/app/actions/ecdh'
+import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { Spinner } from '@/components/Spinner'
+
+import { toolBtnPrimary, toolPageCardNarrow, toolPageLead, toolPageShell, toolPageTitle } from './ui'
 
 export interface FormProps {
   onGenerate: (keys: { privateKey: string; publicKey: string; publicKeyBase64: string }) => void
@@ -14,6 +17,7 @@ export interface FormProps {
 export default function Form(props: FormProps) {
   const { onGenerate } = props
   const alertRef = useRef<AlertImperativeHandler>(null)
+  const d = gettingStartedDoc
 
   const { run: submit, loading: submitting } = useRequest(
     async () => {
@@ -30,28 +34,35 @@ export default function Form(props: FormProps) {
   )
 
   return (
-    <form className="flex flex-col flex-1 items-center justify-center p-4 bg-gray-100">
-      <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Generate ECDH Key Pair</h1>
-        <p className="text-sm text-gray-500 mb-6 text-center">
-          Generate a new ECDH (Elliptic Curve Diffie-Hellman) key pair for secure OAuth token encryption.
-          <br />
-          The private key must be kept secret, while the public key can be safely shared.
+    <div className={toolPageShell}>
+      <div className={`${d.card} ${toolPageCardNarrow} flex flex-col items-center px-5 py-8 sm:px-8 sm:py-10`}>
+        <div className={`${d.iconBox} mb-5`}>
+          <FiKey size={18} aria-hidden />
+        </div>
+        <h1 className={`${toolPageTitle} mb-3`}>ECDH key pair</h1>
+        <p className={`${toolPageLead} mb-8`}>
+          Generate a P-256 ECDH server key pair for encrypting OAuth-style token payloads. The private key stays on the server; clients fetch the public key from{' '}
+          <code className={d.codeInline}>/api/oauth/public-key</code> in production.
         </p>
 
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="w-full flex items-center justify-center gap-4 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          type="button"
-        >
-          {submitting ? <Spinner /> : 'Generate Key Pair'}
+        <button onClick={submit} disabled={submitting} className={toolBtnPrimary} type="button">
+          {submitting ? (
+            <>
+              <FiLoader size={16} className="animate-spin" aria-hidden />
+              Generating…
+            </>
+          ) : (
+            <>
+              <FiKey size={16} aria-hidden />
+              Generate key pair
+            </>
+          )}
         </button>
 
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="mt-4 flex w-full flex-col gap-2">
           <Alert ref={alertRef} />
         </div>
       </div>
-    </form>
+    </div>
   )
 }

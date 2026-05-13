@@ -1,8 +1,9 @@
 import { useRequest } from 'ahooks'
 import { useRef, useState } from 'react'
+import { FiLoader, FiSmartphone, FiUser } from 'react-icons/fi'
 
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { Spinner } from '@/components/Spinner'
+import { appUi } from '@/components/ui/app-tokens'
 import { generateTOTPSecret } from '@/utils/totp'
 
 export interface FormProps {
@@ -37,17 +38,27 @@ export default function Form(props: FormProps) {
   )
 
   return (
-    <form className="flex flex-col flex-1 items-center justify-center p-4 bg-gray-100" ref={formRef}>
-      <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Set Up Two-Factor Authentication</h1>
-        <p className="text-sm text-gray-500 mb-6 text-center">
-          Enhance your account security by setting up two-factor authentication (2FA). This will require a one-time password (OTP) from an authenticator app during login.
-        </p>
+    <form className={appUi.pageShell} ref={formRef}>
+      <div className={`${appUi.card} w-full max-w-lg`}>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className={`${appUi.iconBox} mb-5`}>
+            <FiSmartphone size={18} aria-hidden />
+          </div>
+          <p className={`${appUi.sectionLabel} mb-2`}>Authenticator app</p>
+          <h1 className={`${appUi.pageTitle} mb-3`}>TOTP QR code</h1>
+          <p className={`${appUi.lead} max-w-md`}>
+            Generate a Base32 secret and QR code for the same account you use to sign in. Store the secret in your server environment after pairing.
+          </p>
+        </div>
 
-        <div className="mb-4">
+        <div className="mb-4 space-y-1.5">
+          <label htmlFor="totp-username" className={appUi.fieldLabel}>
+            Username
+          </label>
           <input
+            id="totp-username"
             type="text"
-            className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3"
+            className={appUi.control}
             placeholder="Username"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
@@ -57,27 +68,36 @@ export default function Form(props: FormProps) {
           />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-6 space-y-1.5">
+          <label htmlFor="totp-app-name" className={appUi.fieldLabel}>
+            App name
+          </label>
           <input
+            id="totp-app-name"
             type="text"
-            className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3"
-            placeholder="App Name"
+            className={appUi.control}
+            placeholder="Personal auth"
             value={appName}
             onChange={(event) => setAppName(event.target.value)}
             required
           />
         </div>
 
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="w-full flex items-center justify-center gap-4 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          type="button"
-        >
-          {submitting ? <Spinner /> : 'Generate QR Code'}
+        <button onClick={submit} disabled={submitting} className={appUi.btnPrimary} type="button">
+          {submitting ? (
+            <>
+              <FiLoader size={16} className="animate-spin" aria-hidden />
+              Generating...
+            </>
+          ) : (
+            <>
+              <FiUser size={16} aria-hidden />
+              Generate QR code
+            </>
+          )}
         </button>
 
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="mt-4 flex flex-col gap-2">
           <Alert ref={alertRef} />
         </div>
       </div>

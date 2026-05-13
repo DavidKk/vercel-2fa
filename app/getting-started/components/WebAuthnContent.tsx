@@ -1,65 +1,111 @@
 import Link from 'next/link'
+import { FiArrowRight } from 'react-icons/fi'
+
+import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 
 export function WebAuthnContent() {
+  const d = gettingStartedDoc
+
   return (
-    <div className="prose max-w-none prose-sm">
-      <h2 className="text-xl font-bold text-gray-900 mb-3">Set up WebAuthn</h2>
+    <div className={d.article}>
+      <header className="mb-10">
+        <h2 className={d.h2}>WebAuthn setup</h2>
+        <p className={`${d.lead} mb-3`}>
+          Passkeys and platform authenticators (Touch ID, Face ID, Windows Hello, security keys) let users sign in without typing a TOTP code. This host stores one exported
+          credential in <code className={d.codeInline}>ACCESS_WEBAUTHN_SECRET</code> and checks assertions on each login.
+        </p>
+        <p className={`${d.lead} mb-0`}>
+          You can run WebAuthn-only flows when the deployment is configured for it, or keep TOTP as a backup—see{' '}
+          <Link href="/getting-started/totp" className={d.link}>
+            TOTP setup
+          </Link>{' '}
+          and{' '}
+          <Link href="/getting-started/env" className={d.link}>
+            Environment variables
+          </Link>
+          .
+        </p>
+      </header>
 
-      <p className="text-gray-600 text-sm mb-4">
-        WebAuthn gives you "touch once to login" convenience using fingerprints, Face ID, Windows Hello, or hardware keys such as YubiKey. It is perfect when you want max security
-        for your own admin panels.
-      </p>
+      <div className="flex flex-col gap-10">
+        <section aria-labelledby="wa-rpid">
+          <h3 id="wa-rpid" className={d.docSectionLabel}>
+            Relying party ID (rpId)
+          </h3>
+          <div className={d.calloutInfo}>
+            <p className={`${d.muted} mb-0`}>
+              <code className={d.codeInline}>rpId</code> must equal the host users see in the address bar for that deployment (no scheme, no path). Use{' '}
+              <code className={d.codeInline}>localhost</code> for local HTTP dev; production must be served over HTTPS with a hostname that exactly matches the registered
+              credential. Changing hostname or moving from preview to production URL usually requires registering again and updating env.
+            </p>
+          </div>
+        </section>
 
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-indigo-900 mb-2">🔐 Step 1 · Register credential</h3>
-        <ol className="text-indigo-800 text-sm space-y-1 list-decimal list-inside mb-3">
-          <li>
-            Open{' '}
-            <Link href="/webauthn" className="text-indigo-600 hover:underline font-medium">
-              /webauthn
+        <section aria-labelledby="wa-register">
+          <h3 id="wa-register" className={d.docSectionLabel}>
+            Register
+          </h3>
+          <div className={d.cardMuted}>
+            <ol className={`${d.listDecimal} mb-4`}>
+              <li>
+                Open{' '}
+                <Link href="/webauthn" className={d.link}>
+                  /webauthn
+                </Link>
+              </li>
+              <li>
+                Username matches <code className={d.codeInline}>ACCESS_USERNAME</code>
+              </li>
+              <li>Pick a display name you will recognize later (for example &quot;MacBook Touch ID&quot; or &quot;YubiKey 5C&quot;)</li>
+              <li>When the browser prompts, choose platform authenticator, passkey sync (if offered), or a roaming security key</li>
+            </ol>
+            <Link href="/webauthn" className={d.btnPrimary}>
+              <FiArrowRight size={14} aria-hidden />
+              Open WebAuthn tool
             </Link>
-          </li>
-          <li>Enter username (same admin account used for login)</li>
-          <li>Give it a display name (e.g. "MacBook Touch ID")</li>
-          <li>Set RP ID to the domain hosting this service (localhost in dev)</li>
-          <li>Click Register and follow the browser prompt</li>
-        </ol>
-      </div>
+          </div>
+        </section>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-blue-900 mb-2">🎯 Step 2 · Approve in the browser</h3>
-        <p className="text-blue-800 text-xs mb-3">The browser lets you pick how to verify:</p>
-        <ul className="text-blue-800 text-xs space-y-1 list-disc list-inside">
-          <li>Biometrics (Touch ID, Face ID, Windows Hello)</li>
-          <li>Security keys (YubiKey, SoloKey, etc.)</li>
-          <li>Built-in platform authenticators on phones or laptops</li>
-        </ul>
-      </div>
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-green-900 mb-2">💾 Step 3 · Save the credential</h3>
-        <p className="text-green-800 text-xs mb-3">After registration you get a JSON blob:</p>
-        <div className="bg-white rounded border border-green-200 p-3 mb-2">
-          <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap break-all">
-            {`{
-  "id": "...",
+        <section aria-labelledby="wa-save">
+          <h3 id="wa-save" className={d.docSectionLabel}>
+            Save credential JSON
+          </h3>
+          <div className={d.card}>
+            <p className={`${d.muted} mb-3`}>
+              After registration, copy the exported JSON object into <code className={d.codeInline}>ACCESS_WEBAUTHN_SECRET</code> as a single line. It includes Base64 fields such
+              as <code className={d.codeInline}>credentialID</code> and <code className={d.codeInline}>publicKey</code> plus <code className={d.codeInline}>rpId</code> and{' '}
+              <code className={d.codeInline}>username</code> for sanity checks.
+            </p>
+            <div className={d.preBox}>
+              {`{
+  "credentialID": "...",
   "publicKey": "...",
-  "counter": 0,
-  "rpId": "localhost"
+  "rpId": "localhost",
+  "username": "admin"
 }`}
-          </pre>
-        </div>
-        <p className="text-[11px] text-green-700 mb-2">Copy everything into ACCESS_WEBAUTHN_SECRET.</p>
-      </div>
+            </div>
+            <p className={`${d.muted} mt-3 mb-0`}>
+              On Vercel, paste via the dashboard or CLI; escape quotes if your shell requires it. Treat this blob like a password—anyone with it can mint assertions if they also
+              know your password and can reach the login page.
+            </p>
+          </div>
+        </section>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="text-base font-semibold text-yellow-900 mb-2">⚠️ Notes</h3>
-        <ul className="text-yellow-800 text-xs space-y-1 list-disc list-inside">
-          <li>RP ID must match your production domain exactly</li>
-          <li>HTTPS is required in production (localhost is exempt)</li>
-          <li>Credentials are bound to a device — re-register when you switch laptops</li>
-          <li>Keep TOTP enabled as a fallback in case hardware keys are unavailable</li>
-        </ul>
+        <section aria-labelledby="wa-notes">
+          <h3 id="wa-notes" className={d.docSectionLabel}>
+            Operations & recovery
+          </h3>
+          <div className={d.calloutWarn}>
+            <ul className={`${d.calloutWarnBody} list-disc space-y-1`}>
+              <li>HTTPS is required in production; localhost is exempt for development only</li>
+              <li>
+                Credentials are device-bound — new laptop or browser profile needs a new registration (and env update) unless you use synced passkeys from the same platform account
+              </li>
+              <li>Keep TOTP configured as fallback when hardware is lost or unavailable</li>
+              <li>If login fails after a domain change, re-run registration on the new origin and replace the env JSON</li>
+            </ul>
+          </div>
+        </section>
       </div>
     </div>
   )

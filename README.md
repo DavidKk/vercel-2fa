@@ -2,7 +2,7 @@
 
 # Two-Factor Authentication Service
 
-[online](https://vercel-2fa.vercel.app)
+[online](https://signet.vercel.app)
 
 A simple and user-friendly two-factor authentication service based on TOTP (Time-Based One-Time Password) and WebAuthn standards for enhanced security.
 
@@ -55,6 +55,7 @@ Important Notes
 | Variable                 | Required | Description                                      | Example                                                                   |
 | ------------------------ | -------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
 | `ACCESS_USERNAME`        | Yes      | Admin username                                   | `admin`                                                                   |
+| `ACCESS_EMAIL`           | Optional | Shown in JWT as `email` for downstream UIs       | `you@example.com`                                                         |
 | `ACCESS_PASSWORD`        | Yes      | Admin password                                   | `your-secure-password`                                                    |
 | `ACCESS_TOTP_SECRET`     | Optional | TOTP 2FA secret                                  | `JBSWY3DPEHPK3PXP`                                                        |
 | `ACCESS_WEBAUTHN_SECRET` | Optional | WebAuthn credentials                             | `{"id":"...","publicKey":"..."}`                                          |
@@ -79,7 +80,7 @@ This system can serve as a unified login portal for all your personal projects. 
 Redirect users to the authentication center with callback URL:
 
 ```
-https://your-2fa-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
+https://your-signet-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
 ```
 
 **Parameters**:
@@ -99,6 +100,8 @@ After successful authentication, the system redirects to the specified `redirect
 https://your-app.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&state=random-string
 ```
 
+The login JWT payload includes `sub` (stable subject id), `username` and `preferred_username` (from `ACCESS_USERNAME`), and `email` when `ACCESS_EMAIL` is set—use these to render the signed-in user after verification.
+
 #### 4. Verify Token
 
 External systems can verify tokens using two methods:
@@ -106,13 +109,13 @@ External systems can verify tokens using two methods:
 **Method A: Shared Secret Verification (Recommended for internal systems)**
 
 ```typescript
-import jwt from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 
-const JWT_SECRET = 'your-shared-secret' // Same secret as auth center
+const secretKey = new TextEncoder().encode('your-shared-secret') // Same secret as auth center
 
-function verifyToken(token: string) {
+async function verifyToken(token: string) {
   try {
-    const payload = jwt.verify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, secretKey)
     // payload contains: { username, authenticated, iat, exp }
 
     if (payload.authenticated) {
@@ -128,7 +131,7 @@ function verifyToken(token: string) {
 **Method B: API Verification (For scenarios without shared secrets)**
 
 ```typescript
-const response = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -142,6 +145,20 @@ if (result.code === 0 && result.data.valid) {
   console.log('User:', result.data.payload.username)
 }
 ```
+
+#### Static ESM SDK (`/sdk/signet-client.mjs`)
+
+The deployment serves a tiny ES module (optional helper; no npm package required):
+
+- **`buildLoginUrl`** — build `/login?redirectUrl=&state=`
+- **`parseLoginCallbackParams`** — read `token` / `state` from the callback query string
+- **`verifyTokenAtAuthCenter`** — `POST /api/auth/verify` using `fetch` (works in Node and the browser; server-side calls do not need an `Origin` header)
+
+Example URL after deploy: `https://your-signet-domain.com/sdk/signet-client.mjs`
+
+**Next.js:** For **Route Handlers / Server Actions**, prefer copying this file into your repo (or importing it via a normal filesystem path in a monorepo). Using [`experimental.urlImports`](https://nextjs.org/docs/app/api-reference/config/next-config-js/urlImports) for server bundles has been reported to fail at runtime on some Next.js 15–16 + Webpack setups (`__webpack_modules__[moduleId] is not a function`) even when the build succeeds. Client-only code or non-Next runtimes may still use `urlImports` or dynamic `import()` of the deployed URL.
+
+The deployment sends `Access-Control-Allow-Origin: *` on `/sdk/*.mjs` for browser `import()` when applicable.
 
 ### Security Configuration
 
@@ -166,7 +183,7 @@ ALLOWED_REDIRECT_URLS=https://*.example.com,https://*.company.com
 const state = crypto.randomUUID()
 sessionStorage.setItem('oauth_state', state)
 
-const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
 window.location.href = loginUrl
 
 // Verify state on callback
@@ -192,7 +209,7 @@ function handleLogin() {
   sessionStorage.setItem('oauth_state', state)
 
   const callbackUrl = `${window.location.origin}/auth/callback`
-  const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+  const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
 
   window.location.href = loginUrl
 }

@@ -2,10 +2,12 @@
 
 import { useRequest } from 'ahooks'
 import { useCallback, useRef, useState } from 'react'
+import { FiCheckCircle, FiSmartphone } from 'react-icons/fi'
 
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
-import { Spinner } from '@/components/Spinner'
+import { LoginAuthenticatorCodeField, LoginFormButton } from '@/components/login'
+import { appUi } from '@/components/ui/app-tokens'
 import { verifyTOTPToken } from '@/utils/totp'
 
 export interface VerificationProps {
@@ -52,35 +54,33 @@ export default function Verification(props: VerificationProps) {
   }, [])
 
   return (
-    <form className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4" ref={formRef}>
-      <div className="w-full max-w-md bg-white p-6 rounded-md shadow-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Two-Factor Authentication</h1>
-        <p className="text-sm text-gray-500 mb-6">Please enter the 6-digit verification code from your authenticator app.</p>
-
-        <div className="mb-6">
-          <input
-            type="text"
-            className="mt-1 w-full px-3 py-2 border rounded-md text-center tracking-[1em] placeholder:tracking-normal text-lg focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter 6-digit code"
-            value={token}
-            disabled={completed}
-            onChange={(e) => setToken(e.target.value)}
-            maxLength={6}
-            pattern="\d{6}"
-            required
-          />
+    <form className={appUi.pageShell} ref={formRef}>
+      <div className={`${appUi.card} w-full max-w-lg`}>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className={`${appUi.iconBox} mb-5`}>
+            <FiSmartphone size={18} aria-hidden />
+          </div>
+          <p className={`${appUi.sectionLabel} mb-2`}>Verification</p>
+          <h1 className={`${appUi.pageTitle} mb-3`}>Confirm TOTP setup</h1>
+          <p className={`${appUi.lead} max-w-md`}>Enter the current 6-digit code from your authenticator app before relying on this secret for login.</p>
         </div>
 
-        <button
-          onClick={verify}
-          disabled={completed || submitting}
-          className="w-full py-2 px-4 rounded-md text-white bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700"
-          type="button"
-        >
-          {submitting ? <Spinner /> : 'Verify Code'}
-        </button>
+        <LoginAuthenticatorCodeField
+          id="totp-setup-verify"
+          hideLabel
+          value={token}
+          onChange={setToken}
+          placeholder="Enter 6-digit code"
+          disabled={completed}
+          className="mb-6 w-full"
+        />
 
-        <div className="flex flex-col gap-2 mt-2">
+        <LoginFormButton type="button" variant="primary" loading={submitting} loadingLabel="Verifying…" disabled={completed} onClick={verify}>
+          <FiCheckCircle size={16} aria-hidden />
+          Verify Code
+        </LoginFormButton>
+
+        <div className="mt-5 flex flex-col gap-2">
           <Alert ref={alertRef} />
         </div>
       </div>

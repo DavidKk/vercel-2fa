@@ -1,79 +1,111 @@
-import FeatherIcon from 'feather-icons-react'
 import Link from 'next/link'
+import { FiArrowRight } from 'react-icons/fi'
+
+import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 
 export function ECDHContent() {
+  const d = gettingStartedDoc
+
   return (
-    <div className="prose max-w-none prose-sm">
-      <h2 className="text-xl font-bold text-gray-900 mb-3">Set up ECDH Key Exchange</h2>
-
-      <p className="text-gray-600 text-sm mb-4">
-        ECDH (Elliptic Curve Diffie-Hellman) enables secure OAuth token encryption. The server generates a permanent key pair, and clients use temporary keys to establish encrypted
-        communication channels.
-      </p>
-
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-indigo-900 mb-2">🔑 Step 1 · Generate key pair</h3>
-        <ol className="text-indigo-800 text-sm space-y-1 list-decimal list-inside mb-3">
-          <li>
-            Visit{' '}
-            <Link href="/ecdh" className="text-indigo-600 hover:underline font-medium">
-              /ecdh
-            </Link>
-          </li>
-          <li>Click "Generate Key Pair"</li>
-          <li>Wait for the system to generate a new ECDH key pair</li>
-        </ol>
-        <Link href="/ecdh" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm">
-          <FeatherIcon icon="arrow-right" size={14} />
-          open ecdh tool
-        </Link>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-blue-900 mb-2">💾 Step 2 · Store private key</h3>
-        <p className="text-blue-800 text-xs mb-3">After generation, you'll see three key values. For production, you only need the private key:</p>
-        <ul className="text-blue-800 space-y-1 list-disc list-inside text-xs mb-3">
-          <li>
-            <strong>Private Key (PEM Format)</strong> — Copy into <code>ECDH_SERVER_PRIVATE_KEY</code> (required for production)
-          </li>
-          <li>
-            <strong>Public Key (PEM Format)</strong> — Only needed for debugging, copy into <code>ECDH_SERVER_PUBLIC_KEY</code>
-          </li>
-        </ul>
-        <div className="bg-white rounded border border-blue-200 p-3">
-          <p className="text-[11px] font-mono text-gray-700 break-all">ECDH_SERVER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"</p>
-        </div>
-        <p className="text-[11px] text-blue-700 mt-2">
-          <strong>Note:</strong> The public keys are only needed for debugging. In production, only the private key is required. The public key is shared with clients separately.
+    <div className={d.article}>
+      <header className="mb-10">
+        <h2 className={d.h2}>ECDH for encrypted return</h2>
+        <p className={`${d.lead} mb-3`}>
+          Optional hardening: instead of putting a raw JWT in the browser query string, the client generates an ephemeral ECDH key pair and sends the public key with login. The
+          server derives a shared secret, encrypts the session token payload, and returns ciphertext the browser decrypts locally—reducing exposure to shoulder-surfing, referrer
+          leaks, and intermediate proxies that log full URLs.
         </p>
-      </div>
+        <p className={`${d.lead} mb-0`}>
+          Standard redirect flow without ECDH remains supported. When you are ready to exercise the full OAuth-shaped path, use{' '}
+          <Link href="/oauth/playground" className={d.link}>
+            OAuth Playground
+          </Link>{' '}
+          alongside the{' '}
+          <Link href="/ecdh" className={d.link}>
+            /ecdh
+          </Link>{' '}
+          key tool.
+        </p>
+      </header>
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-green-900 mb-2">🔐 Step 3 · How it works</h3>
-        <p className="text-green-800 text-xs mb-3">ECDH enables secure token encryption:</p>
-        <ol className="text-green-800 text-xs space-y-1 list-decimal list-inside">
-          <li>Client generates a temporary key pair in the browser</li>
-          <li>Client sends its public key to the server</li>
-          <li>Server uses its private key + client's public key to derive a shared secret</li>
-          <li>Server encrypts the OAuth token with the shared secret</li>
-          <li>Client decrypts the token using its temporary private key</li>
-        </ol>
-      </div>
+      <div className="flex flex-col gap-10">
+        <section aria-labelledby="ecdh-when">
+          <h3 id="ecdh-when" className={d.docSectionLabel}>
+            When it helps
+          </h3>
+          <div className={d.calloutInfo}>
+            <ul className={`${d.listDisc} mb-0`}>
+              <li>Callbacks land on shared or less-trusted devices where URL history matters</li>
+              <li>You want defense-in-depth on top of HTTPS and short-lived tokens</li>
+              <li>
+                You already run the OAuth login form that negotiates client keys (same mechanics as <code className={d.codeInline}>/login</code> with ECDH enabled)
+              </li>
+            </ul>
+          </div>
+        </section>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="text-base font-semibold text-yellow-900 mb-2">⚠️ Important Notes</h3>
-        <ul className="text-yellow-800 text-xs space-y-1 list-disc list-inside">
-          <li>Keep the private key secret — never expose or commit to version control</li>
-          <li>Public keys are safe to share — they cannot be used to derive the private key</li>
-          <li>
-            For production, only <code>ECDH_SERVER_PRIVATE_KEY</code> is required
-          </li>
-          <li>
-            The public key (<code>ECDH_SERVER_PUBLIC_KEY</code>) is only needed for debugging. The public key is automatically shared with clients via the{' '}
-            <code>/api/oauth/public-key</code> endpoint.
-          </li>
-          <li>Rotate keys periodically for enhanced security</li>
-        </ul>
+        <section aria-labelledby="ecdh-keys">
+          <h3 id="ecdh-keys" className={d.docSectionLabel}>
+            Generate & store
+          </h3>
+          <div className={d.cardMuted}>
+            <ol className={`${d.listDecimal} mb-4`}>
+              <li>
+                Open{' '}
+                <Link href="/ecdh" className={d.link}>
+                  /ecdh
+                </Link>{' '}
+                and generate a server key pair (PEM)
+              </li>
+              <li>
+                Set <code className={d.codeInline}>ECDH_SERVER_PRIVATE_KEY</code> to the server private PEM. In env files, keep newlines escaped or quoted so the value parses as
+                one line—your platform&apos;s secret UI usually handles multiline PEM cleanly.
+              </li>
+              <li>
+                Optional <code className={d.codeInline}>ECDH_SERVER_PUBLIC_KEY</code> for local debugging only; production browsers should fetch the current public key from{' '}
+                <code className={d.codeInline}>/api/oauth/public-key</code> so rotation can be centralized
+              </li>
+            </ol>
+            <Link href="/ecdh" className={d.btnPrimary}>
+              <FiArrowRight size={14} aria-hidden />
+              Open ECDH tool
+            </Link>
+          </div>
+        </section>
+
+        <section aria-labelledby="ecdh-runtime">
+          <h3 id="ecdh-runtime" className={d.docSectionLabel}>
+            Runtime flow
+          </h3>
+          <div className={d.card}>
+            <ol className={d.listDecimal}>
+              <li>Browser creates an ephemeral ECDH key pair for the login attempt</li>
+              <li>Client public key is attached to the login (or OAuth) request alongside username, password, and second factor</li>
+              <li>Server validates credentials, derives a shared secret from its static private key and the client public key, then encrypts the issued session material</li>
+              <li>Response carries encrypted payload; only the browser holding the ephemeral private key can decrypt and obtain the JWT</li>
+            </ol>
+            <p className={`${d.muted} mt-3 mb-0`}>
+              Key rotation and overlap windows are described under Advanced in{' '}
+              <Link href="/getting-started/env" className={d.link}>
+                Environment variables
+              </Link>{' '}
+              when you enable KV-backed rotation.
+            </p>
+          </div>
+        </section>
+
+        <section aria-labelledby="ecdh-ops">
+          <h3 id="ecdh-ops" className={d.docSectionLabel}>
+            Operations
+          </h3>
+          <div className={d.calloutWarn}>
+            <ul className={`${d.calloutWarnBody} list-disc space-y-1`}>
+              <li>Never commit the server private key; inject via your host secret manager</li>
+              <li>Public keys alone cannot decrypt past traffic without also capturing ciphertext and breaking ECDH</li>
+              <li>Plan rotation: provision a new pair, update env, deploy, then retire the old private key after clients have picked up the new public key</li>
+            </ul>
+          </div>
+        </section>
       </div>
     </div>
   )

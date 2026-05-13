@@ -1,7 +1,9 @@
 import { headers } from 'next/headers'
+import { FiAlertTriangle } from 'react-icons/fi'
 
 import { OAuthHelpSidebar } from '@/app/oauth/OAuthHelpSidebar'
 import { OAuthLoginForm } from '@/app/oauth/OAuthLoginForm'
+import { appUi } from '@/components/ui/app-tokens'
 import { getOAuthServerConfig, isOAuthEnabled, validateOAuthParams } from '@/services/oauth/server'
 
 // Force dynamic rendering because we use searchParams and headers
@@ -84,11 +86,14 @@ export interface ErrorPanelProps {
 function ErrorPanel(props: ErrorPanelProps) {
   const { title, description, value } = props
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 border border-red-200">
-        <h2 className="text-center text-xl font-semibold mb-4 text-red-600">{title}</h2>
-        <p className="text-center text-gray-700">{description}</p>
-        <p className="text-center text-sm text-gray-500 mt-4 break-all">{value}</p>
+    <div className={appUi.pageShell}>
+      <div className={`${appUi.card} w-full max-w-md text-center`}>
+        <div className={`${appUi.iconBox} mx-auto mb-5 border-red-200 bg-red-500/10 text-red-700 dark:border-red-900/60 dark:text-red-300`}>
+          <FiAlertTriangle size={18} aria-hidden />
+        </div>
+        <h2 className="mb-3 text-xl font-semibold tracking-tight text-red-700 dark:text-red-300">{title}</h2>
+        <p className={appUi.lead}>{description}</p>
+        <p className="mt-4 break-all text-sm text-[var(--app-header-text)]">{value}</p>
       </div>
     </div>
   )

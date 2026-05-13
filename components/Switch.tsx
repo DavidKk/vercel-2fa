@@ -52,8 +52,8 @@ const translateClasses = {
 }
 
 const variantClasses = {
-  primary: 'bg-indigo-600 checked:bg-indigo-600',
-  secondary: 'bg-gray-600 checked:bg-gray-600',
+  primary: 'bg-[var(--app-primary)] checked:bg-[var(--app-primary)]',
+  secondary: 'bg-[var(--app-header-text)] checked:bg-[var(--app-header-text)]',
   success: 'bg-green-600 checked:bg-green-600',
   danger: 'bg-red-600 checked:bg-red-600',
 }
@@ -103,9 +103,9 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
           relative inline-flex items-center rounded-full transition-colors duration-200 ease-in-out
           focus:outline-none focus:ring-2 focus:ring-offset-2
           ${sizeClasses[size]}
-          ${checked ? variantClasses[variant] : 'bg-gray-300'}
+          ${checked ? variantClasses[variant] : 'bg-[var(--app-header-border)]'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          focus:ring-indigo-500
+          focus:ring-[var(--app-header-focus)]
         `}
       >
         <span
@@ -117,7 +117,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
         />
       </button>
       {label && (
-        <label onClick={disabled ? undefined : handleClick} className={`text-sm text-gray-700 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+        <label onClick={disabled ? undefined : handleClick} className={`text-sm text-[var(--app-header-text)] ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
           {label}
         </label>
       )}

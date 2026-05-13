@@ -3,7 +3,7 @@
  * Handles verification of OAuth callback tokens and generation of access tokens
  */
 
-import type { JwtPayload } from 'jsonwebtoken'
+import { decodeJwt, type JWTPayload } from 'jose'
 
 import { generateJWTToken, verifyJWTToken } from '@/app/actions/jwt'
 import { buildStandardClaims } from '@/services/jwt'
@@ -26,8 +26,11 @@ export interface VerifyTokenResult {
   user: {
     sub?: string
     authenticated?: boolean
+    /** Same as JWT `username` / `preferred_username` when issued by this service */
+    username?: string
+    email?: string
   }
-  claims?: JwtPayload
+  claims?: JWTPayload
 }
 
 /**
@@ -39,7 +42,7 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
     throw new Error('token is required')
   }
 
-  const payload = normalizePayload((await verifyJWTToken(token)) as JwtPayload | string | null)
+  const payload = normalizePayload((await verifyJWTToken(token)) as JWTPayload | string | null)
 
   // Support both old format (username) and new format (sub) for backward compatibility
   const hasSub = payload && typeof payload.sub === 'string'
@@ -94,8 +97,12 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
 
   // Decode the generated token to get complete claims including iat and exp
   // This ensures the returned claims object matches the actual JWT payload
-  const decodedToken = (await verifyJWTToken(accessToken, { ignoreExpiration: true })) as JwtPayload | null
-  const completeClaims = decodedToken || accessTokenClaims
+  let completeClaims: JWTPayload
+  try {
+    completeClaims = decodeJwt(accessToken)
+  } catch {
+    completeClaims = accessTokenClaims as JWTPayload
+  }
 
   // Mark the original token as used (if replay protection is enabled)
   // This prevents the same OAuth callback token from being reused
@@ -113,6 +120,9 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
   // Get sub from payload or generate it
   const userSub = (payload.sub as string | undefined) || generateUserSubForConfiguredUser()
 
+  const usernameClaim = (typeof payload.preferred_username === 'string' && payload.preferred_username) || (typeof payload.username === 'string' && payload.username) || undefined
+  const emailClaim = typeof payload.email === 'string' && payload.email ? payload.email : undefined
+
   return {
     access_token: accessToken,
     token_type: 'Bearer',
@@ -120,12 +130,14 @@ export async function verifyTokenAndGenerateAccessToken(token: string, options?:
     user: {
       sub: userSub,
       authenticated: payload.authenticated as boolean | undefined,
+      username: usernameClaim,
+      email: emailClaim,
     },
     claims: completeClaims, // Complete claims including iat and exp from the actual JWT
   }
 }
 
-function normalizePayload(payload: JwtPayload | string | null): JwtPayload {
+function normalizePayload(payload: JWTPayload | string | null): JWTPayload {
   if (!payload) {
     throw new Error('Invalid payload')
   }
@@ -137,7 +149,7 @@ function normalizePayload(payload: JwtPayload | string | null): JwtPayload {
   return payload
 }
 
-function getExpiresInSeconds(payload: JwtPayload): number {
+function getExpiresInSeconds(payload: JWTPayload): number {
   if (typeof payload.exp === 'number') {
     const diffMs = payload.exp * 1000 - Date.now()
     return diffMs <= 0 ? 0 : Math.floor(diffMs / 1000)
@@ -146,7 +158,7 @@ function getExpiresInSeconds(payload: JwtPayload): number {
   return ACCESS_TOKEN_TTL_SECONDS
 }
 
-function buildAccessTokenClaims(payload: JwtPayload, options?: VerifyTokenOptions): JwtPayload {
+function buildAccessTokenClaims(payload: JWTPayload, options?: VerifyTokenOptions): JWTPayload {
   const { audience, scope } = options || {}
   const authenticated = payload.authenticated
 
@@ -171,13 +183,13 @@ function buildAccessTokenClaims(payload: JwtPayload, options?: VerifyTokenOption
   const standardClaims = buildStandardClaims(
     {
       authenticated,
-      provider: 'vercel-2fa',
+      provider: 'signet',
     },
     options?.issuer // Pass explicit issuer if provided
   )
 
   // Override sub if we have a specific one (from payload)
-  const claims: JwtPayload = {
+  const claims: JWTPayload = {
     ...standardClaims,
     sub: userSub, // Use the sub from payload or generated one
   }

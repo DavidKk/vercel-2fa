@@ -1,7 +1,5 @@
 declare namespace NodeJS {
   interface ProcessEnv {
-    /** time of project build */
-    NEXT_PUBLIC_BUILD_TIME: string
     /** Admin Username */
     ACCESS_USERNAME: string
     /** Admin Password */
@@ -30,7 +28,7 @@ declare namespace NodeJS {
     KEY_ROTATION_TRANSITION_SECONDS?: string
     /** Salt for generating user subject (sub) identifier. If not set, uses first 32 chars of JWT_SECRET */
     USER_SUB_SALT?: string
-    /** OAuth issuer identifier (iss claim). If not set, constructs from NEXT_PUBLIC_VERCEL_URL or defaults to 'https://vercel-2fa.local' */
+    /** OAuth issuer identifier (iss claim). If not set, constructs from NEXT_PUBLIC_VERCEL_URL or defaults to 'https://signet.local' */
     OAUTH_ISSUER?: string
   }
 }

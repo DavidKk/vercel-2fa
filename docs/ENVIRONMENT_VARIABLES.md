@@ -169,7 +169,7 @@ This document describes all environment variables used in the Two-Factor Authent
 ### OAUTH_ISSUER
 
 - **Description**: OAuth/OIDC issuer identifier (iss claim) for JWT tokens
-- **Required**: No (if not set, constructs from `VERCEL_URL` or defaults to `https://vercel-2fa.local`)
+- **Required**: No (if not set, constructs from `VERCEL_URL` or defaults to `https://signet.local`)
 - **Format**: Full URL (e.g., `https://your-domain.com`)
 - **Purpose**:
   - Identifies the token issuer (OIDC standard)
@@ -178,7 +178,7 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Priority**:
   1. Explicit `OAUTH_ISSUER` environment variable
   2. Constructed from `VERCEL_URL` or `NEXT_PUBLIC_VERCEL_URL` (if available)
-  3. Default: `https://vercel-2fa.local` (should be overridden in production)
+  3. Default: `https://signet.local` (should be overridden in production)
 - **Example**: `OAUTH_ISSUER=https://auth.yourcompany.com`
 - **Note**: In production, always set this to your actual domain to ensure proper OIDC compliance.
 
@@ -233,12 +233,6 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Status**: Supported for backward compatibility
 - **Note**: This variable is automatically set by Vercel when using the old Vercel KV integration. New projects should use `AUTH_KV_REST_API_TOKEN` instead.
 
-### NEXT_PUBLIC_BUILD_TIME
-
-- **Description**: Build timestamp (auto-generated)
-- **Required**: No
-- **Note**: Automatically set during build process, do not modify manually
-
 ## Configuration Examples
 
 ### Development Environment
@@ -275,7 +269,7 @@ NEXT_PUBLIC_ECDH_SERVER_PUBLIC_KEY="base64-encoded-spki-format-public-key"
 # USER_SUB_SALT=your-secret-salt-minimum-32-characters-long
 
 # OAuth Issuer (Optional, recommended for production)
-# OAUTH_ISSUER=https://your-2fa-domain.com
+# OAUTH_ISSUER=https://your-signet-domain.com
 ```
 
 ### Production Environment (Vercel)
@@ -311,7 +305,7 @@ KEY_ROTATION_TRANSITION_SECONDS=86400
 USER_SUB_SALT=your-production-sub-salt-minimum-32-characters-long
 
 # OAuth Issuer (Required for production)
-OAUTH_ISSUER=https://your-2fa-domain.com
+OAUTH_ISSUER=https://your-signet-domain.com
 ```
 
 ## Security Best Practices

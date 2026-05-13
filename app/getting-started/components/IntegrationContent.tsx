@@ -1,124 +1,151 @@
-import FeatherIcon from 'feather-icons-react'
+import Link from 'next/link'
+import { FiCheckCircle, FiShield } from 'react-icons/fi'
+
+import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
+import {
+  SIGNET_INTEGRATION_FLOW_STEPS,
+  SIGNET_INTEGRATION_PRACTICE_BULLETS,
+  SIGNET_JWT_VERIFY_JOSE_SNIPPET,
+  SIGNET_LOGIN_URL_EXAMPLE_JS,
+  SIGNET_REACT_AUTH_CALLBACK_JS,
+  SIGNET_REACT_HANDLE_LOGIN_JS,
+  SIGNET_VERIFY_API_FETCH_JS,
+} from '@/services/mcp/signetIntegrationShared'
 
 export function IntegrationContent() {
+  const d = gettingStartedDoc
+
+  const steps = [...SIGNET_INTEGRATION_FLOW_STEPS]
+
   return (
-    <div className="prose max-w-none prose-sm">
-      <h2 className="text-xl font-bold text-gray-900 mb-3">Integrate with Your Projects</h2>
+    <div className={d.article}>
+      <header className="mb-10">
+        <h2 className={d.h2}>Integrate your apps</h2>
+        <p className={`${d.lead} mb-3`}>
+          Treat this host as the identity provider: your app only needs a login link, a callback route, and token verification. No password storage in consumer services.
+        </p>
+        <p className={`${d.lead} mb-0`}>
+          For interactive OAuth-style experiments, use{' '}
+          <Link href="/oauth/playground" className={d.link}>
+            OAuth Playground
+          </Link>
+          ; the steps below focus on the <code className={d.codeInline}>/login</code> redirect contract.
+        </p>
+      </header>
 
-      <p className="text-gray-600 text-sm mb-4">
-        Every project simply redirects to this login page, waits for the JWT callback, and then verifies it. No more re-building auth for each repo.
-      </p>
-
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-indigo-900 mb-2">🔄 Flow overview</h3>
-        <div className="space-y-3 text-sm text-indigo-800">
-          {[
-            { step: '1', title: 'Redirect user', desc: 'Send users to /login?redirectUrl=your-app&state=uuid' },
-            { step: '2', title: 'Complete 2FA', desc: 'User enters credentials plus TOTP/WebAuthn' },
-            { step: '3', title: 'Receive JWT', desc: 'Service redirects back with token + state' },
-            { step: '4', title: 'Verify', desc: 'Your app validates the token and creates its own session' },
-          ].map(({ step, title, desc }) => (
-            <div className="flex items-start gap-3" key={step}>
-              <div className="bg-indigo-200 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-indigo-900">{step}</div>
-              <div>
-                <h4 className="font-semibold text-indigo-900 text-sm">{title}</h4>
-                <p className="text-[11px]">{desc}</p>
+      <section className="mb-10" aria-labelledby="integration-flow">
+        <h3 id="integration-flow" className={d.docSectionLabel}>
+          Flow
+        </h3>
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:min-w-0 md:grid-cols-2 md:gap-3 md:overflow-visible md:pb-0 md:snap-none lg:grid-cols-4">
+          {steps.map(({ step, title, desc }) => (
+            <div key={step} className="min-w-[12rem] shrink-0 snap-start rounded-xl border border-[var(--app-header-border)] bg-[var(--nav-link-hover-bg)] p-4 md:min-w-0">
+              <div className="mb-2 flex size-8 items-center justify-center rounded-full border border-[var(--app-header-border)] bg-[var(--app-header-bg)] text-xs font-bold text-[var(--nav-brand-text)]">
+                {step}
               </div>
+              <h4 className={`${d.h4} mb-1`}>{title}</h4>
+              <p className="text-xs leading-relaxed text-[var(--app-header-text)]">{desc}</p>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-base font-semibold text-blue-900 mb-2">Option A · Shared secret</h3>
-          <p className="text-blue-800 text-xs mb-3">Use the same JWT secret inside your project:</p>
-          <div className="bg-white rounded border border-blue-200 p-3 mb-2">
-            <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-              {`import jwt from 'jsonwebtoken'
+      <section className="mb-10" aria-labelledby="integration-query">
+        <h3 id="integration-query" className={d.docSectionLabel}>
+          Login URL and query parameters
+        </h3>
+        <div className={`${d.cardMuted} mb-4`}>
+          <p className={`${d.muted} mb-3`}>
+            Always URL-encode <code className={d.codeInline}>redirectUrl</code>. Example pattern:
+          </p>
+          <div className={d.preBox}>{SIGNET_LOGIN_URL_EXAMPLE_JS}</div>
+          <ul className={`${d.listDisc} mt-3 mb-0`}>
+            <li>
+              <strong className="text-[var(--nav-brand-text)]">redirectUrl</strong> — where to send the user after success; must pass{' '}
+              <Link href="/getting-started/env" className={d.link}>
+                redirect allowlist
+              </Link>{' '}
+              rules when cross-origin.
+            </li>
+            <li>
+              <strong className="text-[var(--nav-brand-text)]">state</strong> — optional but recommended; echo it back so your callback can detect CSRF or replay.
+            </li>
+          </ul>
+        </div>
+      </section>
 
-const payload = jwt.verify(token, process.env.JWT_SECRET)
-if (payload?.authenticated) {
-  // create your local session
-}`}
-            </pre>
+      <section className="mb-10" aria-labelledby="integration-verify">
+        <h3 id="integration-verify" className={d.docSectionLabel}>
+          Verify tokens
+        </h3>
+        <div className={d.gridTwoCol}>
+          <div className={d.card}>
+            <h4 className={`${d.h4} mb-2`}>Option A · Shared secret</h4>
+            <p className={`${d.muted} mb-3`}>
+              Use the same <code className={d.codeInline}>JWT_SECRET</code> as this deployment. Verify <code className={d.codeInline}>authenticated</code>, expiry, and optionally{' '}
+              <code className={d.codeInline}>iss</code>/<code className={d.codeInline}>sub</code> to match your policy.
+            </p>
+            <div className={d.preBox}>{SIGNET_JWT_VERIFY_JOSE_SNIPPET}</div>
+            <div className="mt-3 flex items-center gap-2 text-xs text-[var(--app-header-text)]">
+              <FiCheckCircle size={14} className="shrink-0 text-[var(--nav-brand-text)]" aria-hidden />
+              <span>Lowest latency when the consumer is also yours</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-blue-700">
-            <FeatherIcon icon="check-circle" size={14} />
-            <span>Fastest and simplest</span>
+
+          <div className={d.cardMuted}>
+            <h4 className={`${d.h4} mb-2`}>Option B · Verify API</h4>
+            <p className={`${d.muted} mb-3`}>
+              POST JSON <code className={d.codeInline}>{'{ token, audience?, scope? }'}</code> to <code className={d.codeInline}>/api/auth/verify</code>. The route checks{' '}
+              <code className={d.codeInline}>Origin</code> against your redirect allowlist, requires HTTPS for browser calls, and returns the standard envelope:{' '}
+              <code className={d.codeInline}>code === 0</code> with <code className={d.codeInline}>data</code> shaped like an OAuth token response (
+              <code className={d.codeInline}>access_token</code>, <code className={d.codeInline}>token_type</code>, <code className={d.codeInline}>expires_in</code>,{' '}
+              <code className={d.codeInline}>user</code>, optional <code className={d.codeInline}>claims</code>).
+            </p>
+            <div className={d.preBox}>{SIGNET_VERIFY_API_FETCH_JS}</div>
+            <div className="mt-3 flex items-center gap-2 text-xs text-[var(--app-header-text)]">
+              <FiShield size={14} className="shrink-0 text-[var(--nav-brand-text)]" aria-hidden />
+              <span>
+                No <code className={d.codeInline}>JWT_SECRET</code> in the consumer; this host performs verification
+              </span>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-base font-semibold text-green-900 mb-2">Option B · Verify API</h3>
-          <p className="text-green-800 text-xs mb-3">When you cannot share secrets, call the verify endpoint:</p>
-          <div className="bg-white rounded border border-green-200 p-3 mb-2">
-            <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap">
-              {`const res = await fetch('https://your-2fa-domain.com/api/auth/verify', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ token })
-})
-const data = await res.json()
-if (data.code === 0 && data.data.valid) {
-  // trusted login
-}`}
-            </pre>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-green-700">
-            <FeatherIcon icon="shield" size={14} />
-            <span>No key sharing required</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-        <h3 className="text-base font-semibold text-purple-900 mb-2">📝 React example</h3>
-        <div className="space-y-3 text-[11px] text-purple-900 font-mono bg-white rounded border border-purple-200 p-3">
-          <div>
-            <p className="mb-1 font-sans text-xs text-purple-700 font-semibold">Launch login:</p>
-            <pre className="whitespace-pre-wrap">{`function handleLogin() {
-  const state = crypto.randomUUID()
-  sessionStorage.setItem('oauth_state', state)
-
-  const callback = window.location.origin + '/auth/callback'
-  const url = \`https://auth.example.com/login?\${new URLSearchParams({
-    redirectUrl: callback,
-    state,
-  })}\`
-
-  window.location.href = url
-}`}</pre>
-          </div>
-          <div>
-            <p className="mb-1 font-sans text-xs text-purple-700 font-semibold">Handle callback:</p>
-            <pre className="whitespace-pre-wrap">{`function AuthCallback() {
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const token = params.get('token')
-    const state = params.get('state')
-
-    if (state !== sessionStorage.getItem('oauth_state')) throw new Error('Invalid state')
-    sessionStorage.removeItem('oauth_state')
-
-    verifyTokenAndCreateSession(token)
-  }, [])
-
-  return <div>Signing you in...</div>
-}`}</pre>
+      <section className="mb-10" aria-labelledby="integration-react">
+        <h3 id="integration-react" className={d.docSectionLabel}>
+          React sketch
+        </h3>
+        <div className={d.card}>
+          <p className={`${d.muted} mb-4`}>
+            Replace <code className={d.codeInline}>YOUR_AUTH_HOST</code> with your deployed auth base (no trailing slash). Keep state server-side or in{' '}
+            <code className={d.codeInline}>sessionStorage</code> only for the duration of the redirect.
+          </p>
+          <div className="space-y-6">
+            <div>
+              <p className={`${d.muted} mb-2 font-semibold text-[var(--nav-brand-text)]`}>Start login</p>
+              <div className={d.preBox}>{SIGNET_REACT_HANDLE_LOGIN_JS}</div>
+            </div>
+            <div>
+              <p className={`${d.muted} mb-2 font-semibold text-[var(--nav-brand-text)]`}>Callback route</p>
+              <div className={d.preBox}>{SIGNET_REACT_AUTH_CALLBACK_JS}</div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="text-base font-semibold text-yellow-900 mb-2">🔒 Best practices</h3>
-        <ul className="text-yellow-800 text-xs space-y-1 list-disc list-inside">
-          <li>Whitelist only domains you control via ALLOWED_REDIRECT_URLS</li>
-          <li>Generate a fresh state value for every login attempt</li>
-          <li>Use short-lived tokens (defaults to 5 minutes) then create local sessions</li>
-          <li>Serve everything over HTTPS in production</li>
-        </ul>
-      </div>
+      <section aria-labelledby="integration-practices">
+        <h3 id="integration-practices" className={d.docSectionLabel}>
+          Practices
+        </h3>
+        <div className={d.calloutWarn}>
+          <ul className={`${d.calloutWarnBody} list-disc space-y-1`}>
+            {SIGNET_INTEGRATION_PRACTICE_BULLETS.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
     </div>
   )
 }

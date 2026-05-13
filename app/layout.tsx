@@ -5,10 +5,8 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
+import { AppHeader } from '@/components/AppHeader/AppHeader'
 import { AssistSidebarPanel, AssistSidebarProvider, AssistSidebarRouteListener } from '@/components/AssistSidebar'
-
-import Footer from './Footer'
-import { Nav } from './Nav'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -21,8 +19,27 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: '2FA',
-  description: 'Two Factor Authentication',
+  title: 'Signet',
+  description: 'Two-factor authentication service',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-icon-180x180.png', sizes: '180x180', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Signet',
+    statusBarStyle: 'default',
+  },
+  other: {
+    'msapplication-TileColor': '#ffffff',
+    'msapplication-config': '/browserconfig.xml',
+  },
 }
 
 export interface RootLayoutProps {
@@ -32,17 +49,17 @@ export interface RootLayoutProps {
 export default function RootLayout(props: Readonly<RootLayoutProps>) {
   const { children } = props
 
+  // Browser extensions (e.g. Immersive Translate) may inject attributes on <html> before hydration.
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <Analytics />
       <SpeedInsights />
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <AssistSidebarProvider>
           <AssistSidebarRouteListener />
           <AssistSidebarPanel />
-          <Nav />
+          <AppHeader />
           {children}
-          <Footer />
         </AssistSidebarProvider>
       </body>
     </html>

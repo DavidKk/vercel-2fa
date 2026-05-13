@@ -1,6 +1,8 @@
-import jwt from 'jsonwebtoken'
+import { type JWTPayload, jwtVerify, SignJWT } from 'jose'
 
 import { generateUserSubForConfiguredUser } from '@/utils/user-sub'
+
+export type { JWTPayload }
 
 /**
  * Get issuer (iss) for JWT tokens
@@ -9,42 +11,62 @@ import { generateUserSubForConfiguredUser } from '@/utils/user-sub'
  * @returns Issuer identifier string
  */
 export function getIssuer(explicitIssuer?: string): string {
-  // 1. Highest priority: explicit issuer parameter
   if (explicitIssuer) {
     return explicitIssuer
   }
 
-  // 2. Environment variable configuration
   const configuredIssuer = process.env.OAUTH_ISSUER
   if (configuredIssuer) {
     return configuredIssuer
   }
 
-  // 3. Construct from Vercel URL (if available)
   const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL
   if (vercelUrl) {
-    // Vercel URL format: project-name.vercel.app
     return `https://${vercelUrl}`
   }
 
-  // 4. Last resort: use a default (should be overridden in production via OAUTH_ISSUER)
-  return 'https://vercel-2fa.local'
+  return 'https://signet.local'
 }
 
 /**
- * Build standard JWT claims with iss, sub, and other required fields
- * Note: iat and exp are automatically added by jwt.sign()
+ * Build standard JWT claims with iss, sub, and other required fields.
+ * Adds display claims after merging `additionalClaims` so client-supplied payload cannot override them:
+ * `username` / `preferred_username` from `ACCESS_USERNAME`, optional `email` from `ACCESS_EMAIL`.
  * @param additionalClaims - Additional claims to merge with standard claims
  * @param explicitIssuer - Optional explicit issuer to use
  * @returns Standard JWT claims object
  */
 export function buildStandardClaims(additionalClaims: Record<string, unknown> = {}, explicitIssuer?: string): Record<string, unknown> {
   const userSub = generateUserSubForConfiguredUser()
-  return {
-    iss: getIssuer(explicitIssuer), // Issuer identifier (OIDC standard)
-    sub: userSub, // Subject identifier (OIDC standard)
+  const claims: Record<string, unknown> = {
+    iss: getIssuer(explicitIssuer),
+    sub: userSub,
     ...additionalClaims,
   }
+
+  const accessUsername = process.env.ACCESS_USERNAME?.trim()
+  if (accessUsername) {
+    claims.username = accessUsername
+    claims.preferred_username = accessUsername
+  }
+
+  const email = process.env.ACCESS_EMAIL?.trim()
+  if (email) {
+    claims.email = email
+  }
+
+  return claims
+}
+
+export interface SignOptions {
+  expiresIn?: string | number
+  issuer?: string
+  audience?: string | string[]
+}
+
+export interface VerifyOptions {
+  issuer?: string | string[]
+  audience?: string | string[]
 }
 
 /**
@@ -54,26 +76,60 @@ export function buildStandardClaims(additionalClaims: Record<string, unknown> = 
  * @param explicitIssuer - Optional explicit issuer to use
  * @returns JWT token string
  */
-export function generateTokenWithStandardClaims(payload: Record<string, unknown>, options?: jwt.SignOptions | undefined, explicitIssuer?: string): string {
+export async function generateTokenWithStandardClaims(payload: Record<string, unknown>, options?: SignOptions, explicitIssuer?: string): Promise<string> {
   const standardClaims = buildStandardClaims(payload, explicitIssuer)
   return generateToken(standardClaims, options)
 }
 
-export function generateToken(payload: object, options?: jwt.SignOptions | undefined) {
+/**
+ * Sign an HS256 JWT with configured secret and expiration.
+ * @param payload - JWT body (claims)
+ * @param options - Optional expiration override and issuer/audience for the JWT header/payload
+ * @returns Serialized JWT
+ */
+export async function generateToken(payload: object, options?: SignOptions): Promise<string> {
   const { JWT_SECRET, JWT_EXPIRES_IN } = getJWTConfig()
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN, ...options })
+  const secretKey = new TextEncoder().encode(JWT_SECRET)
+
+  const jwtPayload: JWTPayload = {
+    ...(payload as Record<string, unknown>),
+  }
+
+  const sign = new SignJWT(jwtPayload).setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+
+  const expiresIn = options?.expiresIn ?? JWT_EXPIRES_IN
+  if (expiresIn !== undefined && expiresIn !== '') {
+    sign.setExpirationTime(expiresIn as string | number)
+  }
+
+  if (options?.issuer) {
+    sign.setIssuer(options.issuer)
+  }
+
+  if (options?.audience) {
+    sign.setAudience(options.audience)
+  }
+
+  return sign.sign(secretKey)
 }
 
-export function verifyToken(token: string, options?: jwt.VerifyOptions | undefined) {
+/**
+ * Verify HS256 JWT with server secret.
+ * @param token - JWT string
+ * @param options - Optional issuer / audience checks
+ * @returns Parsed payload or null when invalid
+ */
+export async function verifyToken(token: string, options?: VerifyOptions): Promise<JWTPayload | null> {
   try {
     const { JWT_SECRET } = getJWTConfig()
-    // Ensure we don't accept tokens without proper validation
-    // The caller should specify additional options like issuer, audience if needed
-    return jwt.verify(token, JWT_SECRET, {
-      ...options,
-      // Reject tokens without expiration if not explicitly allowed
-      ignoreExpiration: options?.ignoreExpiration ?? false,
+    const secretKey = new TextEncoder().encode(JWT_SECRET)
+
+    const { payload } = await jwtVerify(token, secretKey, {
+      issuer: options?.issuer,
+      audience: options?.audience,
     })
+
+    return payload
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Error verifying token:', err)
@@ -93,4 +149,14 @@ function getJWTConfig() {
     JWT_SECRET,
     JWT_EXPIRES_IN,
   }
+}
+
+/**
+ * Resolves session JWT expiration for the login "remember me" choice.
+ * @param rememberMe When true, uses configured JWT_EXPIRES_IN; when false, uses one day
+ * @returns Value suitable for jose `setExpirationTime` (for example `30d` or `1d`)
+ */
+export function getLoginSessionExpiresIn(rememberMe: boolean): string {
+  const { JWT_EXPIRES_IN } = getJWTConfig()
+  return rememberMe ? JWT_EXPIRES_IN : '1d'
 }

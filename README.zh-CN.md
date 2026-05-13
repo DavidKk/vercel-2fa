@@ -2,7 +2,7 @@
 
 # 二步验证服务
 
-[online](https://vercel-2fa.vercel.app)
+[online](https://signet.vercel.app)
 
 一个简单易用的二步验证服务，基于 TOTP（基于时间的一次性密码）和 WebAuthn 标准，实现更安全的身份验证。
 
@@ -55,6 +55,7 @@ if (isValid) {
 | 变量名                   | 必填 | 说明                                | 示例                                                                      |
 | ------------------------ | ---- | ----------------------------------- | ------------------------------------------------------------------------- |
 | `ACCESS_USERNAME`        | 是   | 管理员用户名                        | `admin`                                                                   |
+| `ACCESS_EMAIL`           | 可选 | 写入 JWT 的 `email`，供接入方展示   | `you@example.com`                                                         |
 | `ACCESS_PASSWORD`        | 是   | 管理员密码                          | `your-secure-password`                                                    |
 | `ACCESS_TOTP_SECRET`     | 可选 | TOTP 二步验证密钥                   | `JBSWY3DPEHPK3PXP`                                                        |
 | `ACCESS_WEBAUTHN_SECRET` | 可选 | WebAuthn 验证密钥                   | `{"id":"...","publicKey":"..."}`                                          |
@@ -79,7 +80,7 @@ if (isValid) {
 将用户重定向到认证中心，携带回调地址：
 
 ```
-https://your-2fa-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
+https://your-signet-domain.com/login?redirectUrl=https://your-app.com/auth/callback&state=random-string
 ```
 
 **参数说明**：
@@ -99,6 +100,8 @@ https://your-2fa-domain.com/login?redirectUrl=https://your-app.com/auth/callback
 https://your-app.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&state=random-string
 ```
 
+登录 JWT 中会包含：`sub`（稳定主体标识）、`username` 与 `preferred_username`（来自 `ACCESS_USERNAME`）；若配置了 `ACCESS_EMAIL` 则还有 `email`。接入方验签后可据此展示用户信息。
+
 #### 4. 验证令牌
 
 外部系统有两种方式验证令牌：
@@ -106,13 +109,13 @@ https://your-app.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **方式 A：使用共享密钥验证（推荐用于内部系统）**
 
 ```typescript
-import jwt from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 
-const JWT_SECRET = 'your-shared-secret' // 与认证中心相同的密钥
+const secretKey = new TextEncoder().encode('your-shared-secret') // 与认证中心相同的密钥
 
-function verifyToken(token: string) {
+async function verifyToken(token: string) {
   try {
-    const payload = jwt.verify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, secretKey)
     // payload 包含: { username, authenticated, iat, exp }
 
     if (payload.authenticated) {
@@ -128,7 +131,7 @@ function verifyToken(token: string) {
 **方式 B：调用验证 API（适合无法共享密钥的场景）**
 
 ```typescript
-const response = await fetch('https://your-2fa-domain.com/api/auth/verify', {
+const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -142,6 +145,20 @@ if (result.code === 0 && result.data.valid) {
   console.log('User:', result.data.payload.username)
 }
 ```
+
+##### 静态 ESM SDK（`/sdk/signet-client.mjs`）
+
+部署后可通过 HTTPS 提供极小 ES 模块（无需 npm），封装常用步骤：
+
+- **`buildLoginUrl`**：拼接 `/login?redirectUrl=&state=`
+- **`parseLoginCallbackParams`**：从回调 URL 读取 `token`、`state`
+- **`verifyTokenAtAuthCenter`**：使用 `fetch` 调用 `POST /api/auth/verify`（Node 与浏览器均可；服务端请求可无 `Origin` 头）
+
+示例：`https://your-signet-domain.com/sdk/signet-client.mjs`
+
+**Next.js：** 对 **Route Handler / Server Action** 建议将上述 `.mjs` **拷贝进接入仓库**或在 monorepo 内用**普通文件路径** import。部分 Next.js 15–16 + Webpack 环境下，对服务端 bundle 使用 `experimental.urlImports` 可能在运行时报错（如 `__webpack_modules__[moduleId] is not a function`）。纯客户端或非 Next 运行时仍可使用 `urlImports` 或浏览器侧 `import()` 部署 URL。
+
+`/sdk/*.mjs` 响应携带 `Access-Control-Allow-Origin: *`，便于浏览器运行时 `import()`。
 
 ### 安全配置建议
 
@@ -166,7 +183,7 @@ ALLOWED_REDIRECT_URLS=https://*.example.com,https://*.company.com
 const state = crypto.randomUUID()
 sessionStorage.setItem('oauth_state', state)
 
-const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
 window.location.href = loginUrl
 
 // 回调时验证 state
@@ -192,7 +209,7 @@ function handleLogin() {
   sessionStorage.setItem('oauth_state', state)
 
   const callbackUrl = `${window.location.origin}/auth/callback`
-  const loginUrl = `https://your-2fa-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+  const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
 
   window.location.href = loginUrl
 }

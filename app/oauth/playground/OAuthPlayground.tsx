@@ -1,6 +1,6 @@
 'use client'
 
-import { Spinner } from '@/components/Spinner'
+import { appUi } from '@/components/ui/app-tokens'
 import { useOAuthFlowContext } from '@/services/oauth/client'
 
 import { OAuthCallbackPlayground } from './OAuthCallbackPlayground'
@@ -13,27 +13,38 @@ interface OAuthPlaygroundProps {
   defaultCallbackUrl?: string | null
 }
 
-/** Loading state component for server public key */
-function LoadingState() {
+export function OAuthPlaygroundSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3">
-      <Spinner color="text-indigo-600" size="h-8 w-8" />
-      <div className="text-sm text-indigo-600 font-medium">Fetching server public key...</div>
-    </div>
-  )
-}
-
-/** Error state component for server public key loading failure */
-function ErrorState({ error }: { error: string | null }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 p-6 bg-red-50 border border-red-200 rounded-lg max-w-md mx-auto">
-      <div className="flex items-center gap-2">
-        <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span className="text-sm font-semibold text-red-800">Load Failed</span>
+    <div className="flex flex-col gap-5" aria-label="Loading OAuth playground">
+      <div className={`${appUi.cardCompact} flex flex-col gap-4 sm:flex-row sm:items-start`}>
+        <div className={`${appUi.iconBox} animate-pulse`} />
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="h-3 w-28 animate-pulse rounded bg-[var(--nav-link-active-bg)]" />
+          <div className="h-7 w-64 max-w-full animate-pulse rounded bg-[var(--nav-link-active-bg)]" />
+          <div className="h-4 w-full max-w-2xl animate-pulse rounded bg-[var(--nav-link-active-bg)]" />
+        </div>
       </div>
-      <p className="text-sm text-red-700 text-center">{error || 'Unable to load server public key. Refresh the page to try again.'}</p>
+      <div className={`${appUi.cardCompact} flex flex-col gap-5`}>
+        <div className="space-y-2">
+          <div className="h-3 w-24 animate-pulse rounded bg-[var(--nav-link-active-bg)]" />
+          <div className="h-16 animate-pulse rounded-lg border border-[var(--app-header-border)] bg-[var(--background)]" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="space-y-2">
+            <div className="h-3 w-20 animate-pulse rounded bg-[var(--nav-link-active-bg)]" />
+            <div className="h-24 animate-pulse rounded-lg border border-[var(--app-header-border)] bg-[var(--background)]" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 w-20 animate-pulse rounded bg-[var(--nav-link-active-bg)]" />
+            <div className="h-24 animate-pulse rounded-lg border border-[var(--app-header-border)] bg-[var(--background)]" />
+          </div>
+        </div>
+      </div>
+      <div className={`${appUi.cardCompact} h-20 animate-pulse`} />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="h-11 animate-pulse rounded-lg bg-[var(--app-primary)]" />
+        <div className="h-11 animate-pulse rounded-lg border border-[var(--app-header-border)] bg-[var(--app-header-bg)]" />
+      </div>
     </div>
   )
 }
@@ -61,21 +72,11 @@ function PlaygroundContent({ isResultPage, defaultCallbackUrl }: { isResultPage:
  * Handles public key loading states and renders appropriate content
  */
 export function OAuthPlayground({ isResultPage = false, defaultCallbackUrl }: OAuthPlaygroundProps) {
-  const { publicKeyStatus, publicKeyError } = useOAuthFlowContext()
-
-  // If public key is loading or has error, show only status message without any functional components
-  let content: React.ReactNode
-  if (publicKeyStatus === 'loading') {
-    content = <LoadingState />
-  } else if (publicKeyStatus === 'error') {
-    content = <ErrorState error={publicKeyError} />
-  } else {
-    content = <PlaygroundContent isResultPage={isResultPage} defaultCallbackUrl={defaultCallbackUrl} />
-  }
-
   return (
-    <div className="flex flex-col flex-1 bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-12 w-full flex flex-col gap-4 justify-center min-h-[60vh]">{content}</div>
+    <div className={appUi.pageShellTop}>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+        <PlaygroundContent isResultPage={isResultPage} defaultCallbackUrl={defaultCallbackUrl} />
+      </div>
     </div>
   )
 }
