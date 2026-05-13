@@ -17,7 +17,6 @@ interface GeneratedKeys {
 }
 
 export default function ECDHClient() {
-  // Register sidebar sections for this page
   useAssistSidebarContent('ecdh', [
     { key: 'usage', title: 'How to Use', markdown: usageMd },
     { key: 'principles', title: 'Principles', markdown: principlesMd },
@@ -29,7 +28,7 @@ export default function ECDHClient() {
   return (
     <>
       <AssistSidebarTrigger contentKey="ecdh" />
-      {keys ? <Success keys={keys} /> : <Form onGenerate={setKeys} />}
+      {keys ? <Success keys={keys} onReset={() => setKeys(null)} /> : <Form onGenerate={setKeys} />}
     </>
   )
 }

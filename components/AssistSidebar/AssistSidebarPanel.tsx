@@ -12,24 +12,27 @@ export function AssistSidebarPanel() {
   return (
     <>
       {/* Overlay */}
-      {isOpen && <div className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300" onClick={closeSidebar} />}
+      {isOpen && <div className="fixed inset-x-0 bottom-0 top-[var(--header-height)] z-40 bg-black/35 transition-opacity duration-300" onClick={closeSidebar} />}
 
       {/* Sidebar drawer */}
       <aside
-        className={`fixed left-0 top-0 w-full md:w-[900px] lg:w-[1100px] h-screen bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out flex ${
+        className={`fixed left-0 top-[var(--header-height)] z-50 flex h-[calc(100dvh-var(--header-height))] w-full border-r border-[var(--app-header-border)] bg-[var(--app-header-bg)] text-[var(--foreground)] shadow-xl transition-transform duration-300 ease-in-out md:w-[900px] lg:w-[1100px] ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Navigation */}
-        <nav className="w-48 border-r border-gray-200 bg-gray-50 flex-shrink-0">
+        <nav className="w-48 flex-shrink-0 border-r border-[var(--app-header-border)] bg-[var(--nav-link-hover-bg)]">
           <div className="p-4">
+            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-[var(--app-header-text)]">Guide</p>
             <ul className="space-y-1">
               {sections.map((section) => (
                 <li key={section.key}>
                   <button
                     onClick={() => setActiveSection(section.key)}
-                    className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                      activeSection === section.key ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      activeSection === section.key
+                        ? 'bg-[var(--nav-link-active-bg)] font-medium text-[var(--nav-link-active-text)]'
+                        : 'text-[var(--app-header-text)] hover:bg-[var(--nav-link-hover-bg)] hover:text-[var(--nav-link-hover-text)]'
                     }`}
                   >
                     {section.title}
@@ -45,14 +48,14 @@ export function AssistSidebarPanel() {
           {/* Close button */}
           <button
             onClick={closeSidebar}
-            className="absolute top-3 right-8 p-1 hover:bg-red-50 hover:text-red-400 rounded transition-all duration-200 hover:scale-110 text-gray-500 z-10"
+            className="absolute right-4 top-4 z-10 rounded-lg p-2 text-[var(--nav-icon-muted)] transition-colors duration-150 hover:bg-[var(--nav-link-hover-bg)] hover:text-[var(--nav-brand-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--app-header-focus)]"
             aria-label="Close assist sidebar"
           >
-            <FiX size={20} className="transition-transform" />
+            <FiX size={20} />
           </button>
 
           <div className="h-full overflow-y-auto overflow-x-hidden">
-            <div className="p-5 pr-12 min-w-0">
+            <div className="min-w-0 p-5 pr-14 sm:p-8 sm:pr-16">
               {currentContent && (
                 <div className="sidebar-content break-words">
                   <div dangerouslySetInnerHTML={{ __html: currentContent }} />

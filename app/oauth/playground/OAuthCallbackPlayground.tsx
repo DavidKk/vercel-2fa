@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FiKey, FiLoader, FiPlayCircle, FiRefreshCw } from 'react-icons/fi'
 
-import { Spinner } from '@/components/Spinner'
 import { Switch } from '@/components/Switch'
+import { appUi } from '@/components/ui/app-tokens'
 import { useOAuthFlowContext } from '@/services/oauth/client'
 
 interface OAuthCallbackPlaygroundProps {
@@ -12,8 +13,9 @@ interface OAuthCallbackPlaygroundProps {
 }
 
 export function OAuthCallbackPlayground({ defaultCallbackUrl }: OAuthCallbackPlaygroundProps = {} as OAuthCallbackPlaygroundProps) {
-  const { mode, setMode, status, keyPair, startLogin } = useOAuthFlowContext()
+  const { mode, setMode, status, keyPair, startLogin, publicKeyStatus, publicKeyError } = useOAuthFlowContext()
   const [editableCallbackUrl, setEditableCallbackUrl] = useState(defaultCallbackUrl || '')
+  const isServerKeyReady = publicKeyStatus === 'ready'
 
   useEffect(() => {
     // If defaultCallbackUrl is provided from SSR, use it; otherwise generate from current URL
@@ -59,74 +61,112 @@ export function OAuthCallbackPlayground({ defaultCallbackUrl }: OAuthCallbackPla
   }
 
   return (
-    <section className="bg-white p-6 rounded-md shadow-md flex flex-col gap-4">
-      <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-bold">OAuth Callback Playground</h1>
-        <p className="text-sm text-gray-500">Simulate a full third-party login flow with ECDH-encrypted token decryption.</p>
+    <section className="flex flex-col gap-5">
+      <header className={`${appUi.cardCompact} flex flex-col gap-4 sm:flex-row sm:items-start`}>
+        <div className={appUi.iconBox}>
+          <FiPlayCircle size={18} aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className={`${appUi.sectionLabel} mb-1.5`}>OAuth sandbox</p>
+          <h1 className={`${appUi.pageTitle} mb-2`}>Callback playground</h1>
+          <p className={`${appUi.lead} max-w-3xl`}>Simulate a third-party login flow with ECDH-encrypted token return and local callback verification.</p>
+        </div>
+      </header>
+
+      <div className={`${appUi.cardCompact} flex flex-col gap-5`}>
+        <div className="space-y-1.5">
+          <label htmlFor="oauth-callback-url" className={appUi.fieldLabel}>
+            Callback URL
+          </label>
+          <textarea
+            id="oauth-callback-url"
+            value={editableCallbackUrl}
+            onChange={(e) => setEditableCallbackUrl(e.target.value)}
+            onFocus={(e) => e.currentTarget.select()}
+            rows={2}
+            className={`${appUi.control} min-h-16 resize-y font-mono text-xs leading-relaxed`}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <label className={appUi.fieldLabel}>Public key</label>
+              {keyPair.error && <span className="text-xs text-red-600 dark:text-red-400">{keyPair.error}</span>}
+            </div>
+            <textarea
+              readOnly
+              value={keyPair.loading ? 'Generating...' : keyPair.publicKey || 'Not generated'}
+              rows={4}
+              className={`${appUi.control} min-h-24 flex-1 resize-y font-mono text-xs leading-relaxed`}
+            />
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label className={appUi.fieldLabel}>Private key</label>
+            <textarea
+              readOnly
+              value={keyPair.loading ? 'Generating...' : keyPair.privateKey || 'Not generated'}
+              rows={4}
+              className={`${appUi.control} min-h-24 flex-1 resize-y font-mono text-xs leading-relaxed`}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-semibold text-gray-700">Callback URL</label>
-        <textarea
-          value={editableCallbackUrl}
-          onChange={(e) => setEditableCallbackUrl(e.target.value)}
-          rows={1}
-          className="w-full overflow-y-scroll text-sm border rounded-md box-border px-3 py-2 font-mono resize-y focus:ring-indigo-500 focus:border-indigo-500"
+      <div className={`${appUi.cardCompact} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}>
+        <div className="flex flex-col gap-1">
+          <span className={appUi.fieldLabel}>Launch mode</span>
+          <p className={appUi.muted}>{mode === 'popup' ? 'Popup window using postMessage handoff.' : 'Full redirect using URL hash callback data.'}</p>
+          {publicKeyStatus === 'loading' && <p className={appUi.muted}>Preparing server public key in the background...</p>}
+          {publicKeyStatus === 'error' && <p className="text-xs leading-relaxed text-red-600 dark:text-red-400">{publicKeyError || 'Server public key failed to load.'}</p>}
+        </div>
+        <Switch
+          checked={mode === 'popup'}
+          onChange={(checked) => {
+            setMode(checked ? 'popup' : 'redirect')
+          }}
+          size="md"
+          variant="primary"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <label className="text-base font-semibold text-gray-700">Public Key</label>
-          {keyPair.error && <span className="text-xs text-red-600">{keyPair.error}</span>}
-        </div>
-        <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-x-scroll overflow-y-auto break-all max-h-24 min-h-[2.5rem]">
-          {keyPair.loading ? 'Generating...' : keyPair.publicKey || 'Not generated'}
-        </pre>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-base font-semibold text-gray-700">Private Key</label>
-        <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-x-scroll overflow-y-auto break-all max-h-24 min-h-[2.5rem]">
-          {keyPair.loading ? 'Generating...' : keyPair.privateKey || 'Not generated'}
-        </pre>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <label className="text-base font-semibold text-gray-700">Launch Mode</label>
-            <p className="text-xs text-gray-500">
-              {mode === 'popup' ? 'Popup Window (postMessage) - More secure, uses window.open' : 'Redirect (URL Hash) - Uses window.location with hash parameters'}
-            </p>
-          </div>
-          <Switch
-            checked={mode === 'popup'}
-            onChange={(checked) => {
-              setMode(checked ? 'popup' : 'redirect')
-            }}
-            size="md"
-            variant="primary"
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button
           type="button"
           onClick={handleLaunch}
-          disabled={!editableCallbackUrl || status === 'launching' || (mode === 'redirect' && !keyPair.publicKey)}
-          className="flex-1 flex items-center justify-center gap-4 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!editableCallbackUrl || status === 'launching' || !isServerKeyReady || (mode === 'redirect' && !keyPair.publicKey)}
+          className={appUi.btnPrimary}
         >
-          {status === 'launching' ? <Spinner /> : 'Start OAuth Login'}
+          {status === 'launching' ? (
+            <>
+              <FiLoader size={16} className="animate-spin" aria-hidden />
+              Starting...
+            </>
+          ) : (
+            <>
+              <FiPlayCircle size={16} aria-hidden />
+              Start OAuth login
+            </>
+          )}
         </button>
-        <button
-          type="button"
-          onClick={handleGenerateKeys}
-          disabled={keyPair.loading}
-          className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {keyPair.loading ? 'Generating...' : 'Generate Key Pair'}
+        <button type="button" onClick={handleGenerateKeys} disabled={keyPair.loading} className={appUi.btnSecondary}>
+          {keyPair.loading ? (
+            <>
+              <FiLoader size={16} className="animate-spin" aria-hidden />
+              Generating...
+            </>
+          ) : keyPair.publicKey ? (
+            <>
+              <FiRefreshCw size={16} aria-hidden />
+              Regenerate key pair
+            </>
+          ) : (
+            <>
+              <FiKey size={16} aria-hidden />
+              Generate key pair
+            </>
+          )}
         </button>
       </div>
     </section>

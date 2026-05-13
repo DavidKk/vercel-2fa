@@ -1,11 +1,11 @@
 import { startRegistration } from '@simplewebauthn/browser'
 import { useRequest } from 'ahooks'
 import { useEffect, useRef, useState } from 'react'
-import { FiChevronDown } from 'react-icons/fi'
+import { FiChevronDown, FiLoader, FiShield, FiUser } from 'react-icons/fi'
 
 import { generateRegisterOptions, verifyRegister } from '@/app/actions/webauthn'
 import Alert, { type AlertImperativeHandler } from '@/components/Alert'
-import { Spinner } from '@/components/Spinner'
+import { appUi } from '@/components/ui/app-tokens'
 import type { StoreCredentials } from '@/services/webauthn'
 
 export interface FormProps {
@@ -58,17 +58,25 @@ export default function Form(props: FormProps) {
   )
 
   return (
-    <form className="flex flex-col flex-1 items-center justify-center p-4 bg-gray-100" ref={formRef}>
-      <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Set Up WebAuthn Authentication</h1>
-        <p className="text-sm text-gray-500 mb-6 text-center">
-          Enhance your account security by setting up WebAuthn authentication. This will allow you to use biometric or security key authentication.
-        </p>
+    <form className={appUi.pageShell} ref={formRef}>
+      <div className={`${appUi.card} w-full max-w-lg`}>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className={`${appUi.iconBox} mb-5`}>
+            <FiShield size={18} aria-hidden />
+          </div>
+          <p className={`${appUi.sectionLabel} mb-2`}>Passkey / security key</p>
+          <h1 className={`${appUi.pageTitle} mb-3`}>WebAuthn credential</h1>
+          <p className={`${appUi.lead} max-w-md`}>Register a platform authenticator or hardware key, then export the credential JSON into your server environment.</p>
+        </div>
 
-        <div className="mb-4">
+        <div className="mb-4 space-y-1.5">
+          <label htmlFor="webauthn-username" className={appUi.fieldLabel}>
+            Username
+          </label>
           <input
+            id="webauthn-username"
             type="text"
-            className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3"
+            className={appUi.control}
             placeholder="Username"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
@@ -78,46 +86,52 @@ export default function Form(props: FormProps) {
           />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 space-y-1.5">
+          <label htmlFor="webauthn-app-name" className={appUi.fieldLabel}>
+            Display name
+          </label>
           <input
+            id="webauthn-app-name"
             type="text"
-            className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3"
-            placeholder="App Name"
+            className={appUi.control}
+            placeholder="MacBook Touch ID"
             value={appName}
             onChange={(event) => setAppName(event.target.value)}
             required
           />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-6 space-y-1.5">
+          <label htmlFor="webauthn-rpid" className={appUi.fieldLabel}>
+            Relying party ID
+          </label>
           <div className="relative">
-            <select
-              className="w-full flex-grow h-12 text-sm border rounded-md box-border px-3 appearance-none disabled:text-gray-500 cursor-not-allowed"
-              value={rpId}
-              onChange={(event) => setRpId(event.target.value)}
-              required
-              disabled
-            >
+            <select id="webauthn-rpid" className={`${appUi.control} appearance-none pr-9`} value={rpId} onChange={(event) => setRpId(event.target.value)} required disabled>
               {domainOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
-            <FiChevronDown size={18} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 opacity-[0.3]" />
+            <FiChevronDown size={18} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nav-icon-muted)] opacity-60" aria-hidden />
           </div>
         </div>
 
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="w-full flex items-center justify-center gap-4 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          type="button"
-        >
-          {submitting ? <Spinner /> : 'Generate WebAuthn Credential'}
+        <button onClick={submit} disabled={submitting} className={appUi.btnPrimary} type="button">
+          {submitting ? (
+            <>
+              <FiLoader size={16} className="animate-spin" aria-hidden />
+              Registering...
+            </>
+          ) : (
+            <>
+              <FiUser size={16} aria-hidden />
+              Register credential
+            </>
+          )}
         </button>
 
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="mt-4 flex flex-col gap-2">
           <Alert ref={alertRef} />
         </div>
       </div>

@@ -2,10 +2,12 @@
 
 import { useRequest } from 'ahooks'
 import { useCallback, useRef, useState } from 'react'
+import { FiCheckCircle, FiSmartphone } from 'react-icons/fi'
 
 import type { AlertImperativeHandler } from '@/components/Alert'
 import Alert from '@/components/Alert'
 import { LoginAuthenticatorCodeField, LoginFormButton } from '@/components/login'
+import { appUi } from '@/components/ui/app-tokens'
 import { verifyTOTPToken } from '@/utils/totp'
 
 export interface VerificationProps {
@@ -52,10 +54,16 @@ export default function Verification(props: VerificationProps) {
   }, [])
 
   return (
-    <form className="flex min-h-screen flex-col items-center justify-center bg-[var(--nav-link-hover-bg)] px-4" ref={formRef}>
-      <div className="w-full max-w-md rounded-xl border border-[var(--app-header-border)] bg-[var(--app-header-bg)] p-6 shadow-sm sm:p-8">
-        <h1 className="mb-2 text-center text-xl font-semibold tracking-tight text-[var(--nav-brand-text)]">Two-Factor Authentication</h1>
-        <p className="mb-6 text-center text-sm text-[var(--app-header-text)]">Please enter the 6-digit verification code from your authenticator app.</p>
+    <form className={appUi.pageShell} ref={formRef}>
+      <div className={`${appUi.card} w-full max-w-lg`}>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className={`${appUi.iconBox} mb-5`}>
+            <FiSmartphone size={18} aria-hidden />
+          </div>
+          <p className={`${appUi.sectionLabel} mb-2`}>Verification</p>
+          <h1 className={`${appUi.pageTitle} mb-3`}>Confirm TOTP setup</h1>
+          <p className={`${appUi.lead} max-w-md`}>Enter the current 6-digit code from your authenticator app before relying on this secret for login.</p>
+        </div>
 
         <LoginAuthenticatorCodeField
           id="totp-setup-verify"
@@ -68,6 +76,7 @@ export default function Verification(props: VerificationProps) {
         />
 
         <LoginFormButton type="button" variant="primary" loading={submitting} loadingLabel="Verifying…" disabled={completed} onClick={verify}>
+          <FiCheckCircle size={16} aria-hidden />
           Verify Code
         </LoginFormButton>
 

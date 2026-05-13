@@ -1,7 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { FiAlertTriangle, FiArrowLeft, FiCheckCircle } from 'react-icons/fi'
 
+import { appUi } from '@/components/ui/app-tokens'
 import { useOAuthFlowContext } from '@/services/oauth/client'
 
 export function VerificationOutput() {
@@ -19,47 +21,58 @@ export function VerificationOutput() {
   const token = typeof decryptedPayload?.token === 'string' ? (decryptedPayload.token as string) : ''
 
   return (
-    <section className="bg-white p-6 rounded-md shadow-md flex flex-col gap-4">
-      <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-bold">OAuth Callback Playground</h1>
-        <p className="text-sm text-gray-500">Decrypted payload and verification response from the OAuth callback.</p>
+    <section className={`${appUi.card} flex flex-col gap-6`}>
+      <div className="flex flex-col items-center text-center">
+        <div className={`${appUi.iconBox} mb-5 ${hasError ? 'border-red-200 bg-red-500/10 text-red-700 dark:border-red-900/60 dark:text-red-300' : ''}`}>
+          {hasError ? <FiAlertTriangle size={18} aria-hidden /> : <FiCheckCircle size={18} aria-hidden />}
+        </div>
+        <p className={`${appUi.sectionLabel} mb-2`}>OAuth result</p>
+        <h1 className={`${appUi.pageTitle} mb-3`}>Callback verification</h1>
+        <p className={`${appUi.lead} max-w-2xl`}>Decrypted payload and verification response from the OAuth callback.</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         {token && (
-          <div className="flex flex-col gap-1">
-            <label className="text-base font-semibold text-gray-700">Token</label>
-            <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-24">{token}</pre>
+          <div className="space-y-1.5">
+            <label className={appUi.fieldLabel}>Token</label>
+            <pre className={`${appUi.codeBlock} max-h-28`}>
+              <code className="break-all whitespace-pre-wrap">{token}</code>
+            </pre>
           </div>
         )}
         {hasError ? (
-          <div className="flex flex-col gap-1">
-            <label className="text-base font-semibold text-gray-700">Error</label>
-            <p className="text-red-600">{error}</p>
+          <div className={`${appUi.calloutWarn} border-red-200 bg-red-500/10 dark:border-red-900/60 dark:bg-red-950/30`}>
+            <label className="mb-1 block text-sm font-semibold text-red-700 dark:text-red-300">Error</label>
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         ) : decryptedPayload ? (
           <>
-            <div className="flex flex-col gap-1">
-              <label className="text-base font-semibold text-gray-700">Decrypted Payload</label>
-              <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-64">{JSON.stringify(decryptedPayload, null, 2)}</pre>
+            <div className="space-y-1.5">
+              <label className={appUi.fieldLabel}>Decrypted payload</label>
+              <pre className={appUi.codeBlock}>
+                <code className="break-all whitespace-pre-wrap">{JSON.stringify(decryptedPayload, null, 2)}</code>
+              </pre>
             </div>
             {verification && (
-              <div className="flex flex-col gap-1">
-                <label className="text-base font-semibold text-gray-700">/api/auth/verify Response</label>
-                <pre className="rounded-md bg-gray-900 text-gray-100 px-3 py-2 text-sm overflow-auto break-all max-h-64">{JSON.stringify(verification, null, 2)}</pre>
+              <div className="space-y-1.5">
+                <label className={appUi.fieldLabel}>/api/auth/verify response</label>
+                <pre className={appUi.codeBlock}>
+                  <code className="break-all whitespace-pre-wrap">{JSON.stringify(verification, null, 2)}</code>
+                </pre>
               </div>
             )}
           </>
         ) : (
-          <div className="flex flex-col gap-1">
-            <label className="text-base font-semibold text-gray-700">Status</label>
-            <p className="text-gray-600">{status === 'verifying' ? 'Verifying token...' : status === 'waiting' ? 'Waiting for OAuth callback...' : 'Awaiting verification...'}</p>
+          <div className={appUi.calloutInfo}>
+            <label className="mb-1 block text-sm font-semibold text-[var(--nav-brand-text)]">Status</label>
+            <p className={appUi.lead}>{status === 'verifying' ? 'Verifying token...' : status === 'waiting' ? 'Waiting for OAuth callback...' : 'Awaiting verification...'}</p>
           </div>
         )}
       </div>
 
-      <button type="button" onClick={handleBack} className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
-        Back
+      <button type="button" onClick={handleBack} className={appUi.btnSecondary}>
+        <FiArrowLeft size={16} aria-hidden />
+        Back to playground
       </button>
     </section>
   )

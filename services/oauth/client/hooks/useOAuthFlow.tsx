@@ -97,6 +97,7 @@ export function useOAuthFlow(options: UseOAuthFlowOptions = {}): OAuthFlowResult
     generate: generateStoredKeyPair,
   } = useECDHKeyPair({
     autoLoad: true,
+    autoGenerate: shouldUseSSRData,
     // For 'login' flow: use SSR initialKeyPair if provided, prioritize it over storage
     // For 'callback' flow: ignore SSR initialKeyPair, use storage keys if available
     initialKeyPair: shouldUseSSRData ? initialKeyPair : null,

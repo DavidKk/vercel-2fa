@@ -1,3 +1,7 @@
+import { FiAlertTriangle, FiCheckCircle, FiCopy, FiSmartphone } from 'react-icons/fi'
+
+import { appUi } from '@/components/ui/app-tokens'
+
 export interface QrcodeProps {
   qrCode: string
   secret: string
@@ -8,23 +12,47 @@ export default function Qrcode(props: QrcodeProps) {
   const { qrCode, secret, onVerify } = props
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
-      <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Two-Factor Authentication</h1>
+    <div className={appUi.pageShell}>
+      <div className={`${appUi.card} w-full max-w-lg`}>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className={`${appUi.iconBox} mb-5`}>
+            <FiSmartphone size={18} aria-hidden />
+          </div>
+          <p className={`${appUi.sectionLabel} mb-2`}>Pair device</p>
+          <h1 className={`${appUi.pageTitle} mb-3`}>Scan TOTP QR code</h1>
+          <p className={`${appUi.lead} max-w-md`}>Add this account to your authenticator app, then keep the secret in your server environment.</p>
+        </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-md text-gray-600 mb-2">Scan this QR code with your authenticator app:</p>
-          <img src={qrCode} alt="QR Code" className="mx-auto" />
+        <div className={`${appUi.cardMuted} mb-5 flex flex-col items-center p-5`}>
+          <img src={qrCode} alt="QR code for authenticator app pairing" className="size-56 rounded-lg bg-white p-3 shadow-sm" />
+        </div>
 
-          <p className="mt-4 text-md text-gray-600">
-            <strong>Important:</strong> Below is your secret key. Store it securely in your server and do not share it with anyone. This key is required for generating and
-            verifying OTPs.
+        <div className={`${appUi.calloutWarn} mb-5`}>
+          <div className="mb-2 flex items-center gap-2">
+            <FiAlertTriangle size={18} className={appUi.warnTitle} aria-hidden />
+            <span className={appUi.warnTitle}>Store securely</span>
+          </div>
+          <p className={appUi.warnBody}>
+            This secret can generate valid one-time passwords. Store it in <code className={appUi.codeInline}>ACCESS_TOTP_SECRET</code> and do not commit it.
           </p>
+        </div>
 
-          <p className="mt-4 text-md text-gray-600">Secret: {secret}</p>
+        <div className="mb-6 space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className={appUi.fieldLabel}>Secret</span>
+            <span className={appUi.badge}>Base32</span>
+          </div>
+          <div className={`${appUi.codeBlock} max-h-none break-all`}>{secret}</div>
+        </div>
 
-          <button onClick={onVerify} className="mt-6 w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">
-            Verify Authentication
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button onClick={onVerify} className={appUi.btnPrimary} type="button">
+            <FiCheckCircle size={16} aria-hidden />
+            Verify authentication
+          </button>
+          <button onClick={() => navigator.clipboard.writeText(secret)} className={appUi.btnSecondary} type="button">
+            <FiCopy size={16} aria-hidden />
+            Copy secret
           </button>
         </div>
       </div>

@@ -1,234 +1,202 @@
 import Link from 'next/link'
-import { FiArrowRight, FiBookOpen, FiCheckCircle, FiCheckSquare, FiKey, FiLink, FiLock, FiLogIn, FiPlayCircle, FiShield, FiSmartphone } from 'react-icons/fi'
+import { FiArrowRight, FiBookOpen, FiCheckCircle, FiKey, FiLink2, FiLock, FiLogIn, FiPlayCircle, FiShield, FiSmartphone } from 'react-icons/fi'
 
 import { generate } from '@/components/Meta'
+import { appUi } from '@/components/ui/app-tokens'
 
 const { generateMetadata } = generate({
   title: 'Signet · Two-Factor Authentication',
-  description: 'A simple and user-friendly two-factor authentication service based on the TOTP standard for enhanced security.',
+  description: 'A compact self-hosted authentication center for TOTP, WebAuthn, JWT sessions, and encrypted OAuth-style redirects.',
 })
 
 export { generateMetadata }
 
+const toolLinks = [
+  {
+    title: 'TOTP QR code',
+    desc: 'Generate a Base32 secret and QR code for authenticator apps.',
+    href: '/totp',
+    action: 'Open TOTP',
+    icon: FiSmartphone,
+  },
+  {
+    title: 'WebAuthn credential',
+    desc: 'Register a passkey or hardware security key and export the credential JSON.',
+    href: '/webauthn',
+    action: 'Open WebAuthn',
+    icon: FiShield,
+  },
+  {
+    title: 'ECDH key pair',
+    desc: 'Create the server key pair used for encrypted OAuth token return.',
+    href: '/ecdh',
+    action: 'Open ECDH',
+    icon: FiKey,
+  },
+]
+
+const docsLinks = [
+  { title: 'Environment variables', href: '/getting-started/env', desc: 'Required secrets, redirect allowlists, session settings, and ECDH options.' },
+  { title: 'Project integration', href: '/getting-started/integration', desc: 'Verify callback tokens and wire Signet into downstream apps.' },
+  { title: 'Auth methods', href: '/getting-started/overview', desc: 'Understand how password, second factor, JWT, and redirects fit together.' },
+]
+
+const flowSteps = [
+  { label: 'Redirect', desc: 'App sends the user to Signet with a callback URL.' },
+  { label: 'Verify', desc: 'Signet checks password plus TOTP or WebAuthn.' },
+  { label: 'Return', desc: 'A JWT is returned directly or through encrypted OAuth payloads.' },
+  { label: 'Trust', desc: 'Your app verifies the token and creates its own session.' },
+]
+
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 bg-gradient-to-b from-indigo-50 to-white">
-      {/* Hero Section */}
-      <div className="max-w-6xl mx-auto px-4 pt-12 pb-8 text-center">
-        <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-medium mb-4">
-          <FiShield size={14} />
-          <span>Secure · Reliable · Easy to Use</span>
-        </div>
-
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-          Two-Factor Authentication
-          <span className="block text-indigo-600 mt-2 text-3xl md:text-4xl">Service</span>
-        </h1>
-
-        <p className="text-lg text-gray-600 mb-6 max-w-3xl mx-auto">
-          Self-hosted authentication center based on TOTP and WebAuthn standards
-          <br className="hidden md:block" />
-          One login service for all your personal projects
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
-          <Link
-            href="/getting-started/overview"
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl"
-          >
-            <FiPlayCircle size={18} />
-            Get Started
-          </Link>
-
-          <Link
-            href="/login?redirectUrl=/login/blank"
-            className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-all border-2 border-indigo-600"
-          >
-            <FiLogIn size={18} />
-            Try Login
-          </Link>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-10">
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-indigo-600 mb-1">2</div>
-            <div className="text-xs text-gray-600">Auth Methods</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
-            <div className="text-xs text-gray-600">Open Source</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-purple-600 mb-1">SSO</div>
-            <div className="text-xs text-gray-600">Single Sign-On</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-orange-600 mb-1">5min</div>
-            <div className="text-xs text-gray-600">Quick Setup</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="bg-white py-10">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Core Features</h2>
-            <p className="text-gray-600">Simple yet secure authentication for your projects</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* TOTP */}
-            <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-6 shadow-sm border border-indigo-100 hover:shadow-lg transition-shadow">
-              <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FiSmartphone size={24} className="text-indigo-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">TOTP Authentication</h3>
-              <p className="text-gray-600 text-sm mb-3">Time-based one-time password, compatible with Google Authenticator, Microsoft Authenticator, and more</p>
-              <Link href="/totp" className="text-indigo-600 hover:text-indigo-700 font-medium text-sm inline-flex items-center gap-2">
-                Generate Secret
-                <FiArrowRight size={14} />
+    <main className="flex min-h-[calc(100dvh-var(--header-height))] flex-1 flex-col bg-[var(--nav-link-hover-bg)]">
+      <section className="border-b border-[var(--app-header-border)] bg-[var(--app-header-bg)]">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center">
+          <div className="min-w-0">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--app-header-border)] bg-[var(--nav-link-hover-bg)] px-3 py-1 text-xs font-medium text-[var(--app-header-text)]">
+              <FiLock size={14} aria-hidden />
+              Self-hosted auth gateway
+            </div>
+            <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-[var(--nav-brand-text)] sm:text-5xl">One small sign-in center for trusted apps</h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--app-header-text)]">
+              Signet centralizes password login, TOTP, WebAuthn, JWT sessions, redirect allowlists, and encrypted OAuth-style callbacks without turning every project into an auth
+              project.
+            </p>
+            <div className="mt-8 flex flex-col gap-2 sm:flex-row">
+              <Link href="/login?redirectUrl=/login/blank" className={`${appUi.btnPrimary} sm:w-auto`}>
+                <FiLogIn size={16} aria-hidden />
+                Try sign in
+              </Link>
+              <Link href="/getting-started/overview" className={`${appUi.btnSecondary} sm:w-auto`}>
+                <FiBookOpen size={16} aria-hidden />
+                Read docs
               </Link>
             </div>
+          </div>
 
-            {/* WebAuthn */}
-            <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 shadow-sm border border-green-100 hover:shadow-lg transition-shadow">
-              <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FiShield size={24} className="text-green-600" />
+          <div className={`${appUi.cardCompact} min-w-0`}>
+            <div className="mb-5 flex items-center justify-between gap-3 border-b border-[var(--app-header-border)] pb-4">
+              <div>
+                <p className={appUi.sectionLabel}>Auth surface</p>
+                <h2 className={`${appUi.panelTitle} mt-1`}>Configured capabilities</h2>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">WebAuthn Authentication</h3>
-              <p className="text-gray-600 text-sm mb-3">Support for biometrics, hardware keys like YubiKey, and FIDO2-compliant modern authentication</p>
-              <Link href="/webauthn" className="text-green-600 hover:text-green-700 font-medium text-sm inline-flex items-center gap-2">
-                Register Credential
-                <FiArrowRight size={14} />
-              </Link>
-            </div>
-
-            {/* SSO */}
-            <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-6 shadow-sm border border-purple-100 hover:shadow-lg transition-shadow">
-              <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FiLink size={24} className="text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Unified Auth Center</h3>
-              <p className="text-gray-600 text-sm mb-3">One authentication service for all your personal projects, no need to build login for each app</p>
-              <Link href="/getting-started/overview" className="text-purple-600 hover:text-purple-700 font-medium text-sm inline-flex items-center gap-2">
-                Learn Integration
-                <FiArrowRight size={14} />
-              </Link>
-            </div>
-
-            {/* JWT Token */}
-            <div className="bg-gradient-to-br from-orange-50 to-white rounded-xl p-6 shadow-sm border border-orange-100 hover:shadow-lg transition-shadow">
-              <div className="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FiKey size={24} className="text-orange-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">JWT Token Auth</h3>
-              <p className="text-gray-600 text-sm mb-3">Standard JWT token implementation with customizable expiration time for easy user identity verification</p>
-              <div className="text-orange-600 font-medium text-sm inline-flex items-center gap-2">
-                <FiCheckCircle size={14} />
-                Secure & Reliable
+              <div className={appUi.iconBox}>
+                <FiShield size={18} aria-hidden />
               </div>
             </div>
-
-            {/* Whitelist */}
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-lg transition-shadow">
-              <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FiCheckSquare size={24} className="text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">URL Whitelist</h3>
-              <p className="text-gray-600 text-sm mb-3">Configure allowed redirect URL whitelist to prevent open redirect vulnerabilities, supports wildcard patterns</p>
-              <div className="text-blue-600 font-medium text-sm inline-flex items-center gap-2">
-                <FiShield size={14} />
-                Complete Protection
-              </div>
-            </div>
-
-            {/* CSRF Protection */}
-            <div className="bg-gradient-to-br from-pink-50 to-white rounded-xl p-6 shadow-sm border border-pink-100 hover:shadow-lg transition-shadow">
-              <div className="bg-pink-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <FiLock size={24} className="text-pink-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">CSRF Protection</h3>
-              <p className="text-gray-600 text-sm mb-3">Built-in state parameter support to protect login flow from cross-site request forgery attacks</p>
-              <div className="text-pink-600 font-medium text-sm inline-flex items-center gap-2">
-                <FiCheckCircle size={14} />
-                Security First
-              </div>
+            <div className="space-y-3">
+              {[
+                ['Second factor', 'TOTP or WebAuthn'],
+                ['Session token', 'JWT with expiry'],
+                ['Redirect safety', 'Allowlist + state'],
+                ['OAuth return', 'ECDH encrypted payload'],
+              ].map(([label, value]) => (
+                <div key={label} className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3 rounded-lg border border-[var(--app-header-border)] bg-[var(--background)] px-3 py-2.5">
+                  <span className={appUi.muted}>{label}</span>
+                  <span className="truncate text-xs font-medium text-[var(--nav-brand-text)]">{value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* How it works */}
-      <div className="bg-gray-50 py-10">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">How It Works</h2>
-            <p className="text-gray-600">Four simple steps to integrate with your projects</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-5 text-center">
-              <div className="bg-indigo-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-xl font-bold text-indigo-600">1</span>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1.5 text-sm">Initiate Login</h4>
-              <p className="text-xs text-gray-600">User redirects from your app to auth center</p>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+        <section>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className={appUi.sectionLabel}>Tools</p>
+              <h2 className={`${appUi.panelTitle} mt-1`}>Set up the pieces Signet needs</h2>
             </div>
-
-            <div className="bg-white rounded-lg p-5 text-center">
-              <div className="bg-green-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-xl font-bold text-green-600">2</span>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1.5 text-sm">2FA Verification</h4>
-              <p className="text-xs text-gray-600">Enter password and verification code to complete authentication</p>
-            </div>
-
-            <div className="bg-white rounded-lg p-5 text-center">
-              <div className="bg-purple-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-xl font-bold text-purple-600">3</span>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1.5 text-sm">Get Token</h4>
-              <p className="text-xs text-gray-600">System generates JWT token and redirects back</p>
-            </div>
-
-            <div className="bg-white rounded-lg p-5 text-center">
-              <div className="bg-orange-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-xl font-bold text-orange-600">4</span>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-1.5 text-sm">Verify & Login</h4>
-              <p className="text-xs text-gray-600">Your app verifies token to complete login</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="bg-indigo-600 py-12">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-3">Ready to Get Started?</h2>
-          <p className="text-indigo-100 mb-6">Add secure two-factor authentication to all your projects in minutes</p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/getting-started/overview"
-              className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-lg"
-            >
-              <FiBookOpen size={18} />
-              View Documentation
-            </Link>
-
-            <Link
-              href="/totp"
-              className="inline-flex items-center gap-2 bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-800 transition-all border-2 border-white"
-            >
-              <FiSmartphone size={18} />
-              Generate TOTP Secret
+            <Link href="/oauth/playground" className="inline-flex items-center gap-1 text-sm font-medium text-[var(--nav-brand-text)] hover:underline">
+              Open playground
+              <FiArrowRight size={14} aria-hidden />
             </Link>
           </div>
-        </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Authentication tools">
+            {toolLinks.map(({ title, desc, href, action, icon: Icon }) => (
+              <Link key={href} href={href} className={`${appUi.cardCompact} group flex min-w-0 flex-col gap-4 transition-colors hover:bg-[var(--nav-link-hover-bg)]`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className={appUi.iconBox}>
+                    <Icon size={18} aria-hidden />
+                  </div>
+                  <FiArrowRight size={16} className="shrink-0 text-[var(--nav-icon-muted)] transition-transform group-hover:translate-x-0.5" aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <h2 className={`${appUi.panelTitle} mb-1`}>{title}</h2>
+                  <p className={appUi.muted}>{desc}</p>
+                </div>
+                <span className="mt-auto text-xs font-medium text-[var(--nav-brand-text)]">{action}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className={`${appUi.cardCompact} min-w-0`}>
+            <div className="mb-5 flex items-start gap-3">
+              <div className={appUi.iconBox}>
+                <FiLink2 size={18} aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className={`${appUi.sectionLabel} mb-1.5`}>OAuth playground</p>
+                <h2 className={`${appUi.panelTitle} mb-1`}>Test the encrypted callback flow</h2>
+                <p className={appUi.lead}>Launch a local OAuth-style flow, generate client keys in the browser, and inspect the callback verification result.</p>
+              </div>
+            </div>
+            <Link href="/oauth/playground" className={`${appUi.btnSecondary} sm:w-auto`}>
+              <FiPlayCircle size={16} aria-hidden />
+              Open playground
+            </Link>
+          </div>
+
+          <div className={`${appUi.cardCompact} min-w-0`}>
+            <p className={`${appUi.sectionLabel} mb-3`}>Runtime guardrails</p>
+            <ul className="space-y-3">
+              {['Redirect allowlist blocks open redirects.', 'JWT sessions can be verified by downstream apps.', 'ECDH protects token return payloads.'].map((item) => (
+                <li key={item} className="flex gap-2 text-xs leading-relaxed text-[var(--app-header-text)]">
+                  <FiCheckCircle size={14} className="mt-0.5 shrink-0 text-[var(--nav-brand-text)]" aria-hidden />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className={`${appUi.cardCompact} grid grid-cols-1 gap-5 lg:grid-cols-[16rem_minmax(0,1fr)]`}>
+          <div>
+            <p className={`${appUi.sectionLabel} mb-1.5`}>How it works</p>
+            <h2 className={`${appUi.panelTitle} mb-2`}>One gateway, many apps</h2>
+            <p className={appUi.lead}>Keep sign-in logic centralized while each app owns its final session.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {flowSteps.map(({ label, desc }, index) => (
+              <div key={label} className="rounded-lg border border-[var(--app-header-border)] bg-[var(--background)] p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[var(--nav-link-active-bg)] text-xs font-semibold text-[var(--nav-brand-text)]">
+                    {index + 1}
+                  </span>
+                  <h3 className="text-sm font-semibold text-[var(--nav-brand-text)]">{label}</h3>
+                </div>
+                <p className={appUi.muted}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Documentation shortcuts">
+          {docsLinks.map(({ title, href, desc }) => (
+            <Link key={href} href={href} className={`${appUi.cardCompact} group flex min-w-0 flex-col gap-3 transition-colors hover:bg-[var(--nav-link-hover-bg)]`}>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className={appUi.panelTitle}>{title}</h2>
+                <FiArrowRight size={16} className="shrink-0 text-[var(--nav-icon-muted)] transition-transform group-hover:translate-x-0.5" aria-hidden />
+              </div>
+              <p className={appUi.muted}>{desc}</p>
+            </Link>
+          ))}
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

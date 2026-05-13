@@ -50,8 +50,9 @@ export function EnvironmentContent() {
                 ))}
                 <div className={`${d.calloutInfo} text-[11px] text-[var(--app-header-text)]`}>
                   Generate JWT secret:
-                  <br />
-                  <code className="mt-1 inline-block font-mono text-[var(--nav-brand-text)]">{`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`}</code>
+                  <div className={`${d.docEnvSnippet} mt-2 bg-[var(--background)]`}>
+                    <code className={envLine}>{`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`}</code>
+                  </div>
                 </div>
               </div>
             </div>
@@ -207,7 +208,7 @@ export function EnvironmentContent() {
           These keys are optional. Enable them when you need stricter token hygiene, stable OIDC-style <code className={d.codeInline}>iss</code> /{' '}
           <code className={d.codeInline}>sub</code>, or automated ECDH key rollover backed by Upstash Redis (REST).
         </p>
-        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
           <div className={d.card}>
             <h4 className={`${d.h4} mb-3`}>Token replay & identity</h4>
             <div className="space-y-4 text-sm">
