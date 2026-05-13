@@ -55,7 +55,7 @@ export async function completeLogin(token: string) {
 
 /**
  * MCP resource URI for the bundled integration skill (same pattern as unbnd: `skill://{scope}/{file}.md`).
- * @see https://openapi.davidjones.fun/api/mcp
+ * HTTP MCP lives at `/api/mcp` on the Signet deployment; use {@link process.env.SIGNET_PUBLIC_ORIGIN} so tools return your canonical host.
  */
 export const SIGNET_MCP_SKILL_URI = 'skill://signet-oauth/signet-oauth-integration-skill.md'
 

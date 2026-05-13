@@ -2,6 +2,7 @@ import { type NextRequest } from 'next/server'
 
 import { createMCPHttpServer, type McpResourceProvider } from '@/initializer/mcp'
 import { createSignetMcpTools, SIGNET_MCP_SKILL, SIGNET_MCP_SKILL_URI, SIGNET_MCP_SKILL_URI_LEGACY } from '@/services/mcp/signetTools'
+import { getPublicOriginFromNextRequest } from '@/utils/next-request-origin'
 
 export const runtime = 'nodejs'
 
@@ -26,9 +27,13 @@ const resourceProvider: McpResourceProvider = {
 }
 
 function createServer(req: NextRequest) {
+  const origin = getPublicOriginFromNextRequest(req)
+  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
+  const host = forwardedHost || req.headers.get('host') || undefined
+
   const tools = createSignetMcpTools({
-    origin: req.nextUrl.origin,
-    host: req.headers.get('host') || undefined,
+    origin,
+    host,
   })
 
   return createMCPHttpServer('signet', '1.0.0', 'MCP tools for integrating third-party apps with Signet login.', tools, resourceProvider)

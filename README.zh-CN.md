@@ -2,7 +2,7 @@
 
 # 二步验证服务
 
-[online](https://signet.vercel.app)
+[online](https://vercel-2fa.vercel.app)
 
 一个简单易用的二步验证服务，基于 TOTP（基于时间的一次性密码）和 WebAuthn 标准，实现更安全的身份验证。
 

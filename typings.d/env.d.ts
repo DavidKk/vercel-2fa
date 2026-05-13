@@ -30,5 +30,7 @@ declare namespace NodeJS {
     USER_SUB_SALT?: string
     /** OAuth issuer identifier (iss claim). If not set, constructs from NEXT_PUBLIC_VERCEL_URL or defaults to 'https://signet.local' */
     OAUTH_ISSUER?: string
+    /** Canonical public origin (no path) for MCP tool URLs and redirects; overrides inferred request host */
+    SIGNET_PUBLIC_ORIGIN?: string
   }
 }

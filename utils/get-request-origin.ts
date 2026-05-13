@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 /**
  * Builds the public origin (scheme + host) for the current HTTP request.
  * Prefer `x-forwarded-*` when behind a reverse proxy (for example Vercel).
- * @returns Origin such as `https://signet.vercel.app`, or an empty string when host is missing
+ * @returns Origin such as `https://signet.example.com`, or an empty string when host is missing
  */
 export async function getRequestOrigin(): Promise<string> {
   const h = await headers()

@@ -182,6 +182,14 @@ This document describes all environment variables used in the Two-Factor Authent
 - **Example**: `OAUTH_ISSUER=https://auth.yourcompany.com`
 - **Note**: In production, always set this to your actual domain to ensure proper OIDC compliance.
 
+### SIGNET_PUBLIC_ORIGIN
+
+- **Description**: Canonical public origin (scheme + host, **no path or trailing slash**) used when building URLs returned by the Signet MCP tools (`signet_get_integration_guide`, `signet_build_login_url`, etc.)
+- **Required**: No
+- **When to set**: Custom domains, reverse proxies, or any case where the inferred `Host` / `x-forwarded-host` does not match the URL you want third-party apps and agents to use (defaults: `SIGNET_PUBLIC_ORIGIN` → forwarded headers → `NextRequest` URL)
+- **Example**: `SIGNET_PUBLIC_ORIGIN=https://vercel-2fa.vercel.app`
+- **Note**: OAuth and login pages still use the request URL in the browser; this mainly keeps MCP and automation aligned with your public hostname.
+
 ### AUTH_KV_REST_API_URL
 
 - **Description**: Upstash Redis REST API URL (automatically provided by Vercel/Upstash integration)

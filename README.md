@@ -2,7 +2,7 @@
 
 # Two-Factor Authentication Service
 
-[online](https://signet.vercel.app)
+[online](https://vercel-2fa.vercel.app)
 
 A simple and user-friendly two-factor authentication service based on TOTP (Time-Based One-Time Password) and WebAuthn standards for enhanced security.
 
