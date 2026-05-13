@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { FiAlertTriangle, FiArrowRight, FiCheck, FiInfo, FiKey, FiShield, FiSmartphone } from 'react-icons/fi'
 
 import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
+import { McpInstallPanel } from '@/components/mcp/McpInstallPanel'
 
 export function OverviewContent() {
   const { article, h2, h4, lead, muted, link, linkWithArrow, codeInline, iconBox, docSectionLabel, calloutInfo, calloutWarn, calloutWarnTitle, calloutWarnBody, cardMuted } =
@@ -151,6 +152,10 @@ export function OverviewContent() {
         </p>
         <p className={`${lead} mb-0`}>Typical uses: personal dashboards, internal tools, staging apps, and OAuth-style redirects where you already trust this host.</p>
       </header>
+
+      <section id="mcp" className="mb-10 scroll-mt-28" aria-labelledby="mcp-install-title">
+        <McpInstallPanel />
+      </section>
 
       <section className="mb-10" aria-labelledby="overview-tools">
         <h3 id="overview-tools" className={docSectionLabel}>

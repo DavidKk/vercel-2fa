@@ -73,8 +73,6 @@ function GuideNavCard(props: { activeTab: GettingStartedTab; sticky?: boolean })
 export function GettingStartedShell({ activeTab }: GettingStartedShellProps) {
   return (
     <div className="relative">
-      {/* Out of document flow so the grid row-gap does not add a blank strip above the layout */}
-      <div id="mcp" className="pointer-events-none absolute left-0 top-0 -z-10 h-px w-px overflow-hidden scroll-mt-28" aria-hidden tabIndex={-1} />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-4 xl:gap-6">
         <div className="xl:hidden">
           <GuideNavCard activeTab={activeTab} />

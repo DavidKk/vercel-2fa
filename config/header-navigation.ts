@@ -33,12 +33,10 @@ export const HEADER_PLAYGROUND: HeaderPlainLink = {
   href: '/oauth/playground',
 }
 
-/**
- * MCP integration docs entry (scroll target `id="mcp"` on Getting Started).
- */
+/** MCP integration install page */
 export const HEADER_MCP: HeaderPlainLink = {
   label: 'MCP',
-  href: '/getting-started/overview#mcp',
+  href: '/mcp',
 }
 
 /** Primary authentication entry */

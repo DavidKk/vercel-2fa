@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { type FC, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { type FC, useCallback, useEffect, useRef, useState } from 'react'
 import { FiBookOpen, FiChevronDown, FiCpu, FiGithub, FiKey, FiMenu, FiPackage, FiPlayCircle, FiSettings, FiShield, FiSmartphone, FiX, FiZap } from 'react-icons/fi'
 
 import { HEADER_DOCS, HEADER_MCP, HEADER_PLAYGROUND, HEADER_SIGN_IN, HEADER_TOOLS } from '@/config/header-navigation'
@@ -54,42 +54,13 @@ function isActivePath(pathname: string, href: string): boolean {
 }
 
 /**
- * @param pathname - Current pathname
- * @returns True when the user is on the Getting Started route tree
- */
-function isGettingStartedPath(pathname: string): boolean {
-  return pathname === '/getting-started' || pathname.startsWith('/getting-started/')
-}
-
-/**
- * @param onStoreChange - Listener to register on `hashchange`
- * @returns Unsubscribe function
- */
-function subscribeWindowHash(onStoreChange: () => void): () => void {
-  if (typeof window === 'undefined') {
-    return () => {}
-  }
-  window.addEventListener('hashchange', onStoreChange)
-  return () => window.removeEventListener('hashchange', onStoreChange)
-}
-
-/**
- * @returns Current `window.location.hash` on the client
- */
-function readWindowHash(): string {
-  return typeof window !== 'undefined' ? window.location.hash : ''
-}
-
-/**
  * Renders the global application header: brand, docs, tools (desktop dropdown), playground, MCP, sign-in, GitHub, and a mobile drawer with an accordion for tools.
  * @returns Header React element
  */
 export function AppHeader() {
   const pathname = usePathname() ?? '/'
-  const navHash = useSyncExternalStore(subscribeWindowHash, readWindowHash, () => '')
-  const onGettingStarted = isGettingStartedPath(pathname)
-  const docsNavActive = onGettingStarted && navHash !== '#mcp'
-  const mcpNavActive = onGettingStarted && navHash === '#mcp'
+  const docsNavActive = isActivePath(pathname, HEADER_DOCS.href)
+  const mcpNavActive = isActivePath(pathname, HEADER_MCP.href)
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false)
