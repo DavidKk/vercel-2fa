@@ -2,32 +2,20 @@ import Link from 'next/link'
 import { FiCheckCircle, FiShield } from 'react-icons/fi'
 
 import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
+import {
+  SIGNET_INTEGRATION_FLOW_STEPS,
+  SIGNET_INTEGRATION_PRACTICE_BULLETS,
+  SIGNET_JWT_VERIFY_JOSE_SNIPPET,
+  SIGNET_LOGIN_URL_EXAMPLE_JS,
+  SIGNET_REACT_AUTH_CALLBACK_JS,
+  SIGNET_REACT_HANDLE_LOGIN_JS,
+  SIGNET_VERIFY_API_FETCH_JS,
+} from '@/services/mcp/signetIntegrationShared'
 
 export function IntegrationContent() {
   const d = gettingStartedDoc
 
-  const steps = [
-    {
-      step: '1',
-      title: 'Redirect',
-      desc: 'Send the browser to /login with redirectUrl (absolute or same-origin path) and optional state.',
-    },
-    {
-      step: '2',
-      title: 'Sign in',
-      desc: 'User enters password; TOTP if configured; or WebAuthn-only when enabled. Remember me changes JWT lifetime.',
-    },
-    {
-      step: '3',
-      title: 'Return',
-      desc: 'Browser lands on redirectUrl with token=… and the same state you sent (if any).',
-    },
-    {
-      step: '4',
-      title: 'Verify',
-      desc: 'Your backend verifies the JWT (shared secret) or calls /api/auth/verify, then issues your own session.',
-    },
-  ]
+  const steps = [...SIGNET_INTEGRATION_FLOW_STEPS]
 
   return (
     <div className={d.article}>
@@ -70,12 +58,7 @@ export function IntegrationContent() {
           <p className={`${d.muted} mb-3`}>
             Always URL-encode <code className={d.codeInline}>redirectUrl</code>. Example pattern:
           </p>
-          <div className={d.preBox}>
-            {`const login = new URL('https://YOUR_AUTH_HOST/login')
-login.searchParams.set('redirectUrl', 'https://your-app.example.com/auth/callback')
-login.searchParams.set('state', crypto.randomUUID())
-window.location.href = login.toString()`}
-          </div>
+          <div className={d.preBox}>{SIGNET_LOGIN_URL_EXAMPLE_JS}</div>
           <ul className={`${d.listDisc} mt-3 mb-0`}>
             <li>
               <strong className="text-[var(--nav-brand-text)]">redirectUrl</strong> — where to send the user after success; must pass{' '}
@@ -102,17 +85,7 @@ window.location.href = login.toString()`}
               Use the same <code className={d.codeInline}>JWT_SECRET</code> as this deployment. Verify <code className={d.codeInline}>authenticated</code>, expiry, and optionally{' '}
               <code className={d.codeInline}>iss</code>/<code className={d.codeInline}>sub</code> to match your policy.
             </p>
-            <div className={d.preBox}>
-              {`import { jwtVerify } from 'jose'
-
-const { payload } = await jwtVerify(
-  token,
-  new TextEncoder().encode(process.env.JWT_SECRET!)
-)
-if (payload?.authenticated === true) {
-  // issue your own session cookie / API token
-}`}
-            </div>
+            <div className={d.preBox}>{SIGNET_JWT_VERIFY_JOSE_SNIPPET}</div>
             <div className="mt-3 flex items-center gap-2 text-xs text-[var(--app-header-text)]">
               <FiCheckCircle size={14} className="shrink-0 text-[var(--nav-brand-text)]" aria-hidden />
               <span>Lowest latency when the consumer is also yours</span>
@@ -128,17 +101,7 @@ if (payload?.authenticated === true) {
               <code className={d.codeInline}>access_token</code>, <code className={d.codeInline}>token_type</code>, <code className={d.codeInline}>expires_in</code>,{' '}
               <code className={d.codeInline}>user</code>, optional <code className={d.codeInline}>claims</code>).
             </p>
-            <div className={d.preBox}>
-              {`const res = await fetch('https://YOUR_AUTH_HOST/api/auth/verify', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ token }),
-})
-const body = await res.json()
-if (body.code === 0 && body.data?.access_token) {
-  // trusted login — use body.data.user for display; body.data.access_token for APIs
-}`}
-            </div>
+            <div className={d.preBox}>{SIGNET_VERIFY_API_FETCH_JS}</div>
             <div className="mt-3 flex items-center gap-2 text-xs text-[var(--app-header-text)]">
               <FiShield size={14} className="shrink-0 text-[var(--nav-brand-text)]" aria-hidden />
               <span>
@@ -161,41 +124,11 @@ if (body.code === 0 && body.data?.access_token) {
           <div className="space-y-6">
             <div>
               <p className={`${d.muted} mb-2 font-semibold text-[var(--nav-brand-text)]`}>Start login</p>
-              <div className={d.preBox}>
-                {`function handleLogin() {
-  const state = crypto.randomUUID()
-  sessionStorage.setItem('oauth_state', state)
-
-  const callback = window.location.origin + '/auth/callback'
-  const url = new URL('https://YOUR_AUTH_HOST/login')
-  url.searchParams.set('redirectUrl', callback)
-  url.searchParams.set('state', state)
-
-  window.location.href = url.toString()
-}`}
-              </div>
+              <div className={d.preBox}>{SIGNET_REACT_HANDLE_LOGIN_JS}</div>
             </div>
             <div>
               <p className={`${d.muted} mb-2 font-semibold text-[var(--nav-brand-text)]`}>Callback route</p>
-              <div className={d.preBox}>
-                {`function AuthCallback() {
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const token = params.get('token')
-    const state = params.get('state')
-
-    if (!token) return
-    if (state !== sessionStorage.getItem('oauth_state')) {
-      throw new Error('Invalid state')
-    }
-    sessionStorage.removeItem('oauth_state')
-
-    void verifyTokenAndCreateSession(token)
-  }, [])
-
-  return <div>Signing you in...</div>
-}`}
-              </div>
+              <div className={d.preBox}>{SIGNET_REACT_AUTH_CALLBACK_JS}</div>
             </div>
           </div>
         </div>
@@ -207,17 +140,9 @@ if (body.code === 0 && body.data?.access_token) {
         </h3>
         <div className={d.calloutWarn}>
           <ul className={`${d.calloutWarnBody} list-disc space-y-1`}>
-            <li>
-              Whitelist every production callback origin in <code className={d.codeInline}>ALLOWED_REDIRECT_URLS</code>; use wildcards sparingly
-            </li>
-            <li>
-              Generate a fresh <code className={d.codeInline}>state</code> per attempt; reject callbacks with missing or stale state
-            </li>
-            <li>Do not log full JWTs; log correlation ids only</li>
-            <li>Re-verify on privileged actions if your session is long-lived</li>
-            <li>
-              Align <code className={d.codeInline}>JWT_EXPIRES_IN</code> with your risk tolerance; Remember me off caps sessions at 1d
-            </li>
+            {SIGNET_INTEGRATION_PRACTICE_BULLETS.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
           </ul>
         </div>
       </section>

@@ -4,7 +4,17 @@ import { FiAlertTriangle, FiArrowRight, FiCheck, FiInfo, FiKey, FiShield, FiSmar
 import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 import { McpInstallPanel } from '@/components/mcp/McpInstallPanel'
 
-export function OverviewContent() {
+export type OverviewContentProps = {
+  /** Public origin for MCP install deep links (from the server request). */
+  requestOrigin?: string
+}
+
+/**
+ * Renders the Getting Started overview tab: product summary, MCP install, and links to setup guides.
+ * @param requestOrigin Optional request origin forwarded to {@link McpInstallPanel}
+ * @returns Overview article content
+ */
+export function OverviewContent({ requestOrigin }: OverviewContentProps) {
   const { article, h2, h4, lead, muted, link, linkWithArrow, codeInline, iconBox, docSectionLabel, calloutInfo, calloutWarn, calloutWarnTitle, calloutWarnBody, cardMuted } =
     gettingStartedDoc
 
@@ -154,7 +164,7 @@ export function OverviewContent() {
       </header>
 
       <section id="mcp" className="mb-10 scroll-mt-28" aria-labelledby="mcp-install-title">
-        <McpInstallPanel />
+        <McpInstallPanel requestOrigin={requestOrigin} />
       </section>
 
       <section className="mb-10" aria-labelledby="overview-tools">

@@ -1,4 +1,5 @@
 import { tool } from '@/initializer/mcp'
+import { getSignetMcpSkillMarkdown, SIGNET_INTEGRATION_FLOW_STEPS } from '@/services/mcp/signetIntegrationShared'
 import { isAllowedRedirectUrl } from '@/utils/url'
 
 export interface SignetMcpContext {
@@ -52,30 +53,17 @@ export async function completeLogin(token: string) {
   return fetchSnippet
 }
 
-export const SIGNET_MCP_SKILL_URI = 'signet://skill/oauth-integration'
+/**
+ * MCP resource URI for the bundled integration skill (same pattern as unbnd: `skill://{scope}/{file}.md`).
+ * @see https://openapi.davidjones.fun/api/mcp
+ */
+export const SIGNET_MCP_SKILL_URI = 'skill://signet-oauth/signet-oauth-integration-skill.md'
 
-export const SIGNET_MCP_SKILL = `# Signet OAuth Integration Skill
+/** Legacy URI; still accepted by `resources/read` for backward compatibility */
+export const SIGNET_MCP_SKILL_URI_LEGACY = 'signet://skill/oauth-integration'
 
-Use this skill when a user asks how to connect a third-party app to Signet login.
-
-Core flow:
-1. Send the user to /login?redirectUrl=<callback-url> for direct JWT return, or /oauth for ECDH-encrypted OAuth-style return.
-2. Include a random state in the redirect URL or OAuth params.
-3. Add every cross-origin callback origin to ALLOWED_REDIRECT_URLS.
-4. On callback, read the returned token and POST it to /api/auth/verify.
-5. Create the downstream app session from the verify response. Do not reuse the callback token as a long-lived app session.
-
-Useful MCP tools:
-- signet_get_integration_guide: high-level steps, required env, and verify snippets.
-- signet_build_login_url: construct a safe login or OAuth URL from a callback.
-- signet_validate_redirect_url: check whether a callback URL matches current Signet allowlist rules.
-- signet_get_env_checklist: list env vars for selected auth and OAuth features.
-
-Security boundaries:
-- Never ask Signet MCP to complete 2FA or impersonate the user.
-- Treat generated snippets as integration scaffolding; the downstream app still owns its own session and authorization.
-- Prefer HTTPS callback origins in production.
-`
+/** Full skill markdown (EN + 中文速览); built from {@link getSignetMcpSkillMarkdown} shared with Getting Started integration copy */
+export const SIGNET_MCP_SKILL = getSignetMcpSkillMarkdown()
 
 export function createSignetMcpTools(context: SignetMcpContext) {
   const tools = [
@@ -94,6 +82,7 @@ export function createSignetMcpTools(context: SignetMcpContext) {
         const encryptedReturn = booleanParam(params, 'encryptedReturn')
         return {
           summary: 'Integrate by redirecting users to Signet, verifying the returned token, then creating your own app session.',
+          flowSteps: [...SIGNET_INTEGRATION_FLOW_STEPS],
           routes: {
             directLogin: `${context.origin}/login?redirectUrl=<callback-url>`,
             oauthLogin: `${context.origin}/oauth?redirectUrl=<callback-url>&clientPublicKey=<base64-spki>`,

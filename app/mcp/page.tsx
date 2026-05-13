@@ -3,6 +3,7 @@ import { FiCpu } from 'react-icons/fi'
 import { McpInstallPanel } from '@/components/mcp/McpInstallPanel'
 import { generate } from '@/components/Meta'
 import { appUi } from '@/components/ui/app-tokens'
+import { getRequestOrigin } from '@/utils/get-request-origin'
 
 const { generateMetadata } = generate({
   title: 'Signet MCP',
@@ -11,7 +12,9 @@ const { generateMetadata } = generate({
 
 export { generateMetadata }
 
-export default function McpPage() {
+export default async function McpPage() {
+  const requestOrigin = await getRequestOrigin()
+
   return (
     <main className="flex min-h-[calc(100dvh-var(--header-height))] flex-1 flex-col bg-[var(--nav-link-hover-bg)]">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
@@ -28,7 +31,7 @@ export default function McpPage() {
           </div>
         </header>
 
-        <McpInstallPanel />
+        <McpInstallPanel requestOrigin={requestOrigin} />
       </div>
     </main>
   )

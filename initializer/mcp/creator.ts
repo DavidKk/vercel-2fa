@@ -6,15 +6,40 @@ import { api } from '@/initializer/controller'
 import { applyNoStoreCache, JSONRPC, jsonRpcError, jsonRpcSuccess, mcpErrorinvalidArguments, mcpErrorMethodNotAllowed, mcpErrorToolNotFound, mcpResponse } from './response'
 import type { Tool } from './tool'
 
+/** Optional MCP resource hints (MCP 2025-06-18) for client display and context selection */
+export interface MCPResourceAnnotations {
+  audience?: ('user' | 'assistant')[]
+  priority?: number
+  lastModified?: string
+}
+
 export interface MCPManifestResource {
   uri: string
   name: string
+  title?: string
   description?: string
   mimeType?: string
+  size?: number
+  annotations?: MCPResourceAnnotations
+}
+
+/** Parameterized or literal resource URI template (RFC 6570) */
+export interface MCPResourceTemplate {
+  uriTemplate: string
+  name: string
+  title?: string
+  description?: string
+  mimeType?: string
+  annotations?: MCPResourceAnnotations
 }
 
 export interface McpResourceProvider {
   listResources: () => MCPManifestResource[]
+  /**
+   * Optional discoverable URI templates. Some MCP hosts render these like installable skill files
+   * (e.g. `*-skill.md`) instead of plain static resources.
+   */
+  listResourceTemplates?: () => MCPResourceTemplate[]
   readResource: (uri: string) => Promise<{ mimeType: string; text: string } | null>
 }
 
@@ -44,12 +69,14 @@ function buildMCPToolsList(tools: Map<string, Tool>) {
 
 function createManifestHandler(name: string, version: string, description: string, tools: Map<string, Tool>, resourceProvider?: McpResourceProvider | null) {
   return withMCPHandler(async () => {
+    const resourceTemplates = resourceProvider?.listResourceTemplates?.() ?? []
     const manifest = {
       name,
       version,
       description,
       tools: Object.fromEntries(Array.from(tools.values()).map((tool) => [tool.name, { description: tool.description, inputSchema: tool.manifest.parameters }])),
       ...(resourceProvider ? { resources: resourceProvider.listResources() } : {}),
+      ...(resourceTemplates.length > 0 ? { resourceTemplates } : {}),
     }
     return applyNoStoreCache(NextResponse.json({ type: 'result', result: manifest }))
   }, ['GET'])
@@ -83,6 +110,14 @@ async function handleJsonRpcRequest(
       return jsonRpcError(id, JSONRPC.METHOD_NOT_FOUND, 'resources/list not supported for this MCP endpoint')
     }
     return jsonRpcSuccess(id, { resources: resourceProvider.listResources() })
+  }
+
+  if (body.method === 'resources/templates/list') {
+    if (!resourceProvider) {
+      return jsonRpcError(id, JSONRPC.METHOD_NOT_FOUND, 'resources/templates/list not supported for this MCP endpoint')
+    }
+    const resourceTemplates = resourceProvider.listResourceTemplates?.() ?? []
+    return jsonRpcSuccess(id, { resourceTemplates })
   }
 
   if (body.method === 'resources/read') {

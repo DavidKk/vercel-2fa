@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { generate } from '@/components/Meta'
+import { getRequestOrigin } from '@/utils/get-request-origin'
 
 import { GettingStartedShell } from '../GettingStartedShell'
 import { GETTING_STARTED_TABS, type GettingStartedTab, isGettingStartedTab } from '../tabs'
@@ -70,5 +71,7 @@ export default async function GettingStartedTabPage({ params }: { params: Promis
     notFound()
   }
 
-  return <GettingStartedShell activeTab={raw} />
+  const requestOrigin = await getRequestOrigin()
+
+  return <GettingStartedShell activeTab={raw} requestOrigin={requestOrigin} />
 }

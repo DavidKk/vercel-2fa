@@ -28,6 +28,8 @@ const tabs: TabConfig[] = [
 export type GettingStartedShellProps = {
   /** Active guide tab from the URL segment */
   activeTab: GettingStartedTab
+  /** Public origin for MCP install links (scheme + host), from the incoming request */
+  requestOrigin?: string
 }
 
 /**
@@ -68,9 +70,10 @@ function GuideNavCard(props: { activeTab: GettingStartedTab; sticky?: boolean })
 /**
  * Guide layout with navigation links and tab body; driven by `/getting-started/[tab]` routes.
  * @param activeTab Current tab from the server page
+ * @param requestOrigin Public origin for MCP install links on the overview tab
  * @returns Full guide UI for the active tab
  */
-export function GettingStartedShell({ activeTab }: GettingStartedShellProps) {
+export function GettingStartedShell({ activeTab, requestOrigin }: GettingStartedShellProps) {
   return (
     <div className="relative">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-4 xl:gap-6">
@@ -86,7 +89,7 @@ export function GettingStartedShell({ activeTab }: GettingStartedShellProps) {
           <div className="min-h-[22rem] rounded-2xl border border-[var(--app-header-border)] bg-[var(--app-header-bg)] shadow-sm sm:min-h-[26rem]">
             <div className="px-4 py-6 sm:px-8 sm:py-10">
               <div className={gettingStartedDoc.docMain}>
-                {activeTab === 'overview' && <OverviewContent />}
+                {activeTab === 'overview' && <OverviewContent requestOrigin={requestOrigin} />}
                 {activeTab === 'totp' && <TOTPContent />}
                 {activeTab === 'webauthn' && <WebAuthnContent />}
                 {activeTab === 'ecdh' && <ECDHContent />}

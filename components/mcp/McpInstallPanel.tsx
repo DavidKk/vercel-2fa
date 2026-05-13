@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useState } from 'react'
 import { FiCheck, FiCopy, FiCpu, FiExternalLink } from 'react-icons/fi'
 
 import { buildCursorMcpInstallDeepLink, buildCursorMcpJson, buildVsCodeMcpInstallDeepLink, MCP_INSTALL_SERVER_KEY } from '@/app/api/mcp/installSnippets'
@@ -13,13 +13,33 @@ function getClientBaseUrl(): string {
   return window.location.origin
 }
 
-export function McpInstallPanel() {
-  const [baseUrl, setBaseUrl] = useState('')
+export type McpInstallPanelProps = {
+  /**
+   * Optional origin from the server so Cursor/VS Code install links use an absolute MCP URL on first paint.
+   * When omitted, the panel fills from `window.location.origin` before the browser paints (via `useLayoutEffect`).
+   */
+  requestOrigin?: string
+}
+
+/**
+ * Renders Signet MCP install actions: copy URL, editor deep links, and Cursor JSON config.
+ * @param requestOrigin Optional scheme+host from the server (see {@link McpInstallPanelProps.requestOrigin})
+ * @returns Section with install controls
+ */
+export function McpInstallPanel({ requestOrigin }: McpInstallPanelProps) {
+  const fromServer = requestOrigin?.trim() ?? ''
+  const [baseUrl, setBaseUrl] = useState(fromServer)
   const [copied, setCopied] = useState<string | null>(null)
 
-  useEffect(() => {
-    setBaseUrl(getClientBaseUrl())
-  }, [])
+  useLayoutEffect(() => {
+    if (fromServer) {
+      return
+    }
+    const origin = getClientBaseUrl()
+    if (origin) {
+      setBaseUrl(origin)
+    }
+  }, [fromServer])
 
   const mcpUrl = baseUrl ? `${baseUrl}/api/mcp` : '/api/mcp'
   const cursorJson = useMemo(() => buildCursorMcpJson(mcpUrl), [mcpUrl])
@@ -56,26 +76,20 @@ export function McpInstallPanel() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {baseUrl ? (
-          <>
-            <a href={buildCursorMcpInstallDeepLink(mcpUrl)} className={`${appUi.btnPrimary} min-h-9 px-3 py-1.5 text-xs sm:w-auto`} rel="noopener noreferrer">
-              <FiExternalLink size={14} aria-hidden />
-              Cursor
-            </a>
-            <a href={buildVsCodeMcpInstallDeepLink(mcpUrl)} className={`${appUi.btnSecondary} min-h-9 px-3 py-1.5 text-xs sm:w-auto`} rel="noopener noreferrer">
-              VS Code
-            </a>
-            <a
-              href={buildVsCodeMcpInstallDeepLink(mcpUrl, MCP_INSTALL_SERVER_KEY, 'insiders')}
-              className={`${appUi.btnSecondary} min-h-9 px-3 py-1.5 text-xs sm:w-auto`}
-              rel="noopener noreferrer"
-            >
-              Insiders
-            </a>
-          </>
-        ) : (
-          <p className={appUi.muted}>Resolving install links...</p>
-        )}
+        <a href={buildCursorMcpInstallDeepLink(mcpUrl)} className={`${appUi.btnPrimary} min-h-9 px-3 py-1.5 text-xs sm:w-auto`} rel="noopener noreferrer">
+          <FiExternalLink size={14} aria-hidden />
+          Cursor
+        </a>
+        <a href={buildVsCodeMcpInstallDeepLink(mcpUrl)} className={`${appUi.btnSecondary} min-h-9 px-3 py-1.5 text-xs sm:w-auto`} rel="noopener noreferrer">
+          VS Code
+        </a>
+        <a
+          href={buildVsCodeMcpInstallDeepLink(mcpUrl, MCP_INSTALL_SERVER_KEY, 'insiders')}
+          className={`${appUi.btnSecondary} min-h-9 px-3 py-1.5 text-xs sm:w-auto`}
+          rel="noopener noreferrer"
+        >
+          Insiders
+        </a>
       </div>
 
       <div className="space-y-2">
