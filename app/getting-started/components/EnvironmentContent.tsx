@@ -90,6 +90,9 @@ export function EnvironmentContent() {
                   <p className={`${d.muted} mb-1`}>JSON from /webauthn (credentialID, Base64 publicKey, rpId, username).</p>
                   <div className={`${d.docEnvSnippet} mb-2 bg-[var(--background)]`}>
                     <code className={envLine}>{'ACCESS_WEBAUTHN_SECRET={"credentialID":"...","publicKey":"...","rpId":"...","username":"..."}'}</code>
+                    <p className={`${d.muted} mt-2 mb-0`}>
+                      多域名： <code className={d.codeInline}>{'{"byHost":{"localhost":{...},"your.domain":{...}}}'}</code>
+                    </p>
                   </div>
                   <Link href="/webauthn" className={`${d.link} ${d.linkWithArrow} mt-3 text-xs`}>
                     Open WebAuthn

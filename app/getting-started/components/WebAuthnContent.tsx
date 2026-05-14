@@ -11,8 +11,9 @@ export function WebAuthnContent() {
       <header className="mb-10">
         <h2 className={d.h2}>WebAuthn setup</h2>
         <p className={`${d.lead} mb-3`}>
-          Passkeys and platform authenticators (Touch ID, Face ID, Windows Hello, security keys) let users sign in without typing a TOTP code. This host stores one exported
-          credential in <code className={d.codeInline}>ACCESS_WEBAUTHN_SECRET</code> and checks assertions on each login.
+          Passkeys and platform authenticators (Touch ID, Face ID, Windows Hello, security keys) let users sign in without typing a TOTP code. This deployment reads one
+          <code className={d.codeInline}>ACCESS_WEBAUTHN_SECRET</code> JSON value; it may contain one credential or several (see <strong>byHost</strong> /{' '}
+          <strong>credentials</strong> below) so each hostname you use can have its own passkey.
         </p>
         <p className={`${d.lead} mb-0`}>
           You can run WebAuthn-only flows when the deployment is configured for it, or keep TOTP as a backup—see{' '}
@@ -36,7 +37,9 @@ export function WebAuthnContent() {
             <p className={`${d.muted} mb-0`}>
               <code className={d.codeInline}>rpId</code> must equal the host users see in the address bar for that deployment (no scheme, no path). Use{' '}
               <code className={d.codeInline}>localhost</code> for local HTTP dev; production must be served over HTTPS with a hostname that exactly matches the registered
-              credential. Changing hostname or moving from preview to production URL usually requires registering again and updating env.
+              credential. If you open the same deployment under several hostnames (e.g. <code className={d.codeInline}>localhost</code> and{' '}
+              <code className={d.codeInline}>vercel-2fa.vercel.app</code>), register once per host and store them together using the <code className={d.codeInline}>byHost</code>{' '}
+              shape in <code className={d.codeInline}>ACCESS_WEBAUTHN_SECRET</code> — see Environment variables.
             </p>
           </div>
         </section>

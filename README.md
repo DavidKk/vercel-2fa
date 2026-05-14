@@ -52,16 +52,16 @@ Important Notes
 
 ## Environment Variables
 
-| Variable                 | Required | Description                                      | Example                                                                   |
-| ------------------------ | -------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
-| `ACCESS_USERNAME`        | Yes      | Admin username                                   | `admin`                                                                   |
-| `ACCESS_EMAIL`           | Optional | Shown in JWT as `email` for downstream UIs       | `you@example.com`                                                         |
-| `ACCESS_PASSWORD`        | Yes      | Admin password                                   | `your-secure-password`                                                    |
-| `ACCESS_TOTP_SECRET`     | Optional | TOTP 2FA secret                                  | `JBSWY3DPEHPK3PXP`                                                        |
-| `ACCESS_WEBAUTHN_SECRET` | Optional | WebAuthn credentials                             | `{"id":"...","publicKey":"..."}`                                          |
-| `JWT_SECRET`             | Yes      | JWT signing secret (min 32 chars)                | `your-super-secret-jwt-key-min-32-chars`                                  |
-| `JWT_EXPIRES_IN`         | Optional | JWT token expiration                             | `30d` (default 30 days)                                                   |
-| `ALLOWED_REDIRECT_URLS`  | Optional | Allowed redirect URL whitelist (comma-separated) | `https://app1.example.com,https://app2.example.com,https://*.example.com` |
+| Variable                 | Required | Description                                                         | Example                                                                   |
+| ------------------------ | -------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `ACCESS_USERNAME`        | Yes      | Admin username                                                      | `admin`                                                                   |
+| `ACCESS_EMAIL`           | Optional | Shown in JWT as `email` for downstream UIs                          | `you@example.com`                                                         |
+| `ACCESS_PASSWORD`        | Yes      | Admin password                                                      | `your-secure-password`                                                    |
+| `ACCESS_TOTP_SECRET`     | Optional | TOTP 2FA secret                                                     | `JBSWY3DPEHPK3PXP`                                                        |
+| `ACCESS_WEBAUTHN_SECRET` | Optional | WebAuthn JSON; use `byHost` or `credentials` for multiple hostnames | See `docs/ENVIRONMENT_VARIABLES.md`                                       |
+| `JWT_SECRET`             | Yes      | JWT signing secret (min 32 chars)                                   | `your-super-secret-jwt-key-min-32-chars`                                  |
+| `JWT_EXPIRES_IN`         | Optional | JWT token expiration                                                | `30d` (default 30 days)                                                   |
+| `ALLOWED_REDIRECT_URLS`  | Optional | Allowed redirect URL whitelist (comma-separated)                    | `https://app1.example.com,https://app2.example.com,https://*.example.com` |
 
 **Notes**:
 

@@ -52,16 +52,16 @@ if (isValid) {
 
 ## 环境变量配置
 
-| 变量名                   | 必填 | 说明                                | 示例                                                                      |
-| ------------------------ | ---- | ----------------------------------- | ------------------------------------------------------------------------- |
-| `ACCESS_USERNAME`        | 是   | 管理员用户名                        | `admin`                                                                   |
-| `ACCESS_EMAIL`           | 可选 | 写入 JWT 的 `email`，供接入方展示   | `you@example.com`                                                         |
-| `ACCESS_PASSWORD`        | 是   | 管理员密码                          | `your-secure-password`                                                    |
-| `ACCESS_TOTP_SECRET`     | 可选 | TOTP 二步验证密钥                   | `JBSWY3DPEHPK3PXP`                                                        |
-| `ACCESS_WEBAUTHN_SECRET` | 可选 | WebAuthn 验证密钥                   | `{"id":"...","publicKey":"..."}`                                          |
-| `JWT_SECRET`             | 是   | JWT 令牌签名密钥（至少32字符）      | `your-super-secret-jwt-key-min-32-chars`                                  |
-| `JWT_EXPIRES_IN`         | 可选 | JWT 令牌过期时间                    | `30d`（默认30天）                                                         |
-| `ALLOWED_REDIRECT_URLS`  | 可选 | 允许的重定向 URL 白名单（逗号分隔） | `https://app1.example.com,https://app2.example.com,https://*.example.com` |
+| 变量名                   | 必填 | 说明                                                                                        | 示例                                                                      |
+| ------------------------ | ---- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `ACCESS_USERNAME`        | 是   | 管理员用户名                                                                                | `admin`                                                                   |
+| `ACCESS_EMAIL`           | 可选 | 写入 JWT 的 `email`，供接入方展示                                                           | `you@example.com`                                                         |
+| `ACCESS_PASSWORD`        | 是   | 管理员密码                                                                                  | `your-secure-password`                                                    |
+| `ACCESS_TOTP_SECRET`     | 可选 | TOTP 二步验证密钥                                                                           | `JBSWY3DPEHPK3PXP`                                                        |
+| `ACCESS_WEBAUTHN_SECRET` | 可选 | WebAuthn 凭证 JSON；单 host 为扁平对象，多 host 用 `byHost` 或 `credentials` 数组（见文档） | 见 `docs/ENVIRONMENT_VARIABLES.md`                                        |
+| `JWT_SECRET`             | 是   | JWT 令牌签名密钥（至少32字符）                                                              | `your-super-secret-jwt-key-min-32-chars`                                  |
+| `JWT_EXPIRES_IN`         | 可选 | JWT 令牌过期时间                                                                            | `30d`（默认30天）                                                         |
+| `ALLOWED_REDIRECT_URLS`  | 可选 | 允许的重定向 URL 白名单（逗号分隔）                                                         | `https://app1.example.com,https://app2.example.com,https://*.example.com` |
 
 **注意**：
 

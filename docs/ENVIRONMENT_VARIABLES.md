@@ -39,9 +39,29 @@ This document describes all environment variables used in the Two-Factor Authent
 
 - **Description**: WebAuthn credentials for biometric/hardware key authentication
 - **Required**: Optional (but at least one 2FA method must be configured)
-- **Format**: JSON string containing credential data
-- **Example**: `{"id":"...","publicKey":"...","rpId":"..."}`
-- **Generation**: Can be generated using the `/webauthn` page
+- **Format**: JSON string — see below
+- **Generation**: Use the `/webauthn` page on **each hostname** you need (e.g. `localhost` and your production host). `rpId` must match the host in the address bar for that session.
+
+**Single deployment / single hostname** — one flat object (legacy):
+
+```json
+{ "credentialID": "...", "publicKey": "...", "rpId": "localhost", "username": "admin" }
+```
+
+**Multiple hostnames** (local + production, or preview + production) — use **`byHost`**: keys are hostnames (no port), values are the same shape as above:
+
+```json
+{
+  "byHost": {
+    "localhost": { "credentialID": "...", "publicKey": "...", "rpId": "localhost", "username": "admin" },
+    "vercel-2fa.vercel.app": { "credentialID": "...", "publicKey": "...", "rpId": "vercel-2fa.vercel.app", "username": "admin" }
+  }
+}
+```
+
+Alternatively **`credentials`**: array of objects; the server picks the first entry whose `rpId` is valid for the current request host (exact match or subdomain, e.g. `app.example.com` matches `rpId` `example.com`).
+
+**CDN note**: There is still **one** env var value; it can contain **multiple** credential blobs. You do **not** set separate env var names per domain on Vercel—use `byHost` or `credentials` inside this JSON.
 
 ## Optional Variables
 

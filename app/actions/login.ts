@@ -1,10 +1,11 @@
 'use server'
 
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
+import { headers } from 'next/headers'
 
 import { generateJWTToken } from '@/app/actions/jwt'
 import { getLoginSessionExpiresIn } from '@/services/jwt'
-import { stringToCredentials } from '@/services/webauthn'
+import { normalizeRequestHostname, resolveWebAuthnCredentialsForHost } from '@/services/webauthn'
 import { deriveSharedKey, encryptWithSharedKey } from '@/utils/ecdh'
 import { loadServerPrivateKey } from '@/utils/ecdh-server-keys'
 
@@ -62,9 +63,14 @@ export async function getLoginWithWebauthnOptions() {
     throw new Error('Invalid server configuration')
   }
 
-  const userCredentials = stringToCredentials(ACCESS_WEBAUTHN_SECRET)
+  const headerList = await headers()
+  const hostHeader = headerList.get('x-forwarded-host') ?? headerList.get('host')
+  const hostname = normalizeRequestHostname(hostHeader)
+  const userCredentials = resolveWebAuthnCredentialsForHost(ACCESS_WEBAUTHN_SECRET, hostname)
   if (!userCredentials) {
-    throw new Error('Invalid server configuration')
+    throw new Error(
+      `No WebAuthn credential for host "${hostname}". Register at /webauthn on this host, or add ACCESS_WEBAUTHN_SECRET.byHost / .credentials for this hostname (rpId must match the site you see in the address bar).`
+    )
   }
 
   return generateLoginOptions({ rpId: userCredentials.rpId, userCredentials })
@@ -89,7 +95,14 @@ export async function verifyWebauthn(payload: VerifyWebauthnPayload) {
     throw new Error('Invalid server configuration')
   }
 
-  const userCredentials = stringToCredentials(ACCESS_WEBAUTHN_SECRET)
+  let hostname: string
+  try {
+    hostname = normalizeRequestHostname(new URL(expectedOrigin).hostname)
+  } catch {
+    throw new Error('Invalid request')
+  }
+
+  const userCredentials = resolveWebAuthnCredentialsForHost(ACCESS_WEBAUTHN_SECRET, hostname)
   if (!userCredentials) {
     throw new Error('Invalid server configuration')
   }
