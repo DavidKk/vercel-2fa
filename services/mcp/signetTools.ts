@@ -62,7 +62,7 @@ export const SIGNET_MCP_SKILL_URI = 'skill://signet-oauth/signet-oauth-integrati
 /** Legacy URI; still accepted by `resources/read` for backward compatibility */
 export const SIGNET_MCP_SKILL_URI_LEGACY = 'signet://skill/oauth-integration'
 
-/** Full skill markdown (EN + 中文速览); built from {@link getSignetMcpSkillMarkdown} shared with Getting Started integration copy */
+/** Full skill markdown (EN quick reference); built from {@link getSignetMcpSkillMarkdown} shared with Getting Started integration copy */
 export const SIGNET_MCP_SKILL = getSignetMcpSkillMarkdown()
 
 export function createSignetMcpTools(context: SignetMcpContext) {

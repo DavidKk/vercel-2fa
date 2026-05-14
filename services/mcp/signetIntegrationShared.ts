@@ -338,13 +338,13 @@ In-app: **Getting started → Project integration** (\`/getting-started/integrat
 
 ---
 
-## 中文速览
+## Quick reference
 
-- **定位**：Signet 是「单管理员账号 + TOTP / WebAuthn」的托管登录站；业务系统**不保存**管理员密码，只做跳转、回跳带短期 JWT、校验后**自建会话**。
-- **\`/login\`**：回跳为 **query** \`?token=&state=\`，服务端 Route Handler 可直接读 \`URL\` 的 search。
-- **\`/oauth\`（ECDH）**：回跳为 **hash** \`#token=&state=\`，**不会**出现在服务端请求里；回调页必须用 **完整 href** 解析（推荐托管 SDK 的 \`parseLoginCallbackParams(window.location.href)\`），不要只用 \`useSearchParams()\` 读 query。
-- **托管 SDK**：\`YOUR_AUTH_HOST/sdk/signet-client.mjs\`（导出含 \`stripLoginCallbackFromUrl\`、\`getVerifyApiUrl\` 等，见 MCP \`sdkExports\`）；与 **vercel-web-scripts** 中 \`lib/load-signet-sdk.ts\` 用法一致。
-- **跨域**：回调 URL 必须在 Signet 的 \`ALLOWED_REDIRECT_URLS\` 中；不确定时用 MCP \`signet_validate_redirect_url\`。
-- **不要用 MCP 做**：代填密码、代过 2FA、冒充真人操作。
+- **Role**: Signet is a hosted login hub (single admin account + TOTP / WebAuthn). Consumer apps **do not store** the admin password; they redirect, receive a short-lived JWT on return, verify it, then **issue their own session**.
+- **\`/login\`**: return uses **query** \`?token=&state=\`; Route Handlers can read \`URL\` search params.
+- **\`/oauth\` (ECDH)**: return uses **hash** \`#token=&state=\`; **not** visible to the server on top-level navigation; parse the **full** \`href\` (e.g. \`parseLoginCallbackParams(window.location.href)\`), not only \`useSearchParams()\`.
+- **Hosted SDK**: \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` (exports include \`stripLoginCallbackFromUrl\`, \`getVerifyApiUrl\`, etc.; see MCP \`sdkExports\`); same usage pattern as **vercel-web-scripts** \`lib/load-signet-sdk.ts\`.
+- **Cross-origin**: callback URLs must be in Signet \`ALLOWED_REDIRECT_URLS\`; use MCP \`signet_validate_redirect_url\` when unsure.
+- **Do not use MCP for**: entering passwords, completing 2FA, or impersonating a human.
 `
 }

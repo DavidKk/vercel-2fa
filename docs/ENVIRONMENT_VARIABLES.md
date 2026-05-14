@@ -215,14 +215,14 @@ Alternatively **`credentials`**: array of objects; the server picks the first en
 - **Description**: Upstash Redis REST API URL (automatically provided by Vercel/Upstash integration)
 - **Required**: Yes (only when using `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTION=1`)
 - **How to get**: Automatically set when you add Upstash Redis integration to your Vercel project
-- **Setup** (通过 Vercel Integrations):
+- **Setup** (via Vercel Integrations):
   1. Go to your Vercel project dashboard
   2. Navigate to the **"Integrations"** tab
   3. Search for **"Upstash"** and click **"Add"** or **"Install"**
   4. Follow the setup wizard to create or connect an Upstash Redis database
   5. Vercel will automatically inject `AUTH_KV_REST_API_URL` and `AUTH_KV_REST_API_TOKEN` into your environment
-  6. **重要**: 添加后必须重新部署应用，环境变量才会生效
-- **Alternative**: 也可以通过 **"Storage"** 标签页 → **"Upstash"** → **"Serverless DB (Redis)"** 添加
+  6. **Important**: redeploy the app after adding the integration so env vars take effect.
+- **Alternative**: **Storage** → **Upstash** → **Serverless DB (Redis)** in the Vercel dashboard.
 - **Backward Compatibility**: The code also supports `UPSTASH_REDIS_REST_URL` and `KV_REST_API_URL` for backward compatibility
 - **Note**: You don't need to manually set this variable. It's automatically configured when you add the Upstash Redis integration.
 - **Reference**: [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
@@ -409,12 +409,12 @@ This error occurs when `ENABLE_KEY_ROTATION=1` or `ENABLE_TOKEN_REPLAY_PROTECTIO
    - Search for **"Upstash"** and click **"Add"** or **"Install"**
    - Follow the setup wizard to create or connect an Upstash Redis database
    - Vercel will automatically inject `AUTH_KV_REST_API_URL` and `AUTH_KV_REST_API_TOKEN`
-   - **重要**: 添加后必须重新部署应用，环境变量才会生效
-   - 验证变量是否设置：Settings → Environment Variables，确认以下变量存在：
-     - `AUTH_KV_REST_API_URL` 和 `AUTH_KV_REST_API_TOKEN` (主要)
-     - 或 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN` (备用)
-     - 或 `KV_REST_API_URL` 和 `KV_REST_API_TOKEN` (向后兼容)
-   - **Alternative**: 也可以通过 **"Storage"** 标签页 → **"Upstash"** → **"Serverless DB (Redis)"** 添加
+   - **Important**: redeploy after adding the integration so env vars take effect.
+   - Verify under **Settings → Environment Variables**:
+     - `AUTH_KV_REST_API_URL` and `AUTH_KV_REST_API_TOKEN` (preferred)
+     - or `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (alternate)
+     - or `KV_REST_API_URL` and `KV_REST_API_TOKEN` (legacy)
+   - **Alternative**: **Storage** → **Upstash** → **Serverless DB (Redis)**.
    - **Reference**: [Upstash Vercel Integration Guide](https://upstash.com/docs/redis/howto/vercelintegration)
 
 2. **If you don't want to use Redis features**:

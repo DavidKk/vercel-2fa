@@ -163,8 +163,8 @@ if (result.code === 0 && result.data.valid) {
 
 **Next.js / Webpack 接入（与 [vercel-web-scripts](https://github.com/DavidKk/vercel-web-scripts) 对齐）：**
 
-1. 用环境变量拼出脚本 URL，例如 `NEXT_PUBLIC_VERCEL_2FA_ORIGIN`（无尾 `/`）+ `/sdk/signet-client.mjs`，或 `NEXT_PUBLIC_SIGNET_SDK_URL` 指向完整 `.mjs`；服务端可再配 `VERCEL_2FA_ORIGIN` 供 `verify` 与动态 `import` 同源拉 SDK。
-2. 客户端与 App Router Route Handler 均可 **`await import(/* webpackIgnore: true */ sdkUrl)`** 并**缓存 Promise**，直接调用上述导出，避免在接入仓库复制 `parse`/`verify`。
+1. 用环境变量拼出脚本 URL，例如 `NEXT_PUBLIC_VERCEL_2FA_ORIGIN`（无尾 `/`）+ `/sdk/signet-client.mjs`，或 `NEXT_PUBLIC_SIGNET_SDK_URL` 指向完整 `.mjs`；服务端可再配 `VERCEL_2FA_ORIGIN` 供 `verify` 与拉取 SDK。
+2. **浏览器**可用 **`await import(/* webpackIgnore: true */ sdkUrl)`** 并**缓存 Promise**。**Node（App Router Route Handler）** 不能对 `https:` URL 直接动态 `import()`（会报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`）；应对 `.mjs` 先 `fetch` 再 `import(data:text/javascript;base64,…)`，或复用 `vercel-web-scripts` 的 `loadSignetSdk()`。
 3. **`/oauth` 回调**：不要用 `useSearchParams()` 只读 query；须处理 **hash**（或直接用 `parseLoginCallbackParams(window.location.href)`）。
 4. **纯服务端读 token**：仅 **`/login`** 回跳的 query 会到达服务器；**`/oauth` 的 hash 不会出现在 HTTP 请求里**。
 
@@ -209,6 +209,11 @@ if (returnedState !== sessionStorage.getItem('oauth_state')) {
 - 默认登录 token 有效期为 5 分钟
 - 建议外部系统接收 token 后立即验证并创建本地会话
 - 不要将短期 token 用于长期会话管理
+
+#### 4. `/login` 回调 URL 中的 token 暴露面
+
+- `?token=` 会出现在**浏览器历史、反向代理/应用访问日志**；用户再点击外链时，部分浏览器会把带 query 的 URL 作为 **Referer** 发给第三方。
+- 缓解：尽量缩短登录 JWT 有效期；消费端拿到 token 后尽快换成本地 **httpOnly** 会话并引导离开带 token 的 URL（`/oauth` hash 方案可避免 token 出现在服务端日志，但实现更重）。
 
 ### 完整示例（React 应用）
 

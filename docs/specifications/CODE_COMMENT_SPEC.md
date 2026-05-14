@@ -26,14 +26,14 @@ export function calculateTotal(price: number, quantity: number): number {
 ### 1.3 Incorrect Examples
 
 ```tsx
-// Incorrect: Use Chinese comments
-// 计算商品总价
+// Incorrect: comments not in English
+// calc total (ambiguous / wrong language for this repo)
 export function calculateTotal(price: number, quantity: number): number {
   return price * quantity;
 }
 
-<!-- Incorrect: Use other languages -->
-<!-- 计算价格 -->
+<!-- Incorrect: non-English markup comment -->
+<!-- calcul prix -->
 function calculatePrice() { }
 ```
 

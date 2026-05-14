@@ -1,8 +1,8 @@
-// 用户凭证接口，注册成功后需要持久化存储
+/** User credential payload; persist after successful registration. */
 export interface UserCredentials {
-  /** 凭证 ID，需要存储到服务器数据库 */
+  /** Credential ID stored server-side */
   credentialID: string
-  /** 公钥数据，需要存储到服务器数据库 */
+  /** Public key bytes stored server-side */
   publicKey: Uint8Array
 }
 

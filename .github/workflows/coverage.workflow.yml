@@ -6,11 +6,10 @@ on:
       - '**'
 
 env:
-  # 产物文件名称
+  # Artifact name for coverage output
   CI_COVERAGE_ARTIFACT_FILE: coverage-${{ github.sha }}
 
 jobs:
-  # 测试任务
   test:
     name: test#node-${{ matrix.node_version }}#${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -35,7 +34,6 @@ jobs:
         shell: bash
         run: pnpm install
 
-      # 测试
       - name: Run tests and collect coverage
         shell: bash
         run: pnpm ci:coverage
@@ -43,7 +41,6 @@ jobs:
           # @see https://github.com/actions/runner-images/issues/70
           NODE_OPTIONS: '--max_old_space_size=4096'
 
-      # 上传覆盖率
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         env:

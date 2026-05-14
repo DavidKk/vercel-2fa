@@ -1,35 +1,46 @@
 ---
 name: signet-consumer-integration
-description: Signet（vercel-2fa）消费端接入 — 托管 signet-client.mjs、HTTP MCP 工具与实例、与 vercel-web-scripts 对齐。涉及「接入 Signet」「/oauth hash」「MCP signet_*」「stripLoginCallbackFromUrl」时使用。
+description: Signet (vercel-2fa) consumer integration — hosted signet-client.mjs, HTTP MCP tools, alignment with vercel-web-scripts. Use for Signet onboarding, /oauth hash flows, MCP signet_*, stripLoginCallbackFromUrl.
 ---
 
-# Signet 消费端接入
+# Signet consumer integration
 
-## 必读顺序
+## Read first
 
-1. 本仓库 **`README.zh-CN.md`** →「作为统一登录服务」「静态 ESM SDK」。
-2. 已连接 **`/api/mcp`** 时，先用工具拿 **当前部署 `origin`** 与 **`sdkExports` / `mcpExamples`**，避免手写错域名或漏参。
+1. This repo **`README.zh-CN.md`** — unified login service, static ESM SDK (Chinese narrative; English in `README.md`).
+2. When **`/api/mcp`** is available, call tools to fetch the **deployed `origin`**, **`sdkExports`**, and **`mcpExamples`** so you do not hard-code the wrong host or miss parameters.
 
-## 托管 SDK（`…/sdk/signet-client.mjs`）
+## Hosted SDK (`…/sdk/signet-client.mjs`)
 
-| 导出                                       | 用途                                                                 |
-| ------------------------------------------ | -------------------------------------------------------------------- |
-| `normalizeAuthCenterOrigin`                | Signet 根 URL 去尾 `/`                                               |
-| `getVerifyApiUrl` / `getOAuthPublicKeyUrl` | 验票、ECDH 公钥接口完整 URL                                          |
-| `buildLoginUrl` / `buildOAuthLoginUrl`     | 发起 `/login` 或 `/oauth`                                            |
-| `parseLoginCallbackParams`                 | 从 **完整 URL / hash / query / URLSearchParams** 取 `token`、`state` |
-| `getLoginCallbackFromWindow`               | 浏览器：`location.href` 上解析                                       |
-| `stripLoginCallbackFromUrl`                | 从 query **和** hash 去掉 `token`/`state`，配合 `replaceState`       |
-| `isLoginCallbackTokenInHash`               | 判断是否典型 `/oauth` hash 回跳                                      |
-| `verifyTokenAtAuthCenter`                  | `POST /api/auth/verify`                                              |
+| Export                                     | Purpose                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `normalizeAuthCenterOrigin`                | Trim trailing `/` on Signet base URL                                      |
+| `getVerifyApiUrl` / `getOAuthPublicKeyUrl` | Full URLs for verify + ECDH public-key endpoints                          |
+| `buildLoginUrl` / `buildOAuthLoginUrl`     | Start `/login` or `/oauth`                                                |
+| `parseLoginCallbackParams`                 | Read `token` / `state` from **full URL / hash / query / URLSearchParams** |
+| `getLoginCallbackFromWindow`               | Browser: parse `location.href`                                            |
+| `stripLoginCallbackFromUrl`                | Remove `token`/`state` from query **and** hash; pair with `replaceState`  |
+| `isLoginCallbackTokenInHash`               | Detect typical `/oauth` hash callback                                     |
+| `verifyTokenAtAuthCenter`                  | `POST /api/auth/verify`                                                   |
 
-**Next：** `import(/* webpackIgnore: true */ sdkUrl)` + **缓存**同一 Promise（见 vercel-web-scripts `loadSignetSdk`）。
+**Loading the SDK (match vercel-web-scripts `loadSignetSdk`):**
 
-## MCP 工具与调用示例（JSON 参数）
+- **Browser**: `import(/* webpackIgnore: true */ sdkUrl)` where `sdkUrl` may be `https://…/signet-client.mjs`; **cache** the same Promise.
+- **Node (App Router Route Handler)**: `import()` **does not** support `https:` — use **`fetch(sdkUrl)` → `data:text/javascript;base64,…` → `import(dataUrl)`**, or skip loading the SDK on the server and **`POST`** `/api/auth/verify` on the auth center with URLs you build yourself.
 
-调用 **`signet_get_integration_guide`** 可一次性拿到 `hostedSdkUrl`、`sdkExports`、`mcpExamples`、`pitfalls`。
+## Security (consumer)
 
-典型参数（复制到 MCP `arguments`）：
+1. **`state`**: compare callback `state` to the **pre-launch** value in constant time for `/login` and `/oauth`; server callbacks must read **HttpOnly** or an agreed store (the demo uses **non-HttpOnly** cookies for `document.cookie`; **first-party XSS** can read `state` — mitigate with CSP and code quality).
+2. **`/login` `token` in query**: appears in **history, reverse-proxy logs, Referrer**; establish a local session quickly and **strip** the URL (`stripLoginCallbackFromUrl`); short-lived JWT reduces risk.
+3. **`ALLOWED_REDIRECT_URLS`**: the auth center must enforce an allowlist; misconfigured origins leak tokens to the wrong site.
+4. **`/oauth` ECDH**: ephemeral client keys live in **sessionStorage**; **first-party XSS** can steal keys — CSP, dependency review, HTTPS.
+5. **Env**: if `getSignetAuthCenterOrigin` / `NEXT_PUBLIC_SIGNET_SDK_URL` point to a malicious host, tokens may be **POSTed to an attacker** — verify domains before deploy.
+
+## MCP tools and sample `arguments`
+
+Call **`signet_get_integration_guide`** once for `hostedSdkUrl`, `sdkExports`, `mcpExamples`, `pitfalls`.
+
+Typical payloads (paste into MCP `arguments`):
 
 ```json
 {
@@ -55,29 +66,30 @@ description: Signet（vercel-2fa）消费端接入 — 托管 signet-client.mjs�
 }
 ```
 
-`encryptedReturn: true` 时 **`signet_build_login_url`** 必须带 **`clientPublicKey`**（见工具 schema）。
+When `encryptedReturn: true`, **`signet_build_login_url`** must include **`clientPublicKey`** (see tool schema).
 
-## 与 vercel-web-scripts 对齐
+## Alignment with vercel-web-scripts
 
 - `lib/signet-sdk-url.ts` — `getSignetSdkModuleUrl()`
 - `lib/load-signet-sdk.ts` — `loadSignetSdk()`
-- `/auth/vercel-2fa/callback` — `/login` 回跳：服务端 `parseLoginCallbackParams(searchParams)` + `verifyTokenAtAuthCenter`
-- OAuth — `buildOAuthLoginUrl`；回调 `parseLoginCallbackParams(href)`；成功后可 **`await stripLoginCallbackFromUrl`**（经 SDK）
+- `/auth/vercel-2fa/callback` — `/login` return: server `parseLoginCallbackParams(searchParams)` + `verifyTokenAtAuthCenter`
+- OAuth — `buildOAuthLoginUrl`; callback `parseLoginCallbackParams(href)`; on success **`await stripLoginCallbackFromUrl`** (via SDK)
 
-## 反例
+## Anti-patterns
 
-1. `/oauth` 回调只用 `useSearchParams()` → 永远无 token。
-2. Route Handler 从 `request.url` 读 hash 里的 token → **不可能**。
-3. 未配 `ALLOWED_REDIRECT_URLS` → 跨域回调被拒。
+1. `/oauth` callback uses only `useSearchParams()` → token never appears.
+2. Route Handler reads token from hash via `request.url` → **impossible** for top-level navigation.
+3. Missing `ALLOWED_REDIRECT_URLS` → cross-origin callback rejected.
+4. Node Route Handler `import('https://…/signet-client.mjs')` → **`ERR_UNSUPPORTED_ESM_URL_SCHEME`**.
 
-## 不要做的事
+## Do not
 
-不要让 AI **代填密码、代过 2FA、冒充用户**操作 Signet。
+Do not ask the AI to **enter passwords, complete 2FA, or impersonate the user** on Signet.
 
-## 维护清单（改一处、同步多处）
+## Keep in sync when editing
 
 - `public/sdk/signet-client.mjs`
-- `services/mcp/signetIntegrationShared.ts`（MCP skill + Getting Started 片段）
+- `services/mcp/signetIntegrationShared.ts` (MCP skill + Getting Started snippets)
 - `services/mcp/signetTools.ts`
-- `README.md` / `README.zh-CN.md`
-- 本 SKILL
+- `README.md` / `README.zh-CN.md` (static ESM SDK, Next.js / Node loading)
+- This SKILL

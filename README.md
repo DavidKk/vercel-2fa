@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![中文](https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E4%B8%AD%E6%96%87-green?style=flat-square&logo=docs)](https://github.com/DavidKk/vercel-2fa/blob/main/README.zh-CN.md) [![English](https://img.shields.io/badge/docs-English-green?style=flat-square&logo=docs)](https://github.com/DavidKk/vercel-2fa/blob/main/README.md)
+[![Build Status](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml/badge.svg)](https://github.com/DavidKk/vercel-2fa/actions/workflows/coverage.workflow.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Chinese docs](https://img.shields.io/badge/docs-Chinese-green?style=flat-square&logo=docs)](https://github.com/DavidKk/vercel-2fa/blob/main/README.zh-CN.md) [![English](https://img.shields.io/badge/docs-English-green?style=flat-square&logo=docs)](https://github.com/DavidKk/vercel-2fa/blob/main/README.md)
 
 # Two-Factor Authentication Service
 
@@ -163,8 +163,8 @@ Example: `https://your-signet-domain.com/sdk/signet-client.mjs`. Responses inclu
 
 **Next.js / Webpack (aligned with [vercel-web-scripts](https://github.com/DavidKk/vercel-web-scripts)):**
 
-1. Resolve `sdkUrl` from env — e.g. `NEXT_PUBLIC_VERCEL_2FA_ORIGIN` (no trailing slash) + `/sdk/signet-client.mjs`, or `NEXT_PUBLIC_SIGNET_SDK_URL` for a full URL; optionally set `VERCEL_2FA_ORIGIN` for server-only verify + same-origin SDK fetch.
-2. In both **client components** and **Route Handlers**, prefer **`await import(/* webpackIgnore: true */ sdkUrl)`** with a **cached module promise** so you call the real `parseLoginCallbackParams` / `verifyTokenAtAuthCenter` instead of forking copies in the consumer repo.
+1. Resolve `sdkUrl` from env — e.g. `NEXT_PUBLIC_VERCEL_2FA_ORIGIN` (no trailing slash) + `/sdk/signet-client.mjs`, or `NEXT_PUBLIC_SIGNET_SDK_URL` for a full URL; optionally set `VERCEL_2FA_ORIGIN` for server-only verify + fetching the SDK.
+2. **Browser:** `await import(/* webpackIgnore: true */ sdkUrl)` with a **cached module promise**. **Node (App Router Route Handlers):** you cannot `import('https:…')` — use `fetch` + `import(data:text/javascript;base64,…)` for the hosted `.mjs`, or reuse `loadSignetSdk()` from `vercel-web-scripts`.
 3. **`/oauth` callbacks:** do not rely on `useSearchParams()` alone — the payload is in the **hash**; use `parseLoginCallbackParams(window.location.href)` (or equivalent).
 4. **Server-only token read from the HTTP request** works for **`/login`** (query is on the wire). It does **not** work for **`/oauth`** hash fragments (they never hit the server).
 
@@ -212,6 +212,11 @@ if (returnedState !== sessionStorage.getItem('oauth_state')) {
 - Default login token expiration is 5 minutes
 - External systems should verify tokens immediately and create local sessions
 - Do not use short-lived tokens for long-term session management
+
+#### 4. `/login` callback: token in the URL query string
+
+- `?token=` appears in **browser history** and **reverse-proxy / app access logs**. If the callback page links out, some browsers may send the URL as **Referer** to third parties.
+- Mitigations: keep login JWT lifetime short; exchange for a local **httpOnly** session immediately; navigate away from the token-bearing URL (`stripLoginCallbackFromUrl`). Prefer the `/oauth` + hash flow if you need to keep tokens off server logs (at the cost of more client-side crypto).
 
 ### Complete Example (React Application)
 
