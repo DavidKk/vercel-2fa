@@ -1,6 +1,7 @@
 /**
  * Signet — minimal browser + Node (Next.js) integration helpers.
- * Hosted as static ESM; use with Next.js experimental.urlImports or any ESM bundler.
+ * Hosted as static ESM; browsers can dynamic-import it directly.
+ * In plain Node/Next.js Route Handlers, fetch once and import from a data: URL.
  */
 
 /** Query + hash keys used on Signet login callbacks */

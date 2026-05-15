@@ -106,7 +106,9 @@ https://your-app.com/auth/callback?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 外部系统有两种方式验证令牌：
 
-**方式 A：使用共享密钥验证（推荐用于内部系统）**
+**方式 A：使用共享密钥验证（仅适合明确共享 `JWT_SECRET` 的内部系统）**
+
+大多数第三方接入应优先使用方式 B 的 hosted SDK，避免回调解析和验票响应处理逻辑与 Signet 漂移。
 
 ```typescript
 import { jwtVerify } from 'jose'
@@ -131,18 +133,16 @@ async function verifyToken(token: string) {
 **方式 B：调用验证 API（适合无法共享密钥的场景）**
 
 ```typescript
-const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ token }),
+const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+const result = await signet.verifyTokenAtAuthCenter({
+  authCenterOrigin: 'https://your-signet-domain.com',
+  token,
+  audience: 'your-app',
 })
 
-const result = await response.json()
-if (result.code === 0 && result.data.valid) {
-  // 验证通过
-  console.log('User:', result.data.payload.username)
+if (result.ok) {
+  // 验证通过。用 result.response.data 创建你的应用会话。
+  console.log('User:', result.response.data.user)
 }
 ```
 
@@ -160,6 +160,12 @@ if (result.code === 0 && result.data.valid) {
 - **`isLoginCallbackTokenInHash`**：判断是否为典型的 `/oauth` hash 回跳（便于分支 UI 或日志）
 
 示例：`https://your-signet-domain.com/sdk/signet-client.mjs`。`/sdk/*.mjs` 已配置 `Access-Control-Allow-Origin: *`，便于浏览器 `import()`。
+
+**选择后端接入还是前端接入：**
+
+- **后端持有会话**（应用有服务端时推荐）：浏览器发起 Signet 登录，Signet 通过 `/login` 回跳到你的后端 callback，后端加载 SDK、解析 query 中的 `token/state`、调用 `verifyTokenAtAuthCenter`，然后签发自己的 httpOnly session cookie。
+- **纯前端应用**（静态站点 / SPA 支持）：浏览器发起 Signet 登录，callback 页面加载 SDK、解析 `window.location.href`、校验 `state`、调用 `verifyTokenAtAuthCenter`、清理回调 URL，然后把返回的 token/user 放进前端状态或存储。纯前端无法创建 httpOnly session cookie。
+- **ECDH `/oauth` redirect**：token/state 在 URL hash 中回跳，必须先由浏览器代码处理。后端 Route Handler 读不到 hash。
 
 **Next.js / Webpack 接入（与 [vercel-web-scripts](https://github.com/DavidKk/vercel-web-scripts) 对齐）：**
 
@@ -193,12 +199,16 @@ ALLOWED_REDIRECT_URLS=https://*.example.com,https://*.company.com
 const state = crypto.randomUUID()
 sessionStorage.setItem('oauth_state', state)
 
-const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+const loginUrl = signet.buildLoginUrl({
+  authCenterOrigin: 'https://your-signet-domain.com',
+  redirectUrl: callbackUrl,
+  state,
+})
 window.location.href = loginUrl
 
 // 回调时验证 state
-const params = new URLSearchParams(window.location.search)
-const returnedState = params.get('state')
+const { state: returnedState } = signet.parseLoginCallbackParams(window.location.href)
 if (returnedState !== sessionStorage.getItem('oauth_state')) {
   throw new Error('Invalid state - possible CSRF attack')
 }
@@ -219,12 +229,17 @@ if (returnedState !== sessionStorage.getItem('oauth_state')) {
 
 ```typescript
 // 1. 登录按钮点击处理
-function handleLogin() {
+async function handleLogin() {
   const state = crypto.randomUUID()
   sessionStorage.setItem('oauth_state', state)
 
+  const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
   const callbackUrl = `${window.location.origin}/auth/callback`
-  const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+  const loginUrl = signet.buildLoginUrl({
+    authCenterOrigin: 'https://your-signet-domain.com',
+    redirectUrl: callbackUrl,
+    state,
+  })
 
   window.location.href = loginUrl
 }
@@ -232,32 +247,35 @@ function handleLogin() {
 // 2. 回调页面处理 (pages/auth/callback.tsx)
 export default function AuthCallback() {
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('token')
-    const state = params.get('state')
+    const run = async () => {
+      const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+      const { token, state } = signet.parseLoginCallbackParams(window.location.href)
 
-    // 验证 state
-    if (state !== sessionStorage.getItem('oauth_state')) {
-      console.error('Invalid state')
-      return
-    }
+      // 验证 state
+      if (state !== sessionStorage.getItem('oauth_state')) {
+        console.error('Invalid state')
+        return
+      }
 
-    // 清除 state
-    sessionStorage.removeItem('oauth_state')
+      // 清除 state
+      sessionStorage.removeItem('oauth_state')
 
-    if (token) {
-      // 发送到自己的后端验证并创建会话
-      fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      }).then(async res => {
-        const data = await res.json()
-        if (data.success) {
+      if (token) {
+        const result = await signet.verifyTokenAtAuthCenter({
+          authCenterOrigin: 'https://your-signet-domain.com',
+          token,
+          audience: 'your-app',
+        })
+        if (result.ok) {
+          // 将 result.response.data 发送到你的后端，或据此创建你的应用会话。
           router.push('/dashboard')
         }
-      })
+        history.replaceState(history.state, '', signet.stripLoginCallbackFromUrl(window.location.href))
+      }
     }
+    void run().catch((error) => {
+      console.error(error)
+    })
   }, [])
 
   return <div>正在处理登录...</div>
@@ -269,6 +287,8 @@ export default function AuthCallback() {
 #### POST /api/auth/verify
 
 验证 JWT token 的有效性
+
+消费端通常应通过 SDK `verifyTokenAtAuthCenter` 调用该接口，避免响应解析与 URL 拼接逻辑漂移。
 
 **请求体**：
 
@@ -285,13 +305,15 @@ export default function AuthCallback() {
   "code": 0,
   "message": "ok",
   "data": {
-    "valid": true,
-    "payload": {
+    "access_token": "eyJ...",
+    "token_type": "Bearer",
+    "expires_in": 180,
+    "user": {
+      "sub": "user-sub",
       "username": "admin",
-      "authenticated": true,
-      "iat": 1699999999,
-      "exp": 1699999999
-    }
+      "authenticated": true
+    },
+    "claims": {}
   }
 }
 ```

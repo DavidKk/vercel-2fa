@@ -23,15 +23,19 @@ export const SIGNET_INTEGRATION_FLOW_STEPS = [
   {
     step: '4',
     title: 'Verify',
-    desc: 'Your backend verifies the JWT (shared secret) or calls /api/auth/verify, then issues your own session.',
+    desc: 'Use SDK verifyTokenAtAuthCenter (or explicit shared-secret verification), then issue your own session.',
   },
 ] as const
 
 /** Login URL example (replace YOUR_AUTH_HOST with your Signet base, no trailing slash) */
-export const SIGNET_LOGIN_URL_EXAMPLE_JS = `const login = new URL('https://YOUR_AUTH_HOST/login')
-login.searchParams.set('redirectUrl', 'https://your-app.example.com/auth/callback')
-login.searchParams.set('state', crypto.randomUUID())
-window.location.href = login.toString()`
+export const SIGNET_LOGIN_URL_EXAMPLE_JS = `const signet = await import(/* webpackIgnore: true */ 'https://YOUR_AUTH_HOST/sdk/signet-client.mjs')
+const state = crypto.randomUUID()
+const loginUrl = signet.buildLoginUrl({
+  authCenterOrigin: 'https://YOUR_AUTH_HOST',
+  redirectUrl: 'https://your-app.example.com/auth/callback',
+  state,
+})
+window.location.href = loginUrl`
 
 /** Option A: verify callback JWT locally with jose */
 export const SIGNET_JWT_VERIFY_JOSE_SNIPPET = `import { jwtVerify } from 'jose'
@@ -44,28 +48,32 @@ if (payload?.authenticated === true) {
   // issue your own session cookie / API token
 }`
 
-/** Option B: POST to Signet verify API */
-export const SIGNET_VERIFY_API_FETCH_JS = `const res = await fetch('https://YOUR_AUTH_HOST/api/auth/verify', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ token }),
+/** Option B: verify through the hosted SDK (which posts to Signet verify API). */
+export const SIGNET_VERIFY_API_FETCH_JS = `const signet = await import(/* webpackIgnore: true */ 'https://YOUR_AUTH_HOST/sdk/signet-client.mjs')
+const result = await signet.verifyTokenAtAuthCenter({
+  authCenterOrigin: 'https://YOUR_AUTH_HOST',
+  token,
+  audience: 'your-app',
 })
-const body = await res.json()
-if (body.code === 0 && body.data?.access_token) {
-  // trusted login — use body.data.user for display; body.data.access_token for APIs
-}`
+if (!result.ok) {
+  throw new Error(result.error || 'Signet token verification failed')
+}
+const data = result.response.data
+// trusted login — use data.user for display; data.access_token for APIs`
 
 /** React: start login redirect */
-export const SIGNET_REACT_HANDLE_LOGIN_JS = `function handleLogin() {
+export const SIGNET_REACT_HANDLE_LOGIN_JS = `async function handleLogin() {
   const state = crypto.randomUUID()
   sessionStorage.setItem('oauth_state', state)
 
-  const callback = window.location.origin + '/auth/callback'
-  const url = new URL('https://YOUR_AUTH_HOST/login')
-  url.searchParams.set('redirectUrl', callback)
-  url.searchParams.set('state', state)
+  const signet = await import(/* webpackIgnore: true */ 'https://YOUR_AUTH_HOST/sdk/signet-client.mjs')
+  const url = signet.buildLoginUrl({
+    authCenterOrigin: 'https://YOUR_AUTH_HOST',
+    redirectUrl: window.location.origin + '/auth/callback',
+    state,
+  })
 
-  window.location.href = url.toString()
+  window.location.href = url
 }`
 
 /**
@@ -75,14 +83,20 @@ export const SIGNET_REACT_HANDLE_LOGIN_JS = `function handleLogin() {
 export const SIGNET_REACT_AUTH_CALLBACK_JS = `function AuthCallback() {
   useEffect(() => {
     const run = async () => {
-      const signet = await import('https://YOUR_AUTH_HOST/sdk/signet-client.mjs')
+      const signet = await import(/* webpackIgnore: true */ 'https://YOUR_AUTH_HOST/sdk/signet-client.mjs')
       const { token, state } = signet.parseLoginCallbackParams(window.location.href)
       if (!token) return
       if (state !== sessionStorage.getItem('oauth_state')) {
         throw new Error('Invalid state')
       }
       sessionStorage.removeItem('oauth_state')
-      await verifyTokenAndCreateSession(token)
+      const result = await signet.verifyTokenAtAuthCenter({
+        authCenterOrigin: 'https://YOUR_AUTH_HOST',
+        token,
+        audience: 'your-app',
+      })
+      if (!result.ok) throw new Error(result.error || 'Signet token verification failed')
+      await createSessionFromSignet(result.response.data)
       history.replaceState(history.state, '', signet.stripLoginCallbackFromUrl(window.location.href))
     }
     void run()
@@ -94,11 +108,19 @@ export const SIGNET_REACT_AUTH_CALLBACK_JS = `function AuthCallback() {
 /** Practices list (same bullets as integration page) */
 export const SIGNET_INTEGRATION_PRACTICE_BULLETS = [
   'Whitelist every production callback origin in ALLOWED_REDIRECT_URLS; use wildcards sparingly',
+  'Use the hosted SDK for URL building, callback parsing, URL cleanup, and verify API calls; do not duplicate these helpers in consumer apps',
   'Generate a fresh state per attempt; reject callbacks with missing or stale state',
   'For `/oauth` returns, never rely on `useSearchParams()` / query-only parsers — the token is in the **hash** until you use `parseLoginCallbackParams(fullUrl)`',
   'Do not log full JWTs; log correlation ids only',
   'Re-verify on privileged actions if your session is long-lived',
   'Align JWT_EXPIRES_IN with your risk tolerance; Remember me off caps sessions at 1d',
+] as const
+
+export const SIGNET_INTEGRATION_MODE_BULLETS = [
+  '**Backend-owned session (recommended when the app has a server):** browser starts Signet login, Signet returns to your backend callback for `/login`, backend loads the SDK, parses query token/state, calls `verifyTokenAtAuthCenter`, then issues your own httpOnly session cookie. This is best for admin panels and higher-risk tools.',
+  '**Frontend-only app (supported for static/SPAs):** browser starts Signet login, callback page loads the SDK, parses `window.location.href`, validates `state`, calls `verifyTokenAtAuthCenter`, strips the callback URL, then stores the returned app token in frontend state/storage. This cannot create an httpOnly session cookie and is better for lower-risk personal tools.',
+  '**ECDH `/oauth` redirect:** token/state return in the URL hash, so the callback must be handled in browser code first. A server Route Handler cannot read the hash; after client-side parse/decrypt/verify, send only your own session bootstrap data to your backend if needed.',
+  '**Agent decision rule:** if the target project has a backend/session layer, choose backend-owned session. If it is truly static/frontend-only, choose frontend-only and call out the storage tradeoff. If requirements are unclear, ask which mode the user wants before implementing.',
 ] as const
 
 function flowStepsMarkdown(): string {
@@ -107,6 +129,10 @@ function flowStepsMarkdown(): string {
 
 function practicesMarkdown(): string {
   return SIGNET_INTEGRATION_PRACTICE_BULLETS.map((line) => `- ${line}`).join('\n')
+}
+
+function integrationModesMarkdown(): string {
+  return SIGNET_INTEGRATION_MODE_BULLETS.map((line) => `- ${line}`).join('\n')
 }
 
 /**
@@ -121,6 +147,7 @@ export function getSignetMcpSkillMarkdown(): string {
 - **Hosted IdP for one configured admin user** (ACCESS_USERNAME / ACCESS_PASSWORD) plus **TOTP and/or WebAuthn** as second factor.
 - Your consumer app **never stores** that password. You only: **redirect → callback with a short-lived JWT → verify → issue your own session**.
 - **Not** multi-tenant user signup; tokens identify the configured Signet user.
+- **Integration rule for agents:** use the hosted SDK at \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` for login URL construction, callback parsing, URL cleanup, and \`/api/auth/verify\` calls. Do **not** hand-roll these helpers unless the user explicitly asks for a low-level implementation.
 
 Use **live URLs** from this MCP session: call \`signet_get_integration_guide\`, \`signet_build_login_url\`, \`signet_validate_redirect_url\`, \`signet_get_env_checklist\` (they use the deployment \`origin\`). Below, **YOUR_AUTH_HOST** is your Signet base URL with scheme and host, **no trailing slash** (same placeholder as the in-app integration guide).
 
@@ -136,10 +163,21 @@ ${flowStepsMarkdown()}
 
 | Mode | Path | Callback carries | Consumer needs |
 |------|------|------------------|----------------|
-| **Direct JWT** (default) | \`YOUR_AUTH_HOST/login?...\` | Query \`token\` (+ optional \`state\`) | Verify JWT locally with shared \`JWT_SECRET\`, **or** POST to \`/api/auth/verify\` |
+| **Direct JWT** (default) | \`YOUR_AUTH_HOST/login?...\` | Query \`token\` (+ optional \`state\`) | Use the hosted SDK to build the URL, parse the callback, then call \`verifyTokenAtAuthCenter\` |
 | **ECDH OAuth-style** | \`YOUR_AUTH_HOST/oauth?...\` | **Hash** \`#token=…&state=…\` (encrypted payload; decrypt client-side) | Client keypair, \`ECDH_SERVER_PRIVATE_KEY\` on Signet, \`/api/oauth/public-key\`; **must** parse \`window.location.href\`, not query-only |
 
 Most integrations use **direct JWT** unless you explicitly need encrypted return.
+
+---
+
+## Choose an integration owner (backend vs frontend)
+
+${integrationModesMarkdown()}
+
+The hosted SDK works in both browser and server contexts, but loading differs:
+
+- **Browser / SPA:** dynamic import the hosted URL directly, e.g. \`await import(/* webpackIgnore: true */ sdkUrl)\`.
+- **Node / Next Route Handler:** do not import \`https:\` directly; fetch the \`.mjs\`, import a cached \`data:\` URL, or reuse the \`loadSignetSdk()\` pattern.
 
 ---
 
@@ -152,7 +190,7 @@ Required query params:
 | \`redirectUrl\` | Yes | **URL-encoded**. Where the browser goes after success. Cross-origin **must** match \`ALLOWED_REDIRECT_URLS\` on Signet. Same-origin relative paths allowed when host matches. |
 | \`state\` | Strongly recommended | Opaque CSRF value; Signet echoes it on the callback. Compare in your callback before trusting \`token\`. |
 
-Example (browser redirect) — **same snippet as** \`/getting-started/integration\`:
+Example (browser redirect) — **same SDK-first snippet as** \`/getting-started/integration\`:
 
 \`\`\`javascript
 ${SIGNET_LOGIN_URL_EXAMPLE_JS}
@@ -168,13 +206,13 @@ ${SIGNET_LOGIN_URL_EXAMPLE_JS}
 
 **\`/oauth\` (ECDH):** Signet redirects with \`token\` / \`state\` in the **URL hash** (\`#…\`). **The hash is never sent to the server.** Client code must read \`window.location.href\` (or hash) on the callback page; \`useSearchParams()\` alone will miss the token.
 
-**Recommended:** load \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` and use \`parseLoginCallbackParams(window.location.href)\` (or \`getLoginCallbackFromWindow()\`). After handling the callback, clear sensitive query/hash keys with \`stripLoginCallbackFromUrl(window.location.href)\` before \`replaceState\`.
+**Required for generated integrations:** load \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` and use \`parseLoginCallbackParams(window.location.href)\` (or \`getLoginCallbackFromWindow()\`). After handling the callback, clear sensitive query/hash keys with \`stripLoginCallbackFromUrl(window.location.href)\` before \`replaceState\`.
 
 Handler checklist:
 
-1. Parse \`token\` / \`state\` with the SDK (or equivalent hash-aware parser); do **not** assume query-only.
+1. Parse \`token\` / \`state\` with the SDK; do **not** assume query-only and do **not** duplicate the parser in consumer apps.
 2. If you sent \`state\`, require a match with the value stored at login start; else reject.
-3. Exchange the verified identity for **your** session (\`/api/auth/verify\` or local JWT verify) — do not treat the callback token as a long-lived browser session by itself.
+3. Exchange the verified identity for **your** session with SDK \`verifyTokenAtAuthCenter\` (or a deliberate local JWT verification path when the user explicitly wants shared-secret verification) — do not treat the callback token as a long-lived browser session by itself.
 4. Strip sensitive params from the address bar (\`history.replaceState\`) after reading.
 
 ---
@@ -183,7 +221,7 @@ Handler checklist:
 
 - **URL:** \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` (CORS \`*\` on \`/sdk/*\` from this deployment).
 - **Browser:** \`await import(url)\` works; with Webpack/Next client bundles use \`import(/* webpackIgnore: true */ url)\` so the bundler does not try to resolve the remote specifier at build time.
-- **Route Handlers (Node):** you may \`await import(/* webpackIgnore: true */ sdkUrl)\` once and cache the module promise (same helpers as the browser). Avoid duplicating \`parseLoginCallbackParams\` / \`verifyTokenAtAuthCenter\` in the consumer repo when you can import the hosted file.
+- **Route Handlers (Node):** do **not** import \`https:\` module specifiers directly in plain Node/Next Route Handlers. Fetch \`.mjs\` once, import it from a \`data:text/javascript;base64,...\` URL, and cache that Promise; or reuse the \`vercel-web-scripts\` \`loadSignetSdk()\` pattern. The important part is still: use SDK exports instead of copying parser / verify logic.
 - **Consumer env (typical):** \`NEXT_PUBLIC_VERCEL_2FA_ORIGIN\` (Signet base, no trailing slash) for the browser; \`VERCEL_2FA_ORIGIN\` for server-only verify if you do not expose the public var; optional \`NEXT_PUBLIC_SIGNET_SDK_URL\` if the \`.mjs\` is on a CDN.
 
 ### SDK exports (single module)
@@ -226,7 +264,7 @@ Snippet (same as in-app guide):
 ${SIGNET_JWT_VERIFY_JOSE_SNIPPET}
 \`\`\`
 
-### Option B — POST \`YOUR_AUTH_HOST/api/auth/verify\` (no secret in consumer)
+### Option B — SDK \`verifyTokenAtAuthCenter\` (no secret in consumer)
 
 **Contract:**
 
@@ -241,7 +279,7 @@ ${SIGNET_JWT_VERIFY_JOSE_SNIPPET}
 
 On non-zero \`code\` or 401-style responses, treat as failed login; show a safe error and do not issue an app session.
 
-Snippet (same as in-app guide):
+Snippet (same as in-app guide; the SDK performs the \`POST /api/auth/verify\`):
 
 \`\`\`javascript
 ${SIGNET_VERIFY_API_FETCH_JS}
@@ -298,7 +336,7 @@ Use \`signet_get_env_checklist\` with the same flags you plan to enable.
 
 ## MCP tools (use in order when helping a developer)
 
-1. \`signet_get_integration_guide\` — routes, hosted SDK URL, pitfalls, \`vercel-web-scripts\`-style notes, verify snippet (\`framework\`: \`generic\` | \`nextjs\`).
+1. \`signet_get_integration_guide\` — routes, hosted SDK URL, pitfalls, \`vercel-web-scripts\`-style notes, SDK verify snippet (\`framework\`: \`generic\` | \`nextjs\`).
 2. \`signet_build_login_url\` — canonical URL for a given \`redirectUrl\` / \`state\` / ECDH flags.
 3. \`signet_validate_redirect_url\` — confirm allowlist will accept the callback URL.
 4. \`signet_get_env_checklist\` — required keys for TOTP/WebAuthn/ECDH/replay.
@@ -309,7 +347,8 @@ Use \`signet_get_env_checklist\` with the same flags you plan to enable.
 
 | Pitfall | Symptom | Fix |
 |--------|---------|-----|
-| OAuth return, query-only parser | Callback page “does nothing” | Use \`parseLoginCallbackParams(window.location.href)\` or read \`location.hash\` |
+| OAuth return, query-only parser | Callback page “does nothing” | Use SDK \`parseLoginCallbackParams(window.location.href)\` |
+| Hand-written verify fetch | Drift from Signet response / CORS behavior | Use SDK \`verifyTokenAtAuthCenter\` |
 | Next \`useSearchParams()\` only | Same as above for \`/oauth\` | Hash is not in search params |
 | Server Route Handler expects hash | Token always missing | Only query reaches the server for top-level navigation; use \`/login\` for server-side callback or handle OAuth on the client first |
 | \`redirectUrl\` not allowlisted | 400 / blocked redirect | Set \`ALLOWED_REDIRECT_URLS\` on Signet; run \`signet_validate_redirect_url\` |
@@ -343,7 +382,7 @@ In-app: **Getting started → Project integration** (\`/getting-started/integrat
 - **Role**: Signet is a hosted login hub (single admin account + TOTP / WebAuthn). Consumer apps **do not store** the admin password; they redirect, receive a short-lived JWT on return, verify it, then **issue their own session**.
 - **\`/login\`**: return uses **query** \`?token=&state=\`; Route Handlers can read \`URL\` search params.
 - **\`/oauth\` (ECDH)**: return uses **hash** \`#token=&state=\`; **not** visible to the server on top-level navigation; parse the **full** \`href\` (e.g. \`parseLoginCallbackParams(window.location.href)\`), not only \`useSearchParams()\`.
-- **Hosted SDK**: \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` (exports include \`stripLoginCallbackFromUrl\`, \`getVerifyApiUrl\`, etc.; see MCP \`sdkExports\`); same usage pattern as **vercel-web-scripts** \`lib/load-signet-sdk.ts\`.
+- **Hosted SDK**: \`YOUR_AUTH_HOST/sdk/signet-client.mjs\` (exports include \`buildLoginUrl\`, \`parseLoginCallbackParams\`, \`verifyTokenAtAuthCenter\`, \`stripLoginCallbackFromUrl\`, \`getVerifyApiUrl\`, etc.; see MCP \`sdkExports\`); same usage pattern as **vercel-web-scripts** \`lib/load-signet-sdk.ts\`. Agents should use this SDK by default.
 - **Cross-origin**: callback URLs must be in Signet \`ALLOWED_REDIRECT_URLS\`; use MCP \`signet_validate_redirect_url\` when unsure.
 - **Do not use MCP for**: entering passwords, completing 2FA, or impersonating a human.
 `

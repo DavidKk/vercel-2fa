@@ -4,6 +4,7 @@ import { FiCheckCircle, FiShield } from 'react-icons/fi'
 import { gettingStartedDoc } from '@/app/getting-started/doc-tokens'
 import {
   SIGNET_INTEGRATION_FLOW_STEPS,
+  SIGNET_INTEGRATION_MODE_BULLETS,
   SIGNET_INTEGRATION_PRACTICE_BULLETS,
   SIGNET_JWT_VERIFY_JOSE_SNIPPET,
   SIGNET_LOGIN_URL_EXAMPLE_JS,
@@ -29,7 +30,7 @@ export function IntegrationContent() {
           <Link href="/oauth/playground" className={d.link}>
             OAuth Playground
           </Link>
-          ; the steps below focus on the <code className={d.codeInline}>/login</code> redirect contract.
+          ; the steps below focus on the <code className={d.codeInline}>/login</code> redirect contract and use the hosted SDK helpers.
         </p>
       </header>
 
@@ -51,6 +52,17 @@ export function IntegrationContent() {
       </section>
 
       <section className="mb-10" aria-labelledby="integration-query">
+        <h3 id="integration-mode" className={d.docSectionLabel}>
+          Backend or frontend ownership
+        </h3>
+        <div className={`${d.calloutInfo} mb-8`}>
+          <ul className={`${d.muted} list-disc space-y-1 pl-4`}>
+            {SIGNET_INTEGRATION_MODE_BULLETS.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+
         <h3 id="integration-query" className={d.docSectionLabel}>
           Login URL and query parameters
         </h3>
@@ -93,13 +105,13 @@ export function IntegrationContent() {
           </div>
 
           <div className={d.cardMuted}>
-            <h4 className={`${d.h4} mb-2`}>Option B · Verify API</h4>
+            <h4 className={`${d.h4} mb-2`}>Option B · SDK verify API</h4>
             <p className={`${d.muted} mb-3`}>
-              POST JSON <code className={d.codeInline}>{'{ token, audience?, scope? }'}</code> to <code className={d.codeInline}>/api/auth/verify</code>. The route checks{' '}
-              <code className={d.codeInline}>Origin</code> against your redirect allowlist, requires HTTPS for browser calls, and returns the standard envelope:{' '}
-              <code className={d.codeInline}>code === 0</code> with <code className={d.codeInline}>data</code> shaped like an OAuth token response (
-              <code className={d.codeInline}>access_token</code>, <code className={d.codeInline}>token_type</code>, <code className={d.codeInline}>expires_in</code>,{' '}
-              <code className={d.codeInline}>user</code>, optional <code className={d.codeInline}>claims</code>).
+              Call SDK <code className={d.codeInline}>verifyTokenAtAuthCenter</code>; it POSTs JSON <code className={d.codeInline}>{'{ token, audience?, scope? }'}</code> to{' '}
+              <code className={d.codeInline}>/api/auth/verify</code>. The route checks <code className={d.codeInline}>Origin</code> against your redirect allowlist, requires HTTPS
+              for browser calls, and returns the standard envelope: <code className={d.codeInline}>code === 0</code> with <code className={d.codeInline}>data</code> shaped like an
+              OAuth token response (<code className={d.codeInline}>access_token</code>, <code className={d.codeInline}>token_type</code>,{' '}
+              <code className={d.codeInline}>expires_in</code>, <code className={d.codeInline}>user</code>, optional <code className={d.codeInline}>claims</code>).
             </p>
             <div className={d.preBox}>{SIGNET_VERIFY_API_FETCH_JS}</div>
             <div className="mt-3 flex items-center gap-2 text-xs text-[var(--app-header-text)]">

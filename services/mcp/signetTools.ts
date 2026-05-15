@@ -1,5 +1,5 @@
 import { tool } from '@/initializer/mcp'
-import { getSignetMcpSkillMarkdown, SIGNET_INTEGRATION_FLOW_STEPS } from '@/services/mcp/signetIntegrationShared'
+import { getSignetMcpSkillMarkdown, SIGNET_INTEGRATION_FLOW_STEPS, SIGNET_INTEGRATION_MODE_BULLETS } from '@/services/mcp/signetIntegrationShared'
 import { isAllowedRedirectUrl } from '@/utils/url'
 
 export interface SignetMcpContext {
@@ -17,28 +17,48 @@ function booleanParam(params: Record<string, unknown>, key: string): boolean {
 }
 
 function buildVerifySnippet(origin: string, framework?: string): string {
-  const fetchSnippet = `const response = await fetch('${origin}/api/auth/verify', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ token, audience: 'your-app' }),
+  const browserSnippet = `const signet = await import(/* webpackIgnore: true */ '${origin}/sdk/signet-client.mjs')
+const result = await signet.verifyTokenAtAuthCenter({
+  authCenterOrigin: '${origin}',
+  token,
+  audience: 'your-app',
 })
 
-if (!response.ok) {
-  throw new Error('Signet token verification failed')
+if (!result.ok) {
+  throw new Error(result.error || 'Signet token verification failed')
 }
 
-const { data } = await response.json()
+const data = result.response.data
 // Create your app session from data.access_token / data.user`
 
   if (framework === 'nextjs') {
     return `import { cookies } from 'next/headers'
 
+let signetSdkPromise: Promise<any> | null = null
+
+async function loadSignetSdk() {
+  signetSdkPromise ??= fetch('${origin}/sdk/signet-client.mjs')
+    .then((response) => {
+      if (!response.ok) throw new Error('Failed to load Signet SDK')
+      return response.text()
+    })
+    .then((source) => import(\`data:text/javascript;base64,\${Buffer.from(source).toString('base64')}\`))
+  return signetSdkPromise
+}
+
 export async function completeLogin(token: string) {
-  ${fetchSnippet
-    .split('\n')
-    .map((line) => `  ${line}`)
-    .join('\n')
-    .trim()}
+  const signet = await loadSignetSdk()
+  const result = await signet.verifyTokenAtAuthCenter({
+    authCenterOrigin: '${origin}',
+    token,
+    audience: 'your-app',
+  })
+
+  if (!result.ok) {
+    throw new Error(result.error || 'Signet token verification failed')
+  }
+
+  const data = result.response.data
 
   const cookieStore = await cookies()
   cookieStore.set('app_session', data.access_token, {
@@ -50,7 +70,7 @@ export async function completeLogin(token: string) {
 }`
   }
 
-  return fetchSnippet
+  return browserSnippet
 }
 
 /**
@@ -82,20 +102,21 @@ export function createSignetMcpTools(context: SignetMcpContext) {
         const encryptedReturn = booleanParam(params, 'encryptedReturn')
         return {
           summary:
-            'Integrate by redirecting users to Signet, verifying the returned token, then creating your own app session. Prefer the hosted SDK at /sdk/signet-client.mjs (see hostedSdkUrl) instead of duplicating parse/verify logic.',
+            'Integrate by redirecting users to Signet, parsing/verifying with the hosted SDK at /sdk/signet-client.mjs, then creating your own app session. Use the SDK helpers by default instead of duplicating URL, parser, or verify logic.',
           hostedSdkUrl: `${context.origin}/sdk/signet-client.mjs`,
           referenceImplementation: {
             name: 'vercel-web-scripts (MagickMonkey)',
             patterns: [
               'lib/signet-sdk-url.ts — getSignetSdkModuleUrl() from NEXT_PUBLIC_VERCEL_2FA_ORIGIN / VERCEL_2FA_ORIGIN / NEXT_PUBLIC_SIGNET_SDK_URL',
               'lib/load-signet-sdk.ts — cached loadSignetSdk() with import(/* webpackIgnore: true */ url)',
-              'App Router /auth/vercel-2fa/callback — await loadSignetSdk() then parseLoginCallbackParams(searchParams) + verifyTokenAtAuthCenter for /login flow',
+              'App Router /auth/vercel-2fa/callback — await loadSignetSdk() then parseLoginCallbackParams(request.url or searchParams) + verifyTokenAtAuthCenter for /login flow',
               'OAuth client hook — buildOAuthLoginUrl; parseLoginCallbackParams(href); stripLoginCallbackFromUrl after success',
             ],
           },
           pitfalls: [
             '/oauth puts token in URL hash — useSearchParams() alone will not see it; use parseLoginCallbackParams(window.location.href).',
             'Server Route Handlers never receive the hash fragment; use /login + query callback if you need purely server-side token read.',
+            'Do not hand-write fetch calls to /api/auth/verify in generated integrations; use SDK verifyTokenAtAuthCenter so response handling stays aligned with Signet.',
             'ALLOWED_REDIRECT_URLS must include the exact callback origin used in production.',
           ],
           sdkExports: [
@@ -126,6 +147,9 @@ export function createSignetMcpTools(context: SignetMcpContext) {
             signet_validate_redirect_url: { redirectUrl: 'https://your-app.example.com/auth/callback' },
           },
           flowSteps: [...SIGNET_INTEGRATION_FLOW_STEPS],
+          integrationModes: [...SIGNET_INTEGRATION_MODE_BULLETS],
+          agentDecisionRule:
+            'If the consumer project has a backend/session layer, implement backend-owned session. If it is static/frontend-only, implement frontend-only and warn that no httpOnly cookie is possible. If unclear, ask the user before coding.',
           routes: {
             directLogin: `${context.origin}/login?redirectUrl=<callback-url>`,
             oauthLogin: `${context.origin}/oauth?redirectUrl=<callback-url>&clientPublicKey=<base64-spki>`,
@@ -137,8 +161,8 @@ export function createSignetMcpTools(context: SignetMcpContext) {
           steps: [
             'Configure Signet env vars and at least one second factor.',
             'Whitelist cross-origin callback origins with ALLOWED_REDIRECT_URLS.',
-            'Redirect the user to Signet with redirectUrl and a random state.',
-            'On callback, post the returned token to /api/auth/verify.',
+            'Load the hosted SDK and call buildLoginUrl/buildOAuthLoginUrl with redirectUrl and a random state.',
+            'On callback, parse token/state with parseLoginCallbackParams, then call verifyTokenAtAuthCenter.',
             'Create the downstream application session from the verification response.',
           ],
           verifySnippet: buildVerifySnippet(context.origin, framework),
@@ -179,8 +203,8 @@ export function createSignetMcpTools(context: SignetMcpContext) {
           url: url.toString(),
           allowedByCurrentConfig: isAllowedRedirectUrl(redirectUrl, context.host),
           note: encryptedReturn
-            ? 'Generate a client ECDH key pair first. OAuth return: token/state are in the callback URL hash (#…). Parse window.location.href (or hosted SDK parseLoginCallbackParams). Server Route Handlers cannot read the hash.'
-            : 'Direct login returns token+state in query on redirectUrl.',
+            ? 'Generate a client ECDH key pair first. OAuth return: token/state are in the callback URL hash (#…). Use hosted SDK parseLoginCallbackParams(window.location.href). Server Route Handlers cannot read the hash.'
+            : 'Direct login returns token+state in query on redirectUrl. Use hosted SDK parseLoginCallbackParams and verifyTokenAtAuthCenter in the callback.',
         }
       }
     ),

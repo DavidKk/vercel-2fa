@@ -2,6 +2,8 @@
 
 This document describes the complete ECDH-encrypted OAuth flow with OAuth2-like token verification. The flow supports two modes: **Popup** (postMessage) and **Redirect** (URL hash).
 
+Consumer integrations should use the hosted SDK at `/sdk/signet-client.mjs` for `getOAuthPublicKeyUrl`, `buildOAuthLoginUrl`, `parseLoginCallbackParams`, `verifyTokenAtAuthCenter`, and `stripLoginCallbackFromUrl`. The diagrams below show protocol steps; do not copy them as hand-written URL or fetch code.
+
 ## Flow Modes
 
 ### Popup Mode (Default)
@@ -60,7 +62,7 @@ sequenceDiagram
     User->>User: Clear sk_temp from memory
     User->>User: Remove postMessage listener
 
-    User->>Auth: POST /api/auth/verify with JWT
+    User->>Auth: SDK verifyTokenAtAuthCenter (POST /api/auth/verify with JWT)
     Note over Auth: Verify JWT signature & claims
     Auth->>Auth: Generate new access_token (JWT, 3min TTL)
     Auth-->>User: Return OAuth2 response (access_token, token_type, expires_in, user)
@@ -99,14 +101,14 @@ sequenceDiagram
     Auth->>User: Redirect to redirectUrl#token=encrypted_token&state=state
     Note over User: Hash parameters are not sent to server
 
-    User->>User: Read token and state from URL hash
+    User->>User: SDK parseLoginCallbackParams(window.location.href)
     User->>User: Load sk_temp from sessionStorage
     User->>User: Validate state matches stored state
     User->>User: Derive shared key (client_sk + server_pk)
     User->>User: Decrypt encryptedToken → JWT
     User->>User: Clear sk_temp and state from sessionStorage
 
-    User->>Auth: POST /api/auth/verify with JWT
+    User->>Auth: SDK verifyTokenAtAuthCenter (POST /api/auth/verify with JWT)
     Note over Auth: Verify JWT signature & claims
     Auth->>Auth: Generate new access_token (JWT, 3min TTL)
     Auth-->>User: Return OAuth2 response (access_token, token_type, expires_in, user)
@@ -120,7 +122,7 @@ sequenceDiagram
 
 ### Common Steps (Both Modes)
 
-1. **Get Server Public Key**: Client fetches the current server public key from `/api/oauth/public-key` endpoint (no need to store in client config)
+1. **Get Server Public Key**: Client fetches the current server public key from `/api/oauth/public-key` endpoint (prefer SDK `getOAuthPublicKeyUrl`; no need to store in client config)
 2. **User initiates login**: User clicks "Login with 2FA" button
 3. **Temporary key generation**: Browser generates a temporary ECDH key pair (client private key + client public key)
 4. **State generation**: Client generates a random UUID for CSRF protection
@@ -129,7 +131,7 @@ sequenceDiagram
 7. **Shared secret derivation**: Both parties compute the same shared secret using ECDH (server private key + client public key)
 8. **Token encryption**: Server encrypts the JWT token with the shared secret using AES-256-GCM
 9. **Token decryption**: Client decrypts the token using its temporary private key and server public key
-10. **Token verification**: Client sends the decrypted JWT to `/api/auth/verify` endpoint
+10. **Token verification**: Client calls SDK `verifyTokenAtAuthCenter`, which sends the decrypted JWT to `/api/auth/verify`
 11. **Access token issuance**: Auth server verifies the JWT and issues a new access token (OAuth2-compliant)
 12. **Session creation**: Client service receives the access token and generates its own session JWT/cookie
 
@@ -190,6 +192,7 @@ sequenceDiagram
 ### `/api/auth/verify` (POST)
 
 - Verifies the decrypted JWT token from the OAuth callback
+- Consumer apps should call this through SDK `verifyTokenAtAuthCenter`
 - Returns OAuth2-compliant response with new access token
 - Protected by origin whitelist
 - Access token is a new JWT with 3-minute expiration (180 seconds)

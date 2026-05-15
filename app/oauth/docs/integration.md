@@ -1,6 +1,6 @@
 # OAuth Integration Guide
 
-This guide explains how to integrate the ECDH-encrypted OAuth flow into your application using the provided React hooks and utilities.
+This guide explains how to integrate the ECDH-encrypted OAuth flow into your application using the provided React hooks and utilities. For consumer apps outside this repository, load the hosted SDK at `/sdk/signet-client.mjs` for URL building, callback parsing, URL cleanup, and verify API calls instead of duplicating those helpers.
 
 ## Quick Start
 
@@ -140,7 +140,8 @@ If you prefer to implement the flow manually without using the provided hooks:
 
 ```ts
 async function fetchServerPublicKey(): Promise<string> {
-  const response = await fetch('https://your-signet-domain.com/api/oauth/public-key', {
+  const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+  const response = await fetch(signet.getOAuthPublicKeyUrl('https://your-signet-domain.com'), {
     method: 'GET',
     headers: {
       Origin: window.location.origin,
@@ -174,21 +175,13 @@ sessionStorage.setItem('oauth_client_private_key', privateKeyBase64)
 ### 3. Build Login URL
 
 ```ts
-function buildLoginUrl(redirectUrl: string, mode: 'popup' | 'redirect'): string {
+async function buildLoginUrl(redirectUrl: string, mode: 'popup' | 'redirect'): Promise<string> {
+  const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
   const state = crypto.randomUUID()
-  const loginUrl = new URL('https://your-signet-domain.com/oauth', window.location.origin)
 
   // Add mode parameter to redirect URL
   const redirectUrlWithMode = new URL(redirectUrl, window.location.origin)
   redirectUrlWithMode.searchParams.set('mode', mode)
-
-  loginUrl.searchParams.set('redirectUrl', encodeURIComponent(redirectUrlWithMode.toString()))
-  loginUrl.searchParams.set('state', state)
-  loginUrl.searchParams.set('clientPublicKey', publicKeyBase64)
-
-  if (mode === 'popup') {
-    loginUrl.searchParams.set('callbackOrigin', window.location.origin)
-  }
 
   // Store state for validation
   if (mode === 'popup') {
@@ -199,7 +192,13 @@ function buildLoginUrl(redirectUrl: string, mode: 'popup' | 'redirect'): string 
     sessionStorage.setItem('oauth_state', state)
   }
 
-  return loginUrl.toString()
+  return signet.buildOAuthLoginUrl({
+    authCenterOrigin: 'https://your-signet-domain.com',
+    redirectUrl: redirectUrlWithMode.toString(),
+    state,
+    clientPublicKey: publicKeyBase64,
+    callbackOrigin: mode === 'popup' ? window.location.origin : undefined,
+  })
 }
 ```
 
@@ -231,18 +230,16 @@ window.addEventListener('message', async (event) => {
     serverPublicKey
   )
 
-  // Verify token
-  const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Origin: window.location.origin,
-    },
-    body: JSON.stringify({ token: decryptedToken }),
+  // Verify token through the hosted SDK
+  const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+  const result = await signet.verifyTokenAtAuthCenter({
+    authCenterOrigin: 'https://your-signet-domain.com',
+    token: decryptedToken,
+    audience: 'your-app',
   })
+  if (!result.ok) throw new Error(result.error || 'Signet token verification failed')
 
-  const data = await response.json()
-  // Use data.access_token to create your session
+  // Use result.response.data.access_token to create your session
 })
 ```
 
@@ -250,12 +247,9 @@ window.addEventListener('message', async (event) => {
 
 ```ts
 // On your callback page
-function handleRedirectCallback() {
-  // Read from URL hash (more secure than query params)
-  const hash = window.location.hash.substring(1)
-  const hashParams = new URLSearchParams(hash)
-  const token = hashParams.get('token')
-  const state = hashParams.get('state')
+async function handleRedirectCallback() {
+  const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+  const { token, state } = signet.parseLoginCallbackParams(window.location.href)
 
   // Validate state
   const storedState = sessionStorage.getItem('oauth_state')
@@ -272,24 +266,21 @@ function handleRedirectCallback() {
   // Decrypt token
   const decryptedToken = await decryptToken(token!, privateKeyBase64, serverPublicKey)
 
-  // Verify token
-  const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Origin: window.location.origin,
-    },
-    body: JSON.stringify({ token: decryptedToken }),
+  // Verify token through the hosted SDK
+  const result = await signet.verifyTokenAtAuthCenter({
+    authCenterOrigin: 'https://your-signet-domain.com',
+    token: decryptedToken,
+    audience: 'your-app',
   })
-
-  const data = await response.json()
+  if (!result.ok) throw new Error(result.error || 'Signet token verification failed')
 
   // Cleanup
   sessionStorage.removeItem('oauth_state')
   sessionStorage.removeItem('oauth_client_public_key')
   sessionStorage.removeItem('oauth_client_private_key')
+  history.replaceState(history.state, '', signet.stripLoginCallbackFromUrl(window.location.href))
 
-  // Use data.access_token to create your session
+  // Use result.response.data.access_token to create your session
 }
 ```
 

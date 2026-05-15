@@ -106,7 +106,9 @@ The login JWT payload includes `sub` (stable subject id), `username` and `prefer
 
 External systems can verify tokens using two methods:
 
-**Method A: Shared Secret Verification (Recommended for internal systems)**
+**Method A: Shared Secret Verification (only for internal systems that intentionally share `JWT_SECRET`)**
+
+For most third-party integrations, prefer Method B with the hosted SDK so callback parsing and verify API handling stay aligned with Signet.
 
 ```typescript
 import { jwtVerify } from 'jose'
@@ -131,18 +133,16 @@ async function verifyToken(token: string) {
 **Method B: API Verification (For scenarios without shared secrets)**
 
 ```typescript
-const response = await fetch('https://your-signet-domain.com/api/auth/verify', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ token }),
+const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+const result = await signet.verifyTokenAtAuthCenter({
+  authCenterOrigin: 'https://your-signet-domain.com',
+  token,
+  audience: 'your-app',
 })
 
-const result = await response.json()
-if (result.code === 0 && result.data.valid) {
-  // Verification successful
-  console.log('User:', result.data.payload.username)
+if (result.ok) {
+  // Verification successful. Create your app session from result.response.data.
+  console.log('User:', result.response.data.user)
 }
 ```
 
@@ -160,6 +160,12 @@ The deployment serves a tiny ES module (no npm package) so **consumer apps share
 - **`isLoginCallbackTokenInHash`** — quick check for typical `/oauth` hash returns
 
 Example: `https://your-signet-domain.com/sdk/signet-client.mjs`. Responses include `Access-Control-Allow-Origin: *` on `/sdk/*` for browser `import()`.
+
+**Choose backend or frontend ownership:**
+
+- **Backend-owned session** (recommended when the app has a server): browser starts Signet login, Signet returns to your backend callback for `/login`, backend loads the SDK, parses query `token/state`, calls `verifyTokenAtAuthCenter`, then issues your own httpOnly session cookie.
+- **Frontend-only app** (supported for static/SPAs): browser starts Signet login, callback page loads the SDK, parses `window.location.href`, validates `state`, calls `verifyTokenAtAuthCenter`, strips the callback URL, then stores the returned token/user in frontend state or storage. This cannot create an httpOnly session cookie.
+- **ECDH `/oauth` redirect**: token/state return in the URL hash, so browser code must handle the callback first. A server Route Handler cannot read the hash.
 
 **Next.js / Webpack (aligned with [vercel-web-scripts](https://github.com/DavidKk/vercel-web-scripts)):**
 
@@ -196,12 +202,16 @@ ALLOWED_REDIRECT_URLS=https://*.example.com,https://*.company.com
 const state = crypto.randomUUID()
 sessionStorage.setItem('oauth_state', state)
 
-const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+const loginUrl = signet.buildLoginUrl({
+  authCenterOrigin: 'https://your-signet-domain.com',
+  redirectUrl: callbackUrl,
+  state,
+})
 window.location.href = loginUrl
 
 // Verify state on callback
-const params = new URLSearchParams(window.location.search)
-const returnedState = params.get('state')
+const { state: returnedState } = signet.parseLoginCallbackParams(window.location.href)
 if (returnedState !== sessionStorage.getItem('oauth_state')) {
   throw new Error('Invalid state - possible CSRF attack')
 }
@@ -222,12 +232,17 @@ if (returnedState !== sessionStorage.getItem('oauth_state')) {
 
 ```typescript
 // 1. Login button handler
-function handleLogin() {
+async function handleLogin() {
   const state = crypto.randomUUID()
   sessionStorage.setItem('oauth_state', state)
 
+  const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
   const callbackUrl = `${window.location.origin}/auth/callback`
-  const loginUrl = `https://your-signet-domain.com/login?redirectUrl=${encodeURIComponent(callbackUrl)}&state=${state}`
+  const loginUrl = signet.buildLoginUrl({
+    authCenterOrigin: 'https://your-signet-domain.com',
+    redirectUrl: callbackUrl,
+    state,
+  })
 
   window.location.href = loginUrl
 }
@@ -235,32 +250,35 @@ function handleLogin() {
 // 2. Callback page handler (pages/auth/callback.tsx)
 export default function AuthCallback() {
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const token = params.get('token')
-    const state = params.get('state')
+    const run = async () => {
+      const signet = await import(/* webpackIgnore: true */ 'https://your-signet-domain.com/sdk/signet-client.mjs')
+      const { token, state } = signet.parseLoginCallbackParams(window.location.href)
 
-    // Verify state
-    if (state !== sessionStorage.getItem('oauth_state')) {
-      console.error('Invalid state')
-      return
-    }
+      // Verify state
+      if (state !== sessionStorage.getItem('oauth_state')) {
+        console.error('Invalid state')
+        return
+      }
 
-    // Clear state
-    sessionStorage.removeItem('oauth_state')
+      // Clear state
+      sessionStorage.removeItem('oauth_state')
 
-    if (token) {
-      // Send to your backend for verification and session creation
-      fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      }).then(async res => {
-        const data = await res.json()
-        if (data.success) {
+      if (token) {
+        const result = await signet.verifyTokenAtAuthCenter({
+          authCenterOrigin: 'https://your-signet-domain.com',
+          token,
+          audience: 'your-app',
+        })
+        if (result.ok) {
+          // Send result.response.data to your backend or create your session.
           router.push('/dashboard')
         }
-      })
+        history.replaceState(history.state, '', signet.stripLoginCallbackFromUrl(window.location.href))
+      }
     }
+    void run().catch((error) => {
+      console.error(error)
+    })
   }, [])
 
   return <div>Processing login...</div>
@@ -272,6 +290,8 @@ export default function AuthCallback() {
 #### POST /api/auth/verify
 
 Verify JWT token validity
+
+Consumer apps should normally call this endpoint through SDK `verifyTokenAtAuthCenter` so response parsing and URL construction stay aligned with Signet.
 
 **Request Body**:
 
@@ -288,13 +308,15 @@ Verify JWT token validity
   "code": 0,
   "message": "ok",
   "data": {
-    "valid": true,
-    "payload": {
+    "access_token": "eyJ...",
+    "token_type": "Bearer",
+    "expires_in": 180,
+    "user": {
+      "sub": "user-sub",
       "username": "admin",
-      "authenticated": true,
-      "iat": 1699999999,
-      "exp": 1699999999
-    }
+      "authenticated": true
+    },
+    "claims": {}
   }
 }
 ```
