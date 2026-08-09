@@ -1,0 +1,7 @@
+# pnpm 11+: dependency build scripts must be explicitly reviewed.
+# Unreviewed scripts fail install with ERR_PNPM_IGNORED_BUILDS (strictDepBuilds).
+# @see https://pnpm.io/settings/build
+allowBuilds:
+  '@vercel/speed-insights': true
+  core-js: false
+  sharp: true
