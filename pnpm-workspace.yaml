@@ -1,6 +1,12 @@
 # pnpm 11+: dependency build scripts must be explicitly reviewed.
 # Unreviewed scripts fail install with ERR_PNPM_IGNORED_BUILDS (strictDepBuilds).
 # @see https://pnpm.io/settings/build
+#
+# `packages` is required when Vercel falls back to pnpm 9/10 (it rejects a
+# workspace file with no packages field). This repo is not a monorepo.
+packages:
+  - '.'
+
 allowBuilds:
   '@vercel/speed-insights': true
   core-js: false
