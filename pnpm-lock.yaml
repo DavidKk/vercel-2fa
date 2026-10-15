@@ -24,8 +24,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@vercel/speed-insights':
-        specifier: ^1.2.0
-        version: 1.2.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
+        specifier: ^2.0.0
+        version: 2.0.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       ahooks:
         specifier: ^3.8.4
         version: 3.8.4(react@19.2.1)
@@ -1107,11 +1107,12 @@ packages:
       vue-router:
         optional: true
 
-  '@vercel/speed-insights@1.2.0':
-    resolution: {integrity: sha512-y9GVzrUJ2xmgtQlzFP2KhVRoCglwfRQgjyfY607aU0hh0Un6d0OUyrJkjuAlsV18qR4zfoFPs/BiIj9YDS6Wzw==}
+  '@vercel/speed-insights@2.0.0':
+    resolution: {integrity: sha512-jwkNcrTeafWxjmWq4AHBaptSqZiJkYU5adLC9QBSqeim0GcqDMgN5Ievh8OG1rJ6W3A4l1oiP7qr9CWxGuzu3w==}
     peerDependencies:
       '@sveltejs/kit': ^1 || ^2
       next: '>= 13'
+      nuxt: '>= 3'
       react: ^18 || ^19 || ^19.0.0-rc
       svelte: '>= 4'
       vue: ^3
@@ -1120,6 +1121,8 @@ packages:
       '@sveltejs/kit':
         optional: true
       next:
+        optional: true
+      nuxt:
         optional: true
       react:
         optional: true
@@ -5416,7 +5419,7 @@ snapshots:
       next: 15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react: 19.2.1
 
-  '@vercel/speed-insights@1.2.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)':
+  '@vercel/speed-insights@2.0.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)':
     optionalDependencies:
       next: 15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react: 19.2.1
