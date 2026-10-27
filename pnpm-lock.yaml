@@ -21,8 +21,8 @@ importers:
         specifier: ^1.34.0
         version: 1.35.6
       '@vercel/analytics':
-        specifier: ^1.5.0
-        version: 1.5.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
+        specifier: ^2.0.1
+        version: 2.0.1(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@vercel/speed-insights':
         specifier: ^1.2.0
         version: 1.2.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
@@ -1081,12 +1081,13 @@ packages:
   '@upstash/redis@1.35.6':
     resolution: {integrity: sha512-aSEIGJgJ7XUfTYvhQcQbq835re7e/BXjs8Janq6Pvr6LlmTZnyqwT97RziZLO/8AVUL037RLXqqiQC6kCt+5pA==}
 
-  '@vercel/analytics@1.5.0':
-    resolution: {integrity: sha512-MYsBzfPki4gthY5HnYN7jgInhAZ7Ac1cYDoRWFomwGHWEX7odTEzbtg9kf/QSo7XEsEAqlQugA6gJ2WS2DEa3g==}
+  '@vercel/analytics@2.0.1':
+    resolution: {integrity: sha512-MTQG6V9qQrt1tsDeF+2Uoo5aPjqbVPys1xvnIftXSJYG2SrwXRHnqEvVoYID7BTruDz4lCd2Z7rM1BdkUehk2g==}
     peerDependencies:
       '@remix-run/react': ^2
       '@sveltejs/kit': ^1 || ^2
       next: '>= 13'
+      nuxt: '>= 3'
       react: ^18 || ^19 || ^19.0.0-rc
       svelte: '>= 4'
       vue: ^3
@@ -1097,6 +1098,8 @@ packages:
       '@sveltejs/kit':
         optional: true
       next:
+        optional: true
+      nuxt:
         optional: true
       react:
         optional: true
@@ -5410,7 +5413,7 @@ snapshots:
     dependencies:
       uncrypto: 0.1.3
 
-  '@vercel/analytics@1.5.0(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)':
+  '@vercel/analytics@2.0.1(next@15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)':
     optionalDependencies:
       next: 15.5.27(@babel/core@7.26.0)(@playwright/test@1.56.1)(@types/node@20.17.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react: 19.2.1
