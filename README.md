@@ -29,10 +29,15 @@ A simple and user-friendly two-factor authentication service based on TOTP (Time
 #### Validate Dynamic Code
 
 ```typescript
-import { authenticator } from 'otplib'
+import { createGuardrails, verify } from 'otplib'
 
-const isValid = authenticator.check(token, secret)
-if (isValid) {
+const result = await verify({
+  token,
+  secret,
+  // Secrets issued by this app are 10 bytes. otplib 13 rejects those unless the minimum is lowered.
+  guardrails: createGuardrails({ MIN_SECRET_BYTES: 10 }),
+})
+if (result.valid) {
   console.log('Token is valid!')
 } else {
   console.log('Token is invalid or expired.')
